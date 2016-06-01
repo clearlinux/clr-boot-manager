@@ -244,7 +244,7 @@ START_TEST(bootman_install_bootloader_test)
         m = boot_manager_new();
         boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
 
-        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_INSTALL),
+        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_INSTALL | BOOTLOADER_OPERATION_NO_CHECK),
                 "Failed to install the bootloader");
 
         if (boot_manager_get_architecture_size(m) == 64) {
