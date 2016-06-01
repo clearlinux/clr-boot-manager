@@ -61,10 +61,12 @@ fi
 if [[ -e /usr/bin/goofiboot ]]; then
         cp /usr/bin/goofiboot "${top_builddir}/tests/dummy_install/usr/bin/."
         cp -R /usr/lib/goofiboot "${top_builddir}/tests/dummy_install/usr/lib/."
-elif [[ -e /usr/bin/gummiboot ]]; then
+fi
+if [[ -e /usr/bin/gummiboot ]]; then
         cp /usr/bin/gummiboot "${top_builddir}/tests/dummy_install/usr/bin/."
         cp -R /usr/lib/gummiboot "${top_builddir}/tests/dummy_install/usr/lib/."
-elif [[ -e /usr/bin/bootctl ]]; then
+fi
+if [[ -e /usr/bin/bootctl ]]; then
         cp /usr/bin/bootctl "${top_builddir}/tests/dummy_install/usr/bin/."
         mkdir -p "${top_builddir}/tests/dummy_install/usr/lib/systemd/boot/"
         cp -R /usr/lib/systemd/boot/efi "${top_builddir}/tests/dummy_install/usr/lib/systemd/boot"
