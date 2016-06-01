@@ -24,7 +24,7 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -Wformat -Wformat-security -Werror=format-security \
         -Wno-conversion -Wunused-variable -Wunreachable-code \
         -Wall -W -D_FORTIFY_SOURCE=2 \
-        -std=c99 -Werror \
+        -std=c99 \
         -DSYSCONFDIR=\"$(sysconfdir)\"
 
 AM_CPPFLAGS = \
