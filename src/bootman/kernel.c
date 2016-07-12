@@ -20,6 +20,7 @@
 #include "bootman.h"
 #include "bootman_private.h"
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 
 #include "config.h"
@@ -92,7 +93,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
          * so validity of existing kernels may be questionable
          * Thus, flag it, and return kernel */
         if (!nc_file_exists(cmdline)) {
-                LOG("Valid kernel found with no cmdline: %s (expected %s)\n", path, cmdline);
+                LOG_ERROR("Valid kernel found with no cmdline: %s (expected %s)", path, cmdline);
                 return NULL;
         }
 
@@ -121,7 +122,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                         abort();
                 }
                 if (!nc_file_exists(module_dir)) {
-                        LOG("Valid kernel with no modules: %s %s\n", path, module_dir);
+                        LOG_ERROR("Valid kernel with no modules: %s %s", path, module_dir);
                         return NULL;
                 }
         }
@@ -145,7 +146,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         kern->release = (int16_t)release;
 
         if (!(f = fopen(cmdline, "r"))) {
-                LOG("Unable to open %s: %s\n", cmdline, strerror(errno));
+                LOG_ERROR("Unable to open %s: %s", cmdline, strerror(errno));
                 free_kernel(kern);
                 return NULL;
         }
@@ -199,7 +200,7 @@ KernelArray *boot_manager_get_kernels(BootManager *self)
 
         dir = opendir(self->kernel_dir);
         if (!dir) {
-                LOG("Error opening %s: %s\n", self->kernel_dir, strerror(errno));
+                LOG_ERROR("Error opening %s: %s", self->kernel_dir, strerror(errno));
                 nc_array_free(&ret, NULL);
                 return NULL;
         }
@@ -515,7 +516,7 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         }
 
         if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
-                LOG("Failed to install kernel %s: %s\n", kfile_target, strerror(errno));
+                LOG_FATAL("Failed to install kernel %s: %s", kfile_target, strerror(errno));
                 return false;
         }
 
@@ -549,9 +550,7 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
 
         /* Remove the kernel from the ESP */
         if (nc_file_exists(kfile_target) && unlink(kfile_target) < 0) {
-                LOG("remove_kernel_internal: Failed to remove %s: %s\n",
-                    kfile_target,
-                    strerror(errno));
+                LOG_ERROR("Failed to remove kernel %s: %s", kfile_target, strerror(errno));
         } else {
                 cbm_sync();
         }
@@ -559,9 +558,9 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         /* Purge the kernel modules from disk */
         if (kernel->module_dir && nc_file_exists(kernel->module_dir)) {
                 if (!nc_rm_rf(kernel->module_dir)) {
-                        LOG("remove_kernel_internal: Failed to remove (-rf) %s: %s\n",
-                            kernel->module_dir,
-                            strerror(errno));
+                        LOG_ERROR("Failed to remove module dir (-rf) %s: %s",
+                                  kernel->module_dir,
+                                  strerror(errno));
                 } else {
                         cbm_sync();
                 }
@@ -569,31 +568,29 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
 
         if (kernel->cmdline_file && nc_file_exists(kernel->cmdline_file)) {
                 if (unlink(kernel->cmdline_file) < 0) {
-                        LOG("remove_kernel_internal: Failed to remove %s: %s\n",
-                            kernel->cmdline_file,
-                            strerror(errno));
+                        LOG_ERROR("Failed to remove cmdline file %s: %s",
+                                  kernel->cmdline_file,
+                                  strerror(errno));
                 }
         }
         if (kernel->kconfig_file && nc_file_exists(kernel->kconfig_file)) {
                 if (unlink(kernel->kconfig_file) < 0) {
-                        LOG("remove_kernel_internal: Failed to remove %s: %s\n",
-                            kernel->kconfig_file,
-                            strerror(errno));
+                        LOG_ERROR("Failed to remove kconfig file %s: %s",
+                                  kernel->kconfig_file,
+                                  strerror(errno));
                 }
         }
         if (kernel->kboot_file && nc_file_exists(kernel->kboot_file)) {
                 if (unlink(kernel->kboot_file) < 0) {
-                        LOG("remove_kernel_internal: Failed to remove %s: %s\n",
-                            kernel->kboot_file,
-                            strerror(errno));
+                        LOG_ERROR("Failed to remove kboot file %s: %s",
+                                  kernel->kboot_file,
+                                  strerror(errno));
                 }
         }
 
         /* Lastly, remove the source */
         if (unlink(kernel->path) < 0) {
-                LOG("remove_kernel_internal: Failed to remove %s: %s\n",
-                    kernel->path,
-                    strerror(errno));
+                LOG_ERROR("Failed to remove kernel blob %s: %s", kernel->path, strerror(errno));
                 return false;
         }
 

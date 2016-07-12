@@ -18,6 +18,7 @@
 #include "bootman.h"
 #include "config.h"
 #include "files.h"
+#include "log.h"
 #include "nica/array.h"
 #include "nica/files.h"
 #include "util.h"
@@ -534,6 +535,10 @@ int main(void)
 
         /* syncing can be problematic during test suite runs */
         cbm_set_sync_filesystems(false);
+
+        /* Ensure that logging is set up properly. */
+        setenv("CBM_DEBUG", "1", 1);
+        cbm_log_init(stderr);
 
         s = core_suite();
         sr = srunner_create(s);

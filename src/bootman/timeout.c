@@ -17,6 +17,7 @@
 
 #include "bootman.h"
 #include "bootman_private.h"
+#include "log.h"
 #include "nica/files.h"
 
 /**
@@ -44,7 +45,7 @@ bool boot_manager_set_timeout_value(BootManager *self, int timeout)
                         return true;
                 }
                 if (unlink(path) < 0) {
-                        fprintf(stderr, "Unable to remove %s: %s\n", path, strerror(errno));
+                        LOG_ERROR("Unable to remove %s: %s", path, strerror(errno));
                         return false;
                 }
                 return true;
@@ -52,12 +53,12 @@ bool boot_manager_set_timeout_value(BootManager *self, int timeout)
 
         fp = fopen(path, "w");
         if (!fp) {
-                fprintf(stderr, "Unable to open %s for writing: %s\n", path, strerror(errno));
+                LOG_FATAL("Unable to open %s for writing: %s", path, strerror(errno));
                 return false;
         }
 
         if (fprintf(fp, "%d\n", timeout) < 0) {
-                fprintf(stderr, "Unable to set new timeout: %s\n", strerror(errno));
+                LOG_FATAL("Unable to set new timeout: %s", strerror(errno));
                 return false;
         }
         return true;
@@ -85,12 +86,12 @@ int boot_manager_get_timeout_value(BootManager *self)
 
         fp = fopen(path, "r");
         if (!fp) {
-                fprintf(stderr, "Unable to open %s for reading: %s\n", path, strerror(errno));
+                LOG_FATAL("Unable to open %s for reading: %s", path, strerror(errno));
                 return -1;
         }
 
         if (fscanf(fp, "%d\n", &t_val) != 1) {
-                fprintf(stderr, "Failed to parse config file, defaulting to no timeout\n");
+                LOG_ERROR("Failed to parse config file, defaulting to no timeout");
                 return -1;
         }
 

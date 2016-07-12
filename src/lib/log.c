@@ -23,11 +23,9 @@ static CbmLogLevel min_log_level;
 
 #define PACKAGE_NAME_SHORT "cbm"
 
-static const char *log_str_table[] = {[CBM_LOG_DEBUG] = "DEBUG",
-                                      [CBM_LOG_INFO] = "INFO",
-                                      [CBM_LOG_SUCCESS] = "SUCCESS",
-                                      [CBM_LOG_ERROR] = "ERROR",
-                                      [CBM_LOG_FATAL] = "FATAL" };
+static const char *log_str_table[] = {[CBM_LOG_DEBUG] = "DEBUG",     [CBM_LOG_INFO] = "INFO",
+                                      [CBM_LOG_SUCCESS] = "SUCCESS", [CBM_LOG_ERROR] = "ERROR",
+                                      [CBM_LOG_WARNING] = "WARNING", [CBM_LOG_FATAL] = "FATAL" };
 
 void cbm_log_init(FILE *log)
 {
@@ -49,6 +47,8 @@ void cbm_log_init(FILE *log)
         } else if (streq(env_level, "4")) {
                 min_log_level = CBM_LOG_ERROR;
         } else if (streq(env_level, "5")) {
+                min_log_level = CBM_LOG_WARNING;
+        } else if (streq(env_level, "6")) {
                 min_log_level = CBM_LOG_FATAL;
         } else {
                 min_log_level = CBM_LOG_ERROR;

@@ -18,6 +18,7 @@
 
 #include "bootman.h"
 #include "cli.h"
+#include "log.h"
 
 bool cbm_command_update(int argc, char **argv)
 {
@@ -44,7 +45,8 @@ bool cbm_command_update(int argc, char **argv)
 
                 realp = realpath(root, NULL);
                 if (!realp) {
-                        LOG("Path specified does not exist: %s\n", root);
+                        LOG_FATAL("Path specified does not exist: %s", root);
+                        return false;
                 }
                 /* Anything not / is image mode */
                 if (!streq(realp, "/")) {

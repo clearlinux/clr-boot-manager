@@ -21,6 +21,7 @@
 #include "bootman.h"
 #include "bootman_private.h"
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 
 #include "config.h"
@@ -47,7 +48,7 @@ BootManager *boot_manager_new()
         /* Try to parse the currently running kernel */
         if (uname(&uts) == 0) {
                 if (!boot_manager_set_uname(r, uts.release)) {
-                        fprintf(stderr, "Warning: Unable to parse kernel\n");
+                        LOG_WARNING("Unable to parse the currently running kernel");
                 }
         }
 
@@ -140,7 +141,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         }
         if (!self->bootloader->init(self)) {
                 self->bootloader->destroy(self);
-                LOG("%s: Cannot initialise bootloader\n", __func__);
+                LOG_FATAL("%s: Cannot initialise bootloader", __func__);
                 return false;
         }
 
@@ -308,7 +309,7 @@ bool boot_manager_set_boot_dir(BootManager *self, const char *bootdir)
         if (!self->bootloader->init(self)) {
                 /* Ensure cleanup. */
                 self->bootloader->destroy(self);
-                FATAL("Re-initialisation of bootloader failed");
+                LOG_FATAL("Re-initialisation of bootloader failed");
                 return false;
         }
         return true;
@@ -345,7 +346,7 @@ bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
                 }
                 return true;
         } else {
-                LOG("boot_manager_modify_bootloader: Unknown operation\n");
+                LOG_FATAL("Unknown bootloader operation");
                 return false;
         }
 }
@@ -379,7 +380,7 @@ uint8_t boot_manager_get_platform_size(__cbm_unused__ BootManager *manager)
         }
 
         if (read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
-                LOG("boot_manager_get_platform_size: Problematic firmware interface\n");
+                LOG_ERROR("Problematic firmware interface");
                 close(fd);
                 return _detect_platform_size();
         }

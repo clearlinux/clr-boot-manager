@@ -20,15 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** Revisit in future */
-#define LOG(...) fprintf(stderr, __VA_ARGS__)
-
-#define FATAL(...)                                                                                 \
-        do {                                                                                       \
-                fprintf(stderr, "%s()[%d]: %s\n", __func__, __LINE__, __VA_ARGS__);                \
-        } while (0);
-
-#define DECLARE_OOM() FATAL("Out Of Memory")
+#define DECLARE_OOM() (fputs("Out of memory", stderr))
 
 #define OOM_CHECK(x)                                                                               \
         {                                                                                          \

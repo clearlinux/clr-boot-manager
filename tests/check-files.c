@@ -19,6 +19,7 @@
 #include "util.h"
 
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 
 START_TEST(bootman_hash_test)
@@ -39,7 +40,7 @@ END_TEST
 START_TEST(bootman_uuid_test)
 {
         if (geteuid() != 0) {
-                LOG("Skipping UUID test as root privileges are required\n");
+                LOG_INFO("Skipping UUID test as root privileges are required");
                 return;
         }
         const char *path = TOP_DIR "/tests/data/hashfile";
@@ -48,14 +49,14 @@ START_TEST(bootman_uuid_test)
         puuid = get_part_uuid(path);
         fail_if(!puuid, "Failed to get filesystem UUID");
 
-        LOG("PUUID: %s\n", puuid);
+        LOG_INFO("PUUID: %s", puuid);
 }
 END_TEST
 
 START_TEST(bootman_find_boot)
 {
         if (!nc_file_exists("/sys/firmware/efi")) {
-                LOG("Skipping UEFI host-specific test\n");
+                LOG_INFO("Skipping UEFI host-specific test");
                 return;
         }
         autofree(char) *boot = NULL;
@@ -68,7 +69,7 @@ END_TEST
 START_TEST(bootman_mount_test)
 {
         if (!nc_file_exists("/proc/self/mounts")) {
-                LOG("Skipping mount test as /proc/self/mounts is absent");
+                LOG_INFO("Skipping mount test as /proc/self/mounts is absent");
                 return;
         }
         fail_if(!cbm_is_mounted("/", NULL), "Apparently / not mounted. Question physics.");
@@ -101,6 +102,10 @@ int main(void)
 
         /* syncing can be problematic during test suite runs */
         cbm_set_sync_filesystems(false);
+
+        /* Ensure that logging is set up properly. */
+        setenv("CBM_DEBUG", "1", 1);
+        cbm_log_init(stderr);
 
         s = core_suite();
         sr = srunner_create(s);

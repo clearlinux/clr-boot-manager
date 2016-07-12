@@ -20,6 +20,7 @@
 #include "bootman.h"
 #include "bootman_private.h"
 #include "files.h"
+#include "log.h"
 
 void cbm_free_sysconfig(SystemConfig *config)
 {
@@ -43,7 +44,7 @@ SystemConfig *cbm_inspect_root(const char *path)
 
         realp = realpath(path, NULL);
         if (!realp) {
-                LOG("Path specified does not exist: %s\n", path);
+                LOG_ERROR("Path specified does not exist: %s", path);
                 return NULL;
         }
 
@@ -55,7 +56,6 @@ SystemConfig *cbm_inspect_root(const char *path)
         }
         c->prefix = realp;
 
-        /* TODO: Disable logging */
         if (geteuid() == 0) {
                 char *rel = NULL;
 
@@ -71,9 +71,9 @@ SystemConfig *cbm_inspect_root(const char *path)
                 if (c->boot_device) {
                         rel = realpath(c->boot_device, NULL);
                         if (!rel) {
-                                LOG("FATAL: Cannot determine boot device: %s %s\n",
-                                    c->boot_device,
-                                    strerror(errno));
+                                LOG_FATAL("Cannot determine boot device: %s %s",
+                                          c->boot_device,
+                                          strerror(errno));
                         } else {
                                 free(c->boot_device);
                                 c->boot_device = rel;
@@ -88,11 +88,11 @@ SystemConfig *cbm_inspect_root(const char *path)
 bool cbm_is_sysconfig_sane(SystemConfig *config)
 {
         if (!config) {
-                LOG("sysconfig insane: Missing config\n");
+                LOG_FATAL("sysconfig insane: Missing config");
                 return false;
         }
         if (!config->root_uuid) {
-                LOG("sysconfig insane: Missing root_uuid\n");
+                LOG_FATAL("sysconfig insane: Missing root_uuid");
                 return false;
         }
         return true;

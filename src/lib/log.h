@@ -20,6 +20,7 @@ typedef enum {
         CBM_LOG_INFO,
         CBM_LOG_SUCCESS,
         CBM_LOG_ERROR,
+        CBM_LOG_WARNING,
         CBM_LOG_FATAL
 } CbmLogLevel;
 
@@ -62,6 +63,11 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
  * Log a fatal error
  */
 #define LOG_FATAL(...) (cbm_log(CBM_LOG_FATAL, __FILE__, __LINE__, __VA_ARGS__))
+
+/**
+ * Log a warning message that must always be seen
+ */
+#define LOG_WARNING(...) (cbm_log(CBM_LOG_WARNING, __FILE__, __LINE__, __VA_ARGS__))
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

@@ -25,6 +25,7 @@
 
 #include "bootloader.h"
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 #include "util.h"
 
@@ -111,7 +112,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
                 /* But test suites. */
-                LOG("PartUUID unknown, this should never happen! %s\n", kernel->path);
+                LOG_ERROR("PartUUID unknown, this should never happen! %s", kernel->path);
         }
 
         if (asprintf(&config_path, "%s/syslinux.cfg", base_path) < 0) {
@@ -194,9 +195,9 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         }
 
         if (!file_set_text(config_path, config_text)) {
-                LOG("syslinux_set_default_kernel: Failed to write %s: %s\n",
-                    config_path,
-                    strerror(errno));
+                LOG_FATAL("syslinux_set_default_kernel: Failed to write %s: %s",
+                          config_path,
+                          strerror(errno));
                 return false;
         }
 

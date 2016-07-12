@@ -20,6 +20,7 @@
 #include "bootman.h"
 #include "bootman_private.h"
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 
 static bool boot_manager_update_image(BootManager *self);
@@ -77,7 +78,7 @@ bool boot_manager_update(BootManager *self)
                 /* Determine root device */
                 root_base = self->sysconfig->boot_device;
                 if (!root_base) {
-                        fprintf(stderr, "FATAL: Cannot determine boot device\n");
+                        LOG_FATAL("Cannot determine boot device");
                         return false;
                 }
 
@@ -86,7 +87,7 @@ bool boot_manager_update(BootManager *self)
                 if (abs_bootdir) {
                         /* User has already mounted the ESP somewhere else, use that */
                         if (!boot_manager_set_boot_dir(self, abs_bootdir)) {
-                                fprintf(stderr, "FATAL: Cannot initialise with premounted ESP\n");
+                                LOG_FATAL("Cannot initialise with premounted ESP");
                                 return false;
                         }
                         /* Successfully using their premounted ESP, go use it */
@@ -98,11 +99,10 @@ bool boot_manager_update(BootManager *self)
                         nc_mkdir_p(boot_dir, 0755);
                 }
                 if (mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
-                        fprintf(stderr,
-                                "FATAL: Cannot mount boot device %s on %s: %s\n",
-                                root_base,
-                                boot_dir,
-                                strerror(errno));
+                        LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
+                                  root_base,
+                                  boot_dir,
+                                  strerror(errno));
                         return false;
                 }
                 did_mount = true;
@@ -115,7 +115,7 @@ perform:
         /* Cleanup and umount */
         if (did_mount) {
                 if (umount(boot_dir) < 0) {
-                        fprintf(stderr, "WARNING: Could not unmount boot directory\n");
+                        LOG_WARNING("Could not unmount boot directory");
                 }
         }
 
@@ -144,7 +144,7 @@ static bool boot_manager_update_image(BootManager *self)
         /* Grab the available kernels */
         kernels = boot_manager_get_kernels(self);
         if (!kernels || kernels->len == 0) {
-                fprintf(stderr, "No kernels discovered in %s, bailing\n", self->kernel_dir);
+                LOG_ERROR("No kernels discovered in %s, bailing", self->kernel_dir);
                 return false;
         }
 
@@ -157,7 +157,7 @@ static bool boot_manager_update_image(BootManager *self)
 
         /* If it doesn't exist this is a user error */
         if (!nc_file_exists(boot_dir)) {
-                fprintf(stderr, "Cannot find boot directory, ensure it is mounted: %s\n", boot_dir);
+                LOG_ERROR("Cannot find boot directory, ensure it is mounted: %s", boot_dir);
                 return false;
         }
 
@@ -176,7 +176,7 @@ static bool boot_manager_update_image(BootManager *self)
                         continue;
                 }
                 if (!boot_manager_install_kernel(self, k)) {
-                        fprintf(stderr, "Cannot install kernel %s\n", k->path);
+                        LOG_FATAL("Cannot install kernel %s", k->path);
                         return false;
                 }
         }
@@ -184,7 +184,7 @@ static bool boot_manager_update_image(BootManager *self)
         /* Set the default to the highest release kernel */
         default_kernel = nc_array_get(kernels, 0);
         if (!boot_manager_set_default_kernel(self, default_kernel)) {
-                fprintf(stderr, "Failed to set the default kernel to: %s\n", default_kernel->path);
+                LOG_FATAL("Failed to set the default kernel to: %s", default_kernel->path);
                 return false;
         }
 
@@ -211,7 +211,7 @@ static bool boot_manager_update_native(BootManager *self)
         /* Grab the available kernels */
         kernels = boot_manager_get_kernels(self);
         if (!kernels || kernels->len == 0) {
-                fprintf(stderr, "No kernels discovered in %s, bailing\n", self->kernel_dir);
+                LOG_ERROR("No kernels discovered in %s, bailing", self->kernel_dir);
                 return false;
         }
 
@@ -221,14 +221,14 @@ static bool boot_manager_update_native(BootManager *self)
         running = boot_manager_get_running_kernel(self, kernels);
 
         if (!running) {
-                fprintf(stderr, "Cannot dermine the currently running kernel");
+                LOG_FATAL("Cannot dermine the currently running kernel");
                 return false;
         }
 
         /** Map kernels to type */
         mapped_kernels = boot_manager_map_kernels(self, kernels);
         if (!mapped_kernels || nc_hashmap_size(mapped_kernels) == 0) {
-                fprintf(stderr, "Failed to map kernels by type, bailing\n");
+                LOG_FATAL("Failed to map kernels by type, bailing");
                 return false;
         }
 
@@ -241,7 +241,7 @@ static bool boot_manager_update_native(BootManager *self)
         if (!boot_manager_is_kernel_installed(self, running)) {
                 /* Not necessarily fatal. */
                 if (!boot_manager_install_kernel(self, running)) {
-                        fprintf(stderr, "Failed to repair running kernel\n");
+                        LOG_ERROR("Failed to repair running kernel");
                 }
         }
 
@@ -263,7 +263,9 @@ static bool boot_manager_update_native(BootManager *self)
                 /* Ensure this tip kernel is installed */
                 if (!boot_manager_is_kernel_installed(self, tip)) {
                         if (!boot_manager_install_kernel(self, tip)) {
-                                fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                LOG_FATAL("Failed to install default-%s kernel: %s",
+                                          tip->ktype,
+                                          tip->path);
                                 goto cleanup;
                         }
                 }
@@ -274,7 +276,8 @@ static bool boot_manager_update_native(BootManager *self)
                 /* Ensure this guy is still installed/repaired */
                 if (last_good && !boot_manager_is_kernel_installed(self, last_good)) {
                         if (!boot_manager_install_kernel(self, last_good)) {
-                                fprintf(stderr, "Failed to install kernel: %s\n", last_good->path);
+                                LOG_FATAL("Failed to install last-good kernel: %s",
+                                          last_good->path);
                                 goto cleanup;
                         }
                 }
@@ -307,9 +310,8 @@ static bool boot_manager_update_native(BootManager *self)
         /* Might return NULL */
         new_default = boot_manager_get_default_for_type(self, kernels, running->ktype);
         if (!boot_manager_set_default_kernel(self, new_default)) {
-                fprintf(stderr,
-                        "Failed to set the default kernel to: %s\n",
-                        new_default ? new_default->path : "<timeout mode>");
+                LOG_ERROR("Failed to set the default kernel to: %s",
+                          new_default ? new_default->path : "<timeout mode>");
                 goto cleanup;
         }
 
@@ -324,7 +326,7 @@ static bool boot_manager_update_native(BootManager *self)
         for (uint16_t i = 0; i < removals->len; i++) {
                 Kernel *k = nc_array_get(removals, i);
                 if (!boot_manager_remove_kernel(self, k)) {
-                        fprintf(stderr, "Failed to remove kernel: %s\n", k->path);
+                        LOG_ERROR("Failed to remove kernel: %s", k->path);
                         ret = false;
                         goto cleanup;
                 }
@@ -346,14 +348,14 @@ static bool boot_manager_update_bootloader(BootManager *self)
                 /* Attempt install of the bootloader */
                 int flags = BOOTLOADER_OPERATION_INSTALL | BOOTLOADER_OPERATION_NO_CHECK;
                 if (!boot_manager_modify_bootloader(self, flags)) {
-                        fprintf(stderr, "Failed to install bootloader\n");
+                        LOG_FATAL("Failed to install bootloader");
                         return false;
                 }
         } else if (boot_manager_needs_update(self)) {
                 /* Attempt update of the bootloader */
                 int flags = BOOTLOADER_OPERATION_UPDATE | BOOTLOADER_OPERATION_NO_CHECK;
                 if (!boot_manager_modify_bootloader(self, flags)) {
-                        fprintf(stderr, "Failed to update bootloader\n");
+                        LOG_FATAL("Failed to update bootloader");
                         return false;
                 }
         }
