@@ -104,6 +104,8 @@ libcbm_la_SOURCES =			\
 	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
+	src/lib/log.h			\
+	src/lib/log.c			\
 	src/lib/util.h
 
 libcbm_la_CFLAGS =		\
