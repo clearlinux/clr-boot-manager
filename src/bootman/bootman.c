@@ -48,7 +48,8 @@ BootManager *boot_manager_new()
         /* Try to parse the currently running kernel */
         if (uname(&uts) == 0) {
                 if (!boot_manager_set_uname(r, uts.release)) {
-                        LOG_WARNING("Unable to parse the currently running kernel");
+                        LOG_WARNING("Unable to parse the currently running kernel: %s",
+                                    uts.release);
                 }
         }
 
@@ -128,6 +129,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
 
         /* Find legacy */
         if (config->legacy) {
+                LOG_DEBUG("Legacy boot now selected (syslinux)");
                 self->bootloader = &syslinux_bootloader;
         } else {
 /* Use the bootloader selected at compile time */
@@ -138,10 +140,11 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
 #else
                 self->bootloader = &goofiboot_bootloader;
 #endif
+                LOG_DEBUG("UEFI boot now selected (%s)", self->bootloader->name);
         }
         if (!self->bootloader->init(self)) {
                 self->bootloader->destroy(self);
-                LOG_FATAL("%s: Cannot initialise bootloader", __func__);
+                LOG_FATAL("Cannot initialise bootloader %s", self->bootloader->name);
                 return false;
         }
 
@@ -388,10 +391,13 @@ uint8_t boot_manager_get_platform_size(__cbm_unused__ BootManager *manager)
         close(fd);
 
         if (strncmp(buffer, "32", 2) == 0) {
+                LOG_DEBUG("Chosen 32-bit UEFI");
                 return 32;
         } else if (strncmp(buffer, "64", 2) == 0) {
+                LOG_DEBUG("Chosen 64-bit UEFI");
                 return 64;
         } else {
+                LOG_DEBUG("UEFI platform size unknown, resorting to 64-bit check");
                 return _detect_platform_size();
         }
 }
@@ -446,9 +452,11 @@ bool boot_manager_set_uname(BootManager *self, const char *uname)
         SystemKernel k = { 0 };
         bool have_sys_kernel = cbm_parse_system_kernel(uname, &k);
         if (!have_sys_kernel) {
+                LOG_ERROR("Failed to parse given uname release: %s", uname);
                 self->have_sys_kernel = false;
                 return false;
         }
+        LOG_INFO("Current running kernel: %s", uname);
 
         memcpy(&(self->sys_kernel), &k, sizeof(struct SystemKernel));
         self->have_sys_kernel = have_sys_kernel;

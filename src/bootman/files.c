@@ -165,6 +165,8 @@ char *get_part_uuid(const char *path)
                 goto clean;
         }
 
+        LOG_DEBUG("UUID for %s is %s", node, value);
+
         ret = strdup(value);
 clean:
         blkid_free_probe(probe);

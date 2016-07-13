@@ -64,6 +64,7 @@ SystemConfig *cbm_inspect_root(const char *path)
                 if (boot) {
                         c->boot_device = boot;
                         c->legacy = true;
+                        LOG_INFO("Discovered legacy boot device: %s", boot);
                 } else {
                         c->boot_device = get_boot_device();
                 }
@@ -77,6 +78,7 @@ SystemConfig *cbm_inspect_root(const char *path)
                         } else {
                                 free(c->boot_device);
                                 c->boot_device = rel;
+                                LOG_INFO("Discovered boot device: %s", rel);
                         }
                 }
                 c->root_uuid = get_part_uuid(realp);
