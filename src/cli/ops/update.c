@@ -58,6 +58,11 @@ bool cbm_command_update(int argc, char **argv)
                 if (!boot_manager_set_prefix(manager, root)) {
                         return false;
                 }
+        } else {
+                /* Default to "/", bail if it doesn't work. */
+                if (!boot_manager_set_prefix(manager, "/")) {
+                        return false;
+                }
         }
 
         if (forced_image) {

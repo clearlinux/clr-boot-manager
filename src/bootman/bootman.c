@@ -53,12 +53,6 @@ BootManager *boot_manager_new()
                 }
         }
 
-        /* Sane defaults. */
-        if (!boot_manager_set_prefix(r, "/")) {
-                boot_manager_free(r);
-                return NULL;
-        }
-
         /* Potentially consider a configure or os-release check */
         boot_manager_set_vendor_prefix(r, "Clear-linux");
         boot_manager_set_os_name(r, "Clear Linux Software for Intel Architecture");
