@@ -385,13 +385,10 @@ uint8_t boot_manager_get_platform_size(__cbm_unused__ BootManager *manager)
         close(fd);
 
         if (strncmp(buffer, "32", 2) == 0) {
-                LOG_DEBUG("Chosen 32-bit UEFI");
                 return 32;
         } else if (strncmp(buffer, "64", 2) == 0) {
-                LOG_DEBUG("Chosen 64-bit UEFI");
                 return 64;
         } else {
-                LOG_DEBUG("UEFI platform size unknown, resorting to 64-bit check");
                 return _detect_platform_size();
         }
 }
