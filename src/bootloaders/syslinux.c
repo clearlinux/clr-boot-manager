@@ -111,8 +111,8 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
 
         root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
-                /* But test suites. */
-                LOG_ERROR("PartUUID unknown, this should never happen! %s", kernel->path);
+                LOG_FATAL("PartUUID unknown, this should never happen! %s", kernel->path);
+                return false;
         }
 
         if (asprintf(&config_path, "%s/syslinux.cfg", base_path) < 0) {
