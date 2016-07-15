@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 #include "util.h"
 
@@ -128,12 +129,12 @@ char *get_part_uuid(const char *path)
         char *ret = NULL;
 
         if (stat(path, &st) != 0) {
-                LOG("Path does not exist: %s\n", path);
+                LOG_ERROR("Path does not exist: %s", path);
                 return NULL;
         }
 
         if (major(st.st_dev) == 0) {
-                LOG("Invalid block device: %s\n", path);
+                LOG_ERROR("Invalid block device: %s", path);
                 return NULL;
         }
 
@@ -144,7 +145,7 @@ char *get_part_uuid(const char *path)
 
         probe = blkid_new_probe_from_filename(node);
         if (!probe) {
-                LOG("Unable to probe %u:%u\n", major(st.st_dev), minor(st.st_dev));
+                LOG_ERROR("Unable to probe %u:%u", major(st.st_dev), minor(st.st_dev));
                 return NULL;
         }
 
@@ -154,15 +155,17 @@ char *get_part_uuid(const char *path)
         blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
 
         if (blkid_do_safeprobe(probe) != 0) {
-                LOG("Error probing filesystem: %s\n", strerror(errno));
+                LOG_ERROR("Error probing filesystem: %s", strerror(errno));
                 goto clean;
         }
 
         if (blkid_probe_lookup_value(probe, "PART_ENTRY_UUID", &value, NULL) != 0) {
-                LOG("Unable to find UUID %s\n", strerror(errno));
+                LOG_ERROR("Unable to find UUID for %s: %s", node, strerror(errno));
                 value = NULL;
                 goto clean;
         }
+
+        LOG_DEBUG("UUID for %s is %s", node, value);
 
         ret = strdup(value);
 clean:
@@ -190,7 +193,7 @@ char *get_boot_device()
 
         /* Read the uuid */
         if ((fd = open(glo.gl_pathv[1], O_RDONLY | O_NOCTTY | O_CLOEXEC)) < 0) {
-                LOG("Unable to read LoaderDevicePartUUID\n");
+                LOG_ERROR("Unable to read LoaderDevicePartUUID");
                 return NULL;
         }
         globfree(&glo);
@@ -247,7 +250,7 @@ static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
         }
 
         if (major(st.st_dev) == 0) {
-                fprintf(stderr, "Invalid block device: %s\n", path);
+                LOG_ERROR("Invalid block device: %s", path);
                 return false;
         }
 
@@ -289,7 +292,7 @@ char *get_legacy_boot_device(char *path)
 
         probe = blkid_new_probe_from_filename(parent_disk);
         if (!probe) {
-                fprintf(stderr, "Unable to probe %s\n", parent_disk);
+                LOG_ERROR("Unable to blkid probe %s", parent_disk);
                 return NULL;
         }
 
@@ -299,7 +302,7 @@ char *get_legacy_boot_device(char *path)
         blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
 
         if (blkid_do_safeprobe(probe) != 0) {
-                fprintf(stderr, "Error probing filesystem: %s\n", strerror(errno));
+                LOG_ERROR("Error probing filesystem of %s: %s", parent_disk, strerror(errno));
                 goto clean;
         }
 
@@ -321,7 +324,7 @@ char *get_legacy_boot_device(char *path)
                 if (flags & CBM_MBR_BOOT_FLAG) {
                         part_id = blkid_partition_get_uuid(part);
                         if (!part_id) {
-                                fprintf(stderr, "Not a valid GPT disk\n");
+                                LOG_ERROR("Not a valid GPT disk");
                                 goto clean;
                         }
                         if (!asprintf(&pt_path, "/dev/disk/by-partuuid/%s", part_id)) {

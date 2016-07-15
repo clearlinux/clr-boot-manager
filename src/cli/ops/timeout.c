@@ -46,8 +46,15 @@ bool cbm_command_set_timeout(int argc, char **argv)
         }
 
         /* Use specified root if required */
-        if (root && !boot_manager_set_prefix(manager, root)) {
-                return false;
+        if (root) {
+                if (!boot_manager_set_prefix(manager, root)) {
+                        return false;
+                }
+        } else {
+                /* Default to "/", bail if it doesn't work. */
+                if (!boot_manager_set_prefix(manager, "/")) {
+                        return false;
+                }
         }
 
         if (argc != 1) {
@@ -99,8 +106,15 @@ bool cbm_command_get_timeout(int argc, char **argv)
         }
 
         /* Use specified root if required */
-        if (root && !boot_manager_set_prefix(manager, root)) {
-                return false;
+        if (root) {
+                if (!boot_manager_set_prefix(manager, root)) {
+                        return false;
+                }
+        } else {
+                /* Default to "/", bail if it doesn't work. */
+                if (!boot_manager_set_prefix(manager, "/")) {
+                        return false;
+                }
         }
 
         if (argc != 0) {

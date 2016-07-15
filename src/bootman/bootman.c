@@ -21,6 +21,7 @@
 #include "bootman.h"
 #include "bootman_private.h"
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 
 #include "config.h"
@@ -47,14 +48,9 @@ BootManager *boot_manager_new()
         /* Try to parse the currently running kernel */
         if (uname(&uts) == 0) {
                 if (!boot_manager_set_uname(r, uts.release)) {
-                        fprintf(stderr, "Warning: Unable to parse kernel\n");
+                        LOG_WARNING("Unable to parse the currently running kernel: %s",
+                                    uts.release);
                 }
-        }
-
-        /* Sane defaults. */
-        if (!boot_manager_set_prefix(r, "/")) {
-                boot_manager_free(r);
-                return NULL;
         }
 
         /* Potentially consider a configure or os-release check */
@@ -127,6 +123,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
 
         /* Find legacy */
         if (config->legacy) {
+                LOG_DEBUG("Legacy boot now selected (syslinux)");
                 self->bootloader = &syslinux_bootloader;
         } else {
 /* Use the bootloader selected at compile time */
@@ -137,10 +134,11 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
 #else
                 self->bootloader = &goofiboot_bootloader;
 #endif
+                LOG_DEBUG("UEFI boot now selected (%s)", self->bootloader->name);
         }
         if (!self->bootloader->init(self)) {
                 self->bootloader->destroy(self);
-                LOG("%s: Cannot initialise bootloader\n", __func__);
+                LOG_FATAL("Cannot initialise bootloader %s", self->bootloader->name);
                 return false;
         }
 
@@ -308,7 +306,7 @@ bool boot_manager_set_boot_dir(BootManager *self, const char *bootdir)
         if (!self->bootloader->init(self)) {
                 /* Ensure cleanup. */
                 self->bootloader->destroy(self);
-                FATAL("Re-initialisation of bootloader failed");
+                LOG_FATAL("Re-initialisation of bootloader failed");
                 return false;
         }
         return true;
@@ -345,7 +343,7 @@ bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
                 }
                 return true;
         } else {
-                LOG("boot_manager_modify_bootloader: Unknown operation\n");
+                LOG_FATAL("Unknown bootloader operation");
                 return false;
         }
 }
@@ -379,7 +377,7 @@ uint8_t boot_manager_get_platform_size(__cbm_unused__ BootManager *manager)
         }
 
         if (read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
-                LOG("boot_manager_get_platform_size: Problematic firmware interface\n");
+                LOG_ERROR("Problematic firmware interface");
                 close(fd);
                 return _detect_platform_size();
         }
@@ -445,9 +443,11 @@ bool boot_manager_set_uname(BootManager *self, const char *uname)
         SystemKernel k = { 0 };
         bool have_sys_kernel = cbm_parse_system_kernel(uname, &k);
         if (!have_sys_kernel) {
+                LOG_ERROR("Failed to parse given uname release: %s", uname);
                 self->have_sys_kernel = false;
                 return false;
         }
+        LOG_INFO("Current running kernel: %s", uname);
 
         memcpy(&(self->sys_kernel), &k, sizeof(struct SystemKernel));
         self->have_sys_kernel = have_sys_kernel;

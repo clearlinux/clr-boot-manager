@@ -18,6 +18,7 @@
 
 #include "bootman.h"
 #include "cli.h"
+#include "log.h"
 
 bool cbm_command_update(int argc, char **argv)
 {
@@ -44,7 +45,8 @@ bool cbm_command_update(int argc, char **argv)
 
                 realp = realpath(root, NULL);
                 if (!realp) {
-                        LOG("Path specified does not exist: %s\n", root);
+                        LOG_FATAL("Path specified does not exist: %s", root);
+                        return false;
                 }
                 /* Anything not / is image mode */
                 if (!streq(realp, "/")) {
@@ -54,6 +56,11 @@ bool cbm_command_update(int argc, char **argv)
                 /* CBM will check this again, we just needed to check for
                  * image mode.. */
                 if (!boot_manager_set_prefix(manager, root)) {
+                        return false;
+                }
+        } else {
+                /* Default to "/", bail if it doesn't work. */
+                if (!boot_manager_set_prefix(manager, "/")) {
                         return false;
                 }
         }

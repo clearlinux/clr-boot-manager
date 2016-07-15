@@ -19,6 +19,7 @@
 #include "bootloader.h"
 #include "bootman.h"
 #include "files.h"
+#include "log.h"
 #include "nica/files.h"
 #include "systemd-class.h"
 #include "util.h"
@@ -198,19 +199,19 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
 static bool sd_class_ensure_dirs(__cbm_unused__ const BootManager *manager)
 {
         if (!nc_mkdir_p(sd_class_config.efi_dir, 00755)) {
-                LOG("Failed to create %s: %s\n", sd_class_config.efi_dir, strerror(errno));
+                LOG_FATAL("Failed to create %s: %s", sd_class_config.efi_dir, strerror(errno));
                 return false;
         }
         cbm_sync();
 
         if (!nc_mkdir_p(sd_class_config.vendor_dir, 00755)) {
-                LOG("Failed to create %s: %s\n", sd_class_config.vendor_dir, strerror(errno));
+                LOG_FATAL("Failed to create %s: %s", sd_class_config.vendor_dir, strerror(errno));
                 return false;
         }
         cbm_sync();
 
         if (!nc_mkdir_p(sd_class_config.entries_dir, 00755)) {
-                LOG("Failed to create %s: %s\n", sd_class_config.entries_dir, strerror(errno));
+                LOG_FATAL("Failed to create %s: %s", sd_class_config.entries_dir, strerror(errno));
                 return false;
         }
         cbm_sync();
@@ -235,20 +236,15 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
 
         /* Ensure all the relevant directories exist */
         if (!sd_class_ensure_dirs(manager)) {
-                LOG("Failed to create required directories\n");
+                LOG_FATAL("Failed to create required directories");
                 return false;
         }
 
         /* Build the options for the entry */
         root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
-                /* But test suites. */
-                LOG("PartUUID unknown, this should never happen! %s\n", kernel->path);
-
-                if (!asprintf(&boot_options, "options %s", kernel->cmdline)) {
-                        DECLARE_OOM();
-                        abort();
-                }
+                LOG_FATAL("PartUUID unknown, this should never happen! %s", kernel->path);
+                return false;
         } else {
                 if (!asprintf(&boot_options,
                               "options root=PARTUUID=%s %s",
@@ -275,7 +271,9 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         }
 
         if (!file_set_text(conf_path, conf_entry)) {
-                LOG("Failed to create loader entry for: %s [%s]\n", kernel->path, strerror(errno));
+                LOG_FATAL("Failed to create loader entry for: %s [%s]",
+                          kernel->path,
+                          strerror(errno));
                 return false;
         }
 
@@ -300,9 +298,9 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         /* We must take a non-fatal approach in a remove operation */
         if (nc_file_exists(conf_path)) {
                 if (unlink(conf_path) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
-                            conf_path,
-                            strerror(errno));
+                        LOG_ERROR("sd_class_remove_kernel: Failed to remove %s: %s",
+                                  conf_path,
+                                  strerror(errno));
                 } else {
                         cbm_sync();
                 }
@@ -318,7 +316,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         }
 
         if (!sd_class_ensure_dirs(manager)) {
-                LOG("Failed to create required directories for %s\n", sd_config->name);
+                LOG_FATAL("Failed to create required directories for %s", sd_config->name);
                 return false;
         }
 
@@ -335,9 +333,9 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                         return true;
                 }
 
-                LOG("sd_class_set_default_kernel: Failed to write %s: %s\n",
-                    sd_class_config.loader_config,
-                    strerror(errno));
+                LOG_FATAL("sd_class_set_default_kernel: Failed to write %s: %s",
+                          sd_class_config.loader_config,
+                          strerror(errno));
                 return false;
         }
 
@@ -367,9 +365,9 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                 }
         }
         if (!file_set_text(sd_class_config.loader_config, item_name)) {
-                LOG("sd_class_set_default_kernel: Failed to write %s: %s\n",
-                    sd_class_config.loader_config,
-                    strerror(errno));
+                LOG_FATAL("sd_class_set_default_kernel: Failed to write %s: %s",
+                          sd_class_config.loader_config,
+                          strerror(errno));
                 return false;
         }
 
@@ -467,7 +465,7 @@ static bool sd_class_install_x64(const BootManager *manager)
 
         /* Install vendor x64 blob */
         if (!copy_file_atomic(sd_class_config.x64_source, sd_class_config.x64_dest, 00644)) {
-                LOG("Failed to install %s: %s\n", sd_class_config.x64_dest, strerror(errno));
+                LOG_FATAL("Failed to install %s: %s", sd_class_config.x64_dest, strerror(errno));
                 return false;
         }
         cbm_sync();
@@ -476,9 +474,9 @@ static bool sd_class_install_x64(const BootManager *manager)
         if (!copy_file_atomic(sd_class_config.x64_source,
                               sd_class_config.default_path_x64,
                               00644)) {
-                LOG("Failed to install %s: %s\n",
-                    sd_class_config.default_path_x64,
-                    strerror(errno));
+                LOG_FATAL("Failed to install %s: %s",
+                          sd_class_config.default_path_x64,
+                          strerror(errno));
                 return false;
         }
         cbm_sync();
@@ -494,7 +492,7 @@ static bool sd_class_install_ia32(const BootManager *manager)
 
         /* Install vendor ia32 blob */
         if (!copy_file_atomic(sd_class_config.ia32_source, sd_class_config.ia32_dest, 00644)) {
-                LOG("Failed to install %s: %s\n", sd_class_config.ia32_dest, strerror(errno));
+                LOG_FATAL("Failed to install %s: %s", sd_class_config.ia32_dest, strerror(errno));
                 return false;
         }
         cbm_sync();
@@ -503,9 +501,9 @@ static bool sd_class_install_ia32(const BootManager *manager)
         if (!copy_file_atomic(sd_class_config.ia32_source,
                               sd_class_config.default_path_ia32,
                               00644)) {
-                LOG("Failed to install %s: %s\n",
-                    sd_class_config.default_path_ia32,
-                    strerror(errno));
+                LOG_FATAL("Failed to install %s: %s",
+                          sd_class_config.default_path_ia32,
+                          strerror(errno));
                 return false;
         }
         cbm_sync();
@@ -520,7 +518,7 @@ bool sd_class_install(const BootManager *manager)
         }
 
         if (!sd_class_ensure_dirs(manager)) {
-                LOG("Failed to create required directories for %s\n", sd_config->name);
+                LOG_FATAL("Failed to create required directories for %s", sd_config->name);
                 return false;
         }
 
@@ -553,9 +551,9 @@ static bool sd_class_update_ia32(const BootManager *manager)
                 if (!copy_file_atomic(sd_class_config.ia32_source,
                                       sd_class_config.ia32_dest,
                                       00644)) {
-                        LOG("Failed to update %s: %s\n",
-                            sd_class_config.ia32_dest,
-                            strerror(errno));
+                        LOG_FATAL("Failed to update %s: %s",
+                                  sd_class_config.ia32_dest,
+                                  strerror(errno));
                         return false;
                 }
         }
@@ -565,9 +563,9 @@ static bool sd_class_update_ia32(const BootManager *manager)
                 if (!copy_file_atomic(sd_class_config.ia32_source,
                                       sd_class_config.default_path_ia32,
                                       00644)) {
-                        LOG("Failed to update %s: %s\n",
-                            sd_class_config.default_path_ia32,
-                            strerror(errno));
+                        LOG_FATAL("Failed to update %s: %s",
+                                  sd_class_config.default_path_ia32,
+                                  strerror(errno));
                         return false;
                 }
         }
@@ -586,7 +584,9 @@ static bool sd_class_update_x64(const BootManager *manager)
                 if (!copy_file_atomic(sd_class_config.x64_source,
                                       sd_class_config.x64_dest,
                                       00644)) {
-                        LOG("Failed to update %s: %s\n", sd_class_config.x64_dest, strerror(errno));
+                        LOG_FATAL("Failed to update %s: %s",
+                                  sd_class_config.x64_dest,
+                                  strerror(errno));
                         return false;
                 }
         }
@@ -596,9 +596,9 @@ static bool sd_class_update_x64(const BootManager *manager)
                 if (!copy_file_atomic(sd_class_config.x64_source,
                                       sd_class_config.default_path_x64,
                                       00644)) {
-                        LOG("Failed to update %s: %s\n",
-                            sd_class_config.default_path_x64,
-                            strerror(errno));
+                        LOG_FATAL("Failed to update %s: %s",
+                                  sd_class_config.default_path_x64,
+                                  strerror(errno));
                         return false;
                 }
         }
@@ -613,7 +613,7 @@ bool sd_class_update(const BootManager *manager)
                 return false;
         }
         if (!sd_class_ensure_dirs(manager)) {
-                LOG("Failed to create required directories for %s\n", sd_config->name);
+                LOG_FATAL("Failed to create required directories for %s", sd_config->name);
                 return false;
         }
 
@@ -645,30 +645,34 @@ bool sd_class_remove(const BootManager *manager)
         /* We call multiple syncs in case something goes wrong in removal, where we could be seeing
          * an ESP umount after */
         if (nc_file_exists(sd_class_config.vendor_dir) && !nc_rm_rf(sd_class_config.vendor_dir)) {
-                LOG("Failed to remove vendor dir: %s\n", strerror(errno));
+                LOG_FATAL("Failed to remove vendor dir: %s", strerror(errno));
                 return false;
         }
         cbm_sync();
 
         if (nc_file_exists(sd_class_config.default_path_ia32) &&
             unlink(sd_class_config.default_path_ia32) < 0) {
-                LOG("Failed to remove %s: %s\n",
-                    sd_class_config.default_path_ia32,
-                    strerror(errno));
+                LOG_FATAL("Failed to remove %s: %s",
+                          sd_class_config.default_path_ia32,
+                          strerror(errno));
                 return false;
         }
         cbm_sync();
 
         if (nc_file_exists(sd_class_config.default_path_x64) &&
             unlink(sd_class_config.default_path_x64) < 0) {
-                LOG("Failed to remove %s: %s\n", sd_class_config.default_path_x64, strerror(errno));
+                LOG_FATAL("Failed to remove %s: %s",
+                          sd_class_config.default_path_x64,
+                          strerror(errno));
                 return false;
         }
         cbm_sync();
 
         if (nc_file_exists(sd_class_config.loader_config) &&
             unlink(sd_class_config.loader_config) < 0) {
-                LOG("Failed to remove %s: %s\n", sd_class_config.loader_config, strerror(errno));
+                LOG_FATAL("Failed to remove %s: %s",
+                          sd_class_config.loader_config,
+                          strerror(errno));
                 return false;
         }
         cbm_sync();
