@@ -105,19 +105,27 @@ finish:
 
 bool cbm_files_match(const char *p1, const char *p2)
 {
-        autofree(char) *h1 = NULL;
-        autofree(char) *h2 = NULL;
+        autofree(CbmMappedFile) *m1 = CBM_MAPPED_FILE_INIT;
+        autofree(CbmMappedFile) *m2 = CBM_MAPPED_FILE_INIT;
 
-        h1 = get_sha1sum(p1);
-        if (!h1) {
-                return false;
-        }
-        h2 = get_sha1sum(p2);
-        if (!h2) {
+        if (!cbm_mapped_file_open(p1, m1)) {
                 return false;
         }
 
-        return streq(h1, h2);
+        if (!cbm_mapped_file_open(p2, m2)) {
+                return false;
+        }
+
+        /* If the lengths are different they're clearly not the same file */
+        if (m1->length != m2->length) {
+                return false;
+        }
+
+        /* Compare both buffers */
+        if (memcmp(m1->buffer, m2->buffer, m1->length) == 0) {
+                return true;
+        }
+        return false;
 }
 
 char *get_part_uuid(const char *path)
