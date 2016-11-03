@@ -7,6 +7,10 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/HACKING \
 	     ${top_srcdir}/findstatic.pl \
 	     ${top_srcdir}/tests/data/blobfile \
+	     ${top_srcdir}/tests/data/match \
+	     ${top_srcdir}/tests/data/match1 \
+	     ${top_srcdir}/tests/data/nomatch1 \
+	     ${top_srcdir}/tests/data/nomatch2 \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/compat/kernel_updater.sh \

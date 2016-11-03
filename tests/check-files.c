@@ -22,6 +22,40 @@
 #include "log.h"
 #include "nica/files.h"
 
+START_TEST(bootman_match_test)
+{
+        const char *source_match = TOP_DIR "/tests/data/match";
+        const char *good_match = TOP_DIR "/tests/data/match1";
+        const char *bad_match_data = TOP_DIR "/tests/data/nomatch1";
+        const char *bad_match_len = TOP_DIR "/tests/data/nomatch2";
+        /* In a clean environment, anyway. */
+        const char *non_exist_path = "PATHTHATWONT@EXIST!";
+
+        /* Known good */
+        fail_if(!cbm_files_match(source_match, good_match), "Known matches failed to match");
+
+        /* Known different data */
+        fail_if(cbm_files_match(source_match, bad_match_data),
+                "Shouldn't match files with different data");
+
+        /* Known different data + length */
+        fail_if(cbm_files_match(source_match, bad_match_len),
+                "Shouldn't match files with different length");
+
+        /* Known missing target, with source present */
+        fail_if(cbm_files_match(source_match, non_exist_path),
+                "Shouldn't match with non existent target");
+
+        /* Known missing source with existing target */
+        fail_if(cbm_files_match(non_exist_path, source_match),
+                "Shouldn't match with non existent source");
+
+        /* Known missing both */
+        fail_if(cbm_files_match(non_exist_path, non_exist_path),
+                "Shouldn't match non existent files");
+}
+END_TEST
+
 START_TEST(bootman_uuid_test)
 {
         if (geteuid() != 0) {
@@ -70,6 +104,7 @@ static Suite *core_suite(void)
 
         s = suite_create("bootman_files");
         tc = tcase_create("bootman_files");
+        tcase_add_test(tc, bootman_match_test);
         tcase_add_test(tc, bootman_uuid_test);
         tcase_add_test(tc, bootman_mount_test);
         tcase_add_test(tc, bootman_find_boot);
