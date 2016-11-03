@@ -24,7 +24,6 @@ addons:
         packages:
             - check
             - libblkid-dev
-            - libssl-dev
             - valgrind
             - lcov
             - clang-3.8
