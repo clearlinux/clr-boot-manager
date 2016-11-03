@@ -70,7 +70,6 @@ static Suite *core_suite(void)
 
         s = suite_create("bootman_files");
         tc = tcase_create("bootman_files");
-        tcase_add_test(tc, bootman_hash_test);
         tcase_add_test(tc, bootman_uuid_test);
         tcase_add_test(tc, bootman_mount_test);
         tcase_add_test(tc, bootman_find_boot);
