@@ -39,14 +39,6 @@ typedef struct CbmMappedFile {
 } CbmMappedFile;
 
 /**
- * Get the SHA-1 hashsum for the given path as a hex string
- *
- * @param path Path of the file to hash
- * @return a newly allocated string, or NULL on error
- */
-char *get_sha1sum(const char *path);
-
-/**
  * Get the PartUUID for a given path
  *
  * @param path Path to get the PartUUID for

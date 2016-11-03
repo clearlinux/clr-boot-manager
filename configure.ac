@@ -11,7 +11,6 @@ LT_INIT
 
 # Unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9])
-PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 0.9.8])
 PKG_CHECK_MODULES([BLKID], [blkid])
 
 have_coverage=no

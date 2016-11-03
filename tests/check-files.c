@@ -22,21 +22,6 @@
 #include "log.h"
 #include "nica/files.h"
 
-START_TEST(bootman_hash_test)
-{
-        const char *known_sha = "4244d61c4e16e14fd7dc8e4836ca45be98122cb2";
-        const char *path = TOP_DIR "/tests/data/hashfile";
-        char *sha = get_sha1sum(path);
-
-        fail_if(!streq(known_sha, sha), "Computed SHA-1 does not match expectation");
-        free(sha);
-        sha = NULL;
-
-        sha = get_sha1sum("PATHTHATWONT@EXIST!");
-        fail_if(sha, "Got SHA-1 for non-existent path");
-}
-END_TEST
-
 START_TEST(bootman_uuid_test)
 {
         if (geteuid() != 0) {

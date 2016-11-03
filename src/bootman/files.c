@@ -20,7 +20,6 @@
 #include <glob.h>
 #include <libgen.h>
 #include <limits.h>
-#include <openssl/sha.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,54 +52,6 @@ void cbm_sync(void)
         if (cbm_should_sync) {
                 sync();
         }
-}
-
-char *get_sha1sum(const char *p)
-{
-        unsigned char hash[SHA_DIGEST_LENGTH] = { 0 };
-        int fd = -1;
-        struct stat st = { 0 };
-        char *buffer = NULL;
-        char *ret = NULL;
-        size_t max_len = SHA_DIGEST_LENGTH * 2;
-        size_t st_size;
-
-        if ((fd = open(p, O_RDONLY)) < 0) {
-                goto finish;
-        }
-        if (fstat(fd, &st) < 0) {
-                goto finish;
-        }
-
-        st_size = (size_t)st.st_size;
-
-        buffer = mmap(0, st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-        if (!buffer) {
-                goto finish;
-        }
-
-        if (!SHA1((unsigned char *)buffer, st_size, hash)) {
-                goto finish;
-        }
-
-        ret = calloc((max_len) + 1, sizeof(char));
-        if (!ret) {
-                goto finish;
-        }
-
-        for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
-                snprintf(ret + (i * 2), max_len, "%02x", hash[i]);
-        }
-        ret[max_len] = '\0';
-
-finish:
-        if (fd >= 0) {
-                close(fd);
-        }
-        if (buffer) {
-                munmap(buffer, st_size);
-        }
-        return ret;
 }
 
 bool cbm_files_match(const char *p1, const char *p2)
