@@ -79,12 +79,12 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         parent = cbm_get_file_parent(path);
-        if (!asprintf(&cmdline, "%s/cmdline-%s-%d.%s", parent, version, release, type)) {
+        if (asprintf(&cmdline, "%s/cmdline-%s-%d.%s", parent, version, release, type) < 0) {
                 DECLARE_OOM();
                 abort();
         }
 
-        if (!asprintf(&kconfig_file, "%s/config-%s-%d.%s", parent, version, release, type)) {
+        if (asprintf(&kconfig_file, "%s/config-%s-%d.%s", parent, version, release, type) < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -98,13 +98,13 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         /* Check local modules */
-        if (!asprintf(&module_dir,
-                      "%s/%s/%s-%d.%s",
-                      self->sysconfig->prefix,
-                      KERNEL_MODULES_DIRECTORY,
-                      version,
-                      release,
-                      type)) {
+        if (asprintf(&module_dir,
+                     "%s/%s/%s-%d.%s",
+                     self->sysconfig->prefix,
+                     KERNEL_MODULES_DIRECTORY,
+                     version,
+                     release,
+                     type) < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -112,12 +112,12 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         /* Fallback to an older namespace */
         if (!nc_file_exists(module_dir)) {
                 free(module_dir);
-                if (!asprintf(&module_dir,
-                              "%s/%s/%s-%d",
-                              self->sysconfig->prefix,
-                              KERNEL_MODULES_DIRECTORY,
-                              version,
-                              release)) {
+                if (asprintf(&module_dir,
+                             "%s/%s/%s-%d",
+                             self->sysconfig->prefix,
+                             KERNEL_MODULES_DIRECTORY,
+                             version,
+                             release) < 0) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -159,7 +159,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                         buf[r - 1] = '\0';
                 }
                 if (kern->cmdline) {
-                        if (!asprintf(&tmp, "%s %s", kern->cmdline, buf)) {
+                        if (asprintf(&tmp, "%s %s", kern->cmdline, buf) < 0) {
                                 DECLARE_OOM();
                                 abort();
                         }
@@ -209,7 +209,7 @@ KernelArray *boot_manager_get_kernels(BootManager *self)
                 autofree(char) *path = NULL;
                 Kernel *kern = NULL;
 
-                if (!asprintf(&path, "%s/%s", self->kernel_dir, ent->d_name)) {
+                if (asprintf(&path, "%s/%s", self->kernel_dir, ent->d_name) < 0) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -500,7 +500,7 @@ bool boot_manager_is_kernel_installed_internal(const BootManager *manager, const
         }
         kname_base = basename(path);
 
-        if (!asprintf(&path2, "%s/%s", base_path, kname_base)) {
+        if (asprintf(&path2, "%s/%s", base_path, kname_base) < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -529,7 +529,7 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         kname_base = basename(kname_copy);
 
         /* Now copy the kernel file to it's new location */
-        if (!asprintf(&kfile_target, "%s/%s", base_path, kname_base)) {
+        if (asprintf(&kfile_target, "%s/%s", base_path, kname_base) < 0) {
                 DECLARE_OOM();
                 return false;
         }
@@ -562,7 +562,7 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         kname_copy = strdup(kernel->path);
         kname_base = basename(kname_copy);
 
-        if (!asprintf(&kfile_target, "%s/%s", base_path, kname_base)) {
+        if (asprintf(&kfile_target, "%s/%s", base_path, kname_base) < 0) {
                 DECLARE_OOM();
                 return false;
         }

@@ -157,7 +157,7 @@ char *nc_build_case_correct_path_va(const char *c, va_list ap)
                 } else {
                         sav = strdup(root);
 
-                        if (!asprintf(&t, "%s/%s", root, p)) {
+                        if (asprintf(&t, "%s/%s", root, p) < 0) {
                                 fprintf(stderr,
                                         "nc_build_case_correct_path_va: Out "
                                         "of memory\n");
@@ -197,7 +197,7 @@ char *nc_build_case_correct_path_va(const char *c, va_list ap)
                         }
                         if (strcasecmp(ent->d_name, p) == 0) {
                                 if (sav) {
-                                        if (!asprintf(&t, "%s/%s", sav, ent->d_name)) {
+                                        if (asprintf(&t, "%s/%s", sav, ent->d_name) < 0) {
                                                 fprintf(stderr,
                                                         "nc_build_case_"
                                                         "correct_path_va: Out "

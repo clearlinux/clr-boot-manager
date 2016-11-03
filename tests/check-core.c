@@ -58,7 +58,7 @@ START_TEST(bootman_memory_test)
         {
                 autofree(memtestchar) *tmp = NULL;
 
-                if (!asprintf(&tmp, "Allocation test")) {
+                if (asprintf(&tmp, "Allocation test") < 0) {
                         fail("Unable to allocate memory");
                 }
         }
@@ -259,19 +259,19 @@ START_TEST(bootman_install_kernel_test)
 
         fail_if(!boot_manager_install_kernel(m, kernel), "Failed to install kernel");
 
-        if (!asprintf(&path1,
-                      "%s/tests/update_playground/%s/loader/entries/%s-native-4.2.3-138.conf",
-                      TOP_BUILD_DIR,
-                      BOOT_DIRECTORY,
-                      vendor)) {
+        if (asprintf(&path1,
+                     "%s/tests/update_playground/%s/loader/entries/%s-native-4.2.3-138.conf",
+                     TOP_BUILD_DIR,
+                     BOOT_DIRECTORY,
+                     vendor) < 0) {
                 abort();
         }
 
-        if (!asprintf(&path2,
-                      "%s/tests/update_playground/%s/%s.native.4.2.3-138",
-                      TOP_BUILD_DIR,
-                      BOOT_DIRECTORY,
-                      KERNEL_NAMESPACE)) {
+        if (asprintf(&path2,
+                     "%s/tests/update_playground/%s/%s.native.4.2.3-138",
+                     TOP_BUILD_DIR,
+                     BOOT_DIRECTORY,
+                     KERNEL_NAMESPACE) < 0) {
                 abort();
         }
 
@@ -291,9 +291,9 @@ START_TEST(bootman_set_default_kernel_test)
 
         m = prepare_playground(&core_config);
 
-        if (!asprintf(&expected,
-                      "default %s-native-4.2.3-138\n",
-                      boot_manager_get_vendor_prefix(m))) {
+        if (asprintf(&expected,
+                     "default %s-native-4.2.3-138\n",
+                     boot_manager_get_vendor_prefix(m)) < 0) {
                 abort();
         }
 
@@ -335,19 +335,19 @@ START_TEST(bootman_remove_kernel_test)
 
         fail_if(!boot_manager_remove_kernel(m, kernel), "Failed to remove kernel");
 
-        if (!asprintf(&path1,
-                      "%s/tests/update_playground/%s/loader/entries/%s-native-4.2.3-138.conf",
-                      TOP_BUILD_DIR,
-                      BOOT_DIRECTORY,
-                      os_name)) {
+        if (asprintf(&path1,
+                     "%s/tests/update_playground/%s/loader/entries/%s-native-4.2.3-138.conf",
+                     TOP_BUILD_DIR,
+                     BOOT_DIRECTORY,
+                     os_name) < 0) {
                 abort();
         }
 
-        if (!asprintf(&path2,
-                      "%s/tests/update_playground/%s/%s.native-4.2.3-138",
-                      TOP_BUILD_DIR,
-                      BOOT_DIRECTORY,
-                      os_name)) {
+        if (asprintf(&path2,
+                     "%s/tests/update_playground/%s/%s.native-4.2.3-138",
+                     TOP_BUILD_DIR,
+                     BOOT_DIRECTORY,
+                     os_name) < 0) {
                 abort();
         }
 

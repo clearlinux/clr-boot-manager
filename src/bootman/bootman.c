@@ -106,7 +106,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
                 self->kernel_dir = NULL;
         }
 
-        if (!asprintf(&kernel_dir, "%s/%s", config->prefix, KERNEL_DIRECTORY)) {
+        if (asprintf(&kernel_dir, "%s/%s", config->prefix, KERNEL_DIRECTORY) < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -277,7 +277,7 @@ char *boot_manager_get_boot_dir(BootManager *self)
                 return strdup(self->abs_bootdir);
         }
 
-        if (!asprintf(&ret, "%s%s", self->sysconfig->prefix, BOOT_DIRECTORY)) {
+        if (asprintf(&ret, "%s%s", self->sysconfig->prefix, BOOT_DIRECTORY) < 0) {
                 DECLARE_OOM();
                 abort();
         }

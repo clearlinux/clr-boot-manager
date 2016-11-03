@@ -97,7 +97,7 @@ char *get_part_uuid(const char *path)
                 return NULL;
         }
 
-        if (!asprintf(&node, "/dev/block/%u:%u", major(st.st_dev), minor(st.st_dev))) {
+        if (asprintf(&node, "/dev/block/%u:%u", major(st.st_dev), minor(st.st_dev)) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -182,7 +182,7 @@ char *get_boot_device()
         }
         read_buf[j] = '\0';
 
-        if (!asprintf(&p, "/dev/disk/by-partuuid/%s", uuid)) {
+        if (asprintf(&p, "/dev/disk/by-partuuid/%s", uuid) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -232,7 +232,7 @@ char *get_parent_disk(char *path)
                 return NULL;
         }
 
-        if (!asprintf(&node, "/dev/block/%u:%u", major(devt), minor(devt))) {
+        if (asprintf(&node, "/dev/block/%u:%u", major(devt), minor(devt)) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -289,7 +289,7 @@ char *get_legacy_boot_device(char *path)
                                 LOG_ERROR("Not a valid GPT disk");
                                 goto clean;
                         }
-                        if (!asprintf(&pt_path, "/dev/disk/by-partuuid/%s", part_id)) {
+                        if (asprintf(&pt_path, "/dev/disk/by-partuuid/%s", part_id) < 0) {
                                 DECLARE_OOM();
                                 goto clean;
                         }
@@ -415,7 +415,7 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
         autofree(char) *new_name = NULL;
         struct stat st = { 0 };
 
-        if (!asprintf(&new_name, "%s.TmpWrite", target)) {
+        if (asprintf(&new_name, "%s.TmpWrite", target) < 0) {
                 return false;
         }
 
