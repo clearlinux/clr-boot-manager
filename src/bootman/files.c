@@ -556,6 +556,47 @@ void cbm_set_sync_filesystems(bool should_sync)
         cbm_should_sync = should_sync;
 }
 
+bool cbm_mapped_file_open(const char *path, CbmMappedFile *file)
+{
+        if (!file) {
+                return false;
+        }
+        int fd = -1;
+        struct stat st = { 0 };
+        ssize_t length = -1;
+        char *buffer = NULL;
+
+        fd = open(path, O_RDONLY);
+        if (fd < 0) {
+                return false;
+        }
+        if (fstat(fd, &st) != 0) {
+                close(fd);
+                return false;
+        }
+        length = st.st_size;
+
+        buffer = mmap(NULL, (size_t)length, PROT_READ, MAP_PRIVATE, fd, 0);
+        if (!buffer) {
+                close(fd);
+                return false;
+        }
+        file->length = (size_t)length;
+        file->buffer = buffer;
+        file->fd = fd;
+        return true;
+}
+
+void cbm_mapped_file_close(CbmMappedFile *file)
+{
+        if (!file) {
+                return;
+        }
+        munmap(file->buffer, file->length);
+        close(file->fd);
+        memset(file, 0, sizeof(CbmMappedFile));
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
