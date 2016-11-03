@@ -112,7 +112,7 @@ bool nc_copy_file(const char *src, const char *dst, mode_t mode, bool remove_tar
         while (true) {
                 if ((r = read(src_fd, &buffer, sizeof(buffer))) < 0) {
                         ret = false;
-                        break;
+                        goto end;
                 }
                 if (write(dest_fd, buffer, sizeof(buffer)) != r) {
                         break;

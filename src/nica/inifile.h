@@ -69,6 +69,7 @@ typedef enum {
         NC_INI_ERROR_NOT_CLOSED,   /**< Encountered section start that wasn't closed with a ']' */
         NC_INI_ERROR_NO_SECTION,   /**< Key assignment with no defined sections */
         NC_INI_ERROR_INVALID_LINE, /**< Encountered an invalid line (syntax) */
+        NC_INI_ERROR_INTERNAL,     /**< Fatal internal error encountered. Caller should exit */
         NC_INI_ERROR_MAX
 } NcIniError;
 

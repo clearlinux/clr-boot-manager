@@ -22,12 +22,13 @@
 /**
  * Mapping of @NcIniError to static strings
  */
-static const char *_errors[] = {[NC_INI_ERROR_FILE] = "",
-                                [NC_INI_ERROR_EMPTY_KEY] = "Encountered empty key",
-                                [NC_INI_ERROR_NOT_CLOSED] = "Expected closing \']\' for section",
-                                [NC_INI_ERROR_NO_SECTION] =
-                                    "Encountered key=value mapping without a valid section",
-                                [NC_INI_ERROR_INVALID_LINE] = "Expected key=value notation" };
+static const char *_errors[] =
+    {[NC_INI_ERROR_FILE] = "",
+     [NC_INI_ERROR_EMPTY_KEY] = "Encountered empty key",
+     [NC_INI_ERROR_NOT_CLOSED] = "Expected closing \']\' for section",
+     [NC_INI_ERROR_NO_SECTION] = "Encountered key=value mapping without a valid section",
+     [NC_INI_ERROR_INVALID_LINE] = "Expected key=value notation",
+     [NC_INI_ERROR_INTERNAL] = "A fatal internal error was encountered" };
 
 const char *nc_ini_error(NcIniError error)
 {
@@ -200,6 +201,8 @@ int nc_ini_file_parse_full(const char *path, NcHashmap **out_map, int *error_lin
         while ((r = getline(&buf, &sn, file)) != -1) {
                 char *ch = NULL;
                 ssize_t str_len = r;
+                char *key = NULL;
+                char *value = NULL;
 
                 /* Fix newline */
                 if (buf[r - 1] == '\n') {
@@ -259,35 +262,37 @@ int nc_ini_file_parse_full(const char *path, NcHashmap **out_map, int *error_lin
                 long int offset = ch - buf;
 
                 /* Grab the key->value from this assignment line */
-                char *value = strdup((buf + offset) + 1);
+                value = strdup((buf + offset) + 1);
                 buf[offset] = '\0';
-                char *key = strdup(buf);
+                key = strdup(buf);
                 key = string_chew_terminated(key);
                 value = string_chew_terminated(value);
 
                 if (streq(key, "")) {
                         err_ret = NC_INI_ERROR_EMPTY_KEY;
                         free(key);
+                        key = NULL;
                         free(value);
+                        value = NULL;
                         goto fail;
                 }
 
                 /* Ensure a section mapping exists */
                 section_map = nc_hashmap_get(root_map, current_section);
                 if (!section_map) {
-                        err_ret = 1;
+                        err_ret = NC_INI_ERROR_INTERNAL;
                         fprintf(stderr,
                                 "[inifile] Fatal! No section map for named "
                                 "section: %s\n",
                                 current_section);
-                        abort();
+                        goto fail;
                 }
 
                 /* Insert these guys into the map */
                 if (!nc_hashmap_put(section_map, key, value)) {
-                        err_ret = 1;
+                        err_ret = NC_INI_ERROR_INTERNAL;
                         fprintf(stderr, "[inifile] Fatal! Out of memory\n");
-                        abort();
+                        goto fail;
                 }
         /* Progression + cleanup */
         next:
@@ -303,6 +308,12 @@ int nc_ini_file_parse_full(const char *path, NcHashmap **out_map, int *error_lin
                 failed = true;
                 if (error_line_number) {
                         *error_line_number = line_count;
+                }
+                if (key) {
+                        free(key);
+                }
+                if (value) {
+                        free(value);
                 }
                 break;
         }
