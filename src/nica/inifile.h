@@ -86,7 +86,7 @@ _nica_public_ NcHashmap *nc_ini_file_parse(const char *path);
  * @param error_line_number If not null, then the erronous line number is
  * stored.
  *
- * @return 0 if the call was succesful, or a negative integer. See nc_ini_error
+ * @return 0 if the call was successful, or a negative integer. See nc_ini_error
  */
 _nica_public_ int nc_ini_file_parse_full(const char *path, NcHashmap **out_map,
                                          int *error_line_number);

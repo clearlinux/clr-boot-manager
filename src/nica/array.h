@@ -56,7 +56,7 @@ _nica_public_ void nc_array_free(NcArray **array, array_free_func free_method);
  * Retrieve an element from the array by index
  * @param array valid NcArray reference
  * @param index index of the element in the array
- * @return a data pointer refered to by index, or NULL
+ * @return a data pointer referred to by index, or NULL
  */
 _nica_public_ void *nc_array_get(NcArray *array, uint16_t index)
     __attribute__((warn_unused_result));

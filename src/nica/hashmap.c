@@ -368,7 +368,7 @@ static bool nc_hashmap_resize(NcHashmap *self)
                 }
         }
         /* Successfully resized - do this separately because we need to
-         * gaurantee old data is preserved */
+         * guarantee old data is preserved */
         for (int i = 0; i < old_size; i++) {
                 nc_hashmap_free_bucket(self, &(old_buckets[i]), false);
         }
