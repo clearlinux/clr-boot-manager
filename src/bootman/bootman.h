@@ -100,7 +100,7 @@ bool boot_manager_update(BootManager *manager);
  * Update the uname for this BootManager
  *
  * @note We already initialise with the host uname on creation, however this
- * uname may be overriden for the purposes of validation
+ * uname may be overridden for the purposes of validation
  *
  * @param uname The new uname to use (utsname.release)
  * @return True if this was a valid uname to use and we could parse it.

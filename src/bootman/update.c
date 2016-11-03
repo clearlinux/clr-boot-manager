@@ -138,7 +138,7 @@ perform:
  * Update the target with logical view of an image creation
  *
  * Quite simply, we install all potential kernels to the specified boot
- * directory, and ensure it's equiped with a boot loader. The kernel with
+ * directory, and ensure it's equipped with a boot loader. The kernel with
  * the highest release number is selected as the default kernel.
  *
  * This method assumes the boot partition is *already mounted* at the target,
