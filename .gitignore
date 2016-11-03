@@ -49,3 +49,9 @@ m4/lt~obsolete.m4
 .libs
 *.la
 *.lo
+
+# Nica tests
+check_array
+check_hashmap
+check_inifile
+check_list

@@ -11,6 +11,13 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/match1 \
 	     ${top_srcdir}/tests/data/nomatch1 \
 	     ${top_srcdir}/tests/data/nomatch2 \
+	     ${top_srcdir}/tests/data/ini/wellformed.ini \
+	     ${top_srcdir}/tests/data/ini/valid_padding.ini \
+	     ${top_srcdir}/tests/data/ini/sectionless.ini \
+	     ${top_srcdir}/tests/data/ini/empty_key.ini \
+	     ${top_srcdir}/tests/data/ini/just_assign.ini \
+	     ${top_srcdir}/tests/data/ini/broken_section_start.ini \
+	     ${top_srcdir}/tests/data/ini/broken_section_end.ini \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/compat/kernel_updater.sh \
@@ -158,7 +165,11 @@ distclean-local:
 TESTS = 		\
 	check_core 	\
 	check_files 	\
-	check_updates
+	check_updates   \
+	check_array     \
+	check_list      \
+	check_hashmap   \
+	check_inifile
 
 check_PROGRAMS = $(TESTS)
 
@@ -206,6 +217,51 @@ check_updates_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
 	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+# Nica tests
+# Test array
+check_array_SOURCES = \
+	tests/check-array.c
+
+check_array_CFLAGS = \
+	$(CHECK_CFLAGS) \
+	$(AM_CFLAGS)
+
+check_array_LDADD = \
+	$(CHECK_LIBS)
+
+# Test hashmap
+check_hashmap_SOURCES = \
+	tests/check-hashmap.c
+
+check_hashmap_CFLAGS = \
+	$(CHECK_CFLAGS) \
+	$(AM_CFLAGS)
+
+check_hashmap_LDADD = \
+	$(CHECK_LIBS)
+
+# Test inifile
+check_inifile_SOURCES = \
+	tests/check-inifile.c
+
+check_inifile_CFLAGS = \
+	$(CHECK_CFLAGS) \
+	$(AM_CFLAGS)
+
+check_inifile_LDADD = \
+	$(CHECK_LIBS)
+
+# Test list
+check_list_SOURCES = \
+	tests/check-list.c
+
+check_list_CFLAGS = \
+	$(CHECK_CFLAGS) \
+	$(AM_CFLAGS)
+
+check_list_LDADD = \
 	$(CHECK_LIBS)
 
 @VALGRIND_CHECK_RULES@
