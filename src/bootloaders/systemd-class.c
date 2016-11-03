@@ -95,7 +95,8 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         prefix = boot_manager_get_prefix((BootManager *)manager);
 
         /* ia32 paths */
-        if (!asprintf(&ia32_source, "%s/%s/%s", prefix, sd_config->efi_dir, sd_config->ia32_blob)) {
+        if (asprintf(&ia32_source, "%s/%s/%s", prefix, sd_config->efi_dir, sd_config->ia32_blob) <
+            0) {
                 sd_class_destroy(manager);
                 DECLARE_OOM();
                 return false;
@@ -111,7 +112,8 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         sd_class_config.ia32_dest = ia32_dest;
 
         /* x64 paths */
-        if (!asprintf(&x64_source, "%s/%s/%s", prefix, sd_config->efi_dir, sd_config->x64_blob)) {
+        if (asprintf(&x64_source, "%s/%s/%s", prefix, sd_config->efi_dir, sd_config->x64_blob) <
+            0) {
                 sd_class_destroy(manager);
                 DECLARE_OOM();
                 return false;
@@ -179,12 +181,12 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
 
         prefix = boot_manager_get_vendor_prefix(manager);
 
-        if (!asprintf(&item_name,
-                      "%s-%s-%s-%d.conf",
-                      prefix,
-                      kernel->ktype,
-                      kernel->version,
-                      kernel->release)) {
+        if (asprintf(&item_name,
+                     "%s-%s-%s-%d.conf",
+                     prefix,
+                     kernel->ktype,
+                     kernel->version,
+                     kernel->release) < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -246,10 +248,10 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                 LOG_FATAL("PartUUID unknown, this should never happen! %s", kernel->path);
                 return false;
         } else {
-                if (!asprintf(&boot_options,
-                              "options root=PARTUUID=%s %s",
-                              root_uuid,
-                              kernel->cmdline)) {
+                if (asprintf(&boot_options,
+                             "options root=PARTUUID=%s %s",
+                             root_uuid,
+                             kernel->cmdline) < 0) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -261,11 +263,8 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         os_name = boot_manager_get_os_name((BootManager *)manager);
 
         /* Kernels are installed to the root of the ESP, namespaced */
-        if (!asprintf(&conf_entry,
-                      "title %s\nlinux /%s\n%s\n",
-                      os_name,
-                      kname_base,
-                      boot_options)) {
+        if (asprintf(&conf_entry, "title %s\nlinux /%s\n%s\n", os_name, kname_base, boot_options) <
+            0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -343,23 +342,23 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
 
         if (timeout > 0) {
                 /* Set the timeout as configured by the user */
-                if (!asprintf(&item_name,
-                              "timeout %d\ndefault %s-%s-%s-%d\n\n",
-                              timeout,
-                              prefix,
-                              kernel->ktype,
-                              kernel->version,
-                              kernel->release)) {
+                if (asprintf(&item_name,
+                             "timeout %d\ndefault %s-%s-%s-%d\n\n",
+                             timeout,
+                             prefix,
+                             kernel->ktype,
+                             kernel->version,
+                             kernel->release) < 0) {
                         DECLARE_OOM();
                         return false;
                 }
         } else {
-                if (!asprintf(&item_name,
-                              "default %s-%s-%s-%d\n",
-                              prefix,
-                              kernel->ktype,
-                              kernel->version,
-                              kernel->release)) {
+                if (asprintf(&item_name,
+                             "default %s-%s-%s-%d\n",
+                             prefix,
+                             kernel->ktype,
+                             kernel->version,
+                             kernel->release) < 0) {
                         DECLARE_OOM();
                         return false;
                 }

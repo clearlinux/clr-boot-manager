@@ -172,19 +172,17 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                                 abort();
                         }
                 }
-                if (streq(k->path, kernel->path)) {
+                if (kernel && streq(k->path, kernel->path)) {
                         if (asprintf(&default_text, "DEFAULT %s\n", kname_base) < 0) {
                                 DECLARE_OOM();
                                 abort();
                         }
-                } else {
-                        default_text = "";
                 }
 
                 if (asprintf(&config_text,
                              "%s%sLABEL %s\n  KERNEL %s\n  APPEND %s\n",
                              _config_text,
-                             default_text,
+                             default_text ? default_text : "",
                              kname_base,
                              kname_base,
                              boot_options) < 0) {
@@ -196,7 +194,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 kname_copy = NULL;
                 free(boot_options);
                 boot_options = NULL;
-                if (streq(k->path, kernel->path)) {
+                if (default_text) {
                         free(default_text);
                 }
                 default_text = NULL;

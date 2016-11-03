@@ -24,12 +24,19 @@ typedef FILE FILE_MNT;
 DEF_AUTOFREE(FILE_MNT, endmntent)
 
 /**
- * Get the SHA-1 hashsum for the given path as a hex string
+ * Used to track an mmap()'d file's lifecycle. Never allocate one of these.
+ * Instead, initialise a CbmMappedFile as:
  *
- * @param path Path of the file to hash
- * @return a newly allocated string, or NULL on error
+ *      autofree(CbmMappedFile) *file = CBM_MAPPED_FILE_INIT;
+ *
+ * This will ensure it is always cleaned up on scope-exit. There is no allocation
+ * here, this is a pointer to a newly referenced stack object.
  */
-char *get_sha1sum(const char *path);
+typedef struct CbmMappedFile {
+        int fd;        /**< File descriptor for the mapped file */
+        char *buffer;  /**< Pointer to the mmap()'d contents */
+        size_t length; /**< Length of the mmap()'d file (see fstat) */
+} CbmMappedFile;
 
 /**
  * Get the PartUUID for a given path
@@ -151,6 +158,26 @@ void cbm_set_sync_filesystems(bool should_sync);
  * If not set, then this is a no-op
  */
 void cbm_sync(void);
+
+/**
+ * Close a previously mapped file
+ */
+void cbm_mapped_file_close(CbmMappedFile *file);
+
+/**
+ * Open the given CbmMappedFile to path and mmap the contents
+ */
+bool cbm_mapped_file_open(const char *path, CbmMappedFile *file);
+
+/**
+ * Ensure a stack pointer vs a heap pointer, to save on copies
+ */
+#define CBM_MAPPED_FILE_INIT &(CbmMappedFile){ 0 };
+
+/**
+ * Handy macro
+ */
+DEF_AUTOFREE(CbmMappedFile, cbm_mapped_file_close)
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

@@ -139,21 +139,21 @@ bool set_kernel_default(PlaygroundKernel *kernel)
         autofree(char) *link_source = NULL;
         autofree(char) *link_target = NULL;
 
-        if (!asprintf(&link_source,
-                      "%s.%s.%s-%d",
-                      KERNEL_NAMESPACE,
-                      kernel->ktype,
-                      kernel->version,
-                      kernel->release)) {
+        if (asprintf(&link_source,
+                     "%s.%s.%s-%d",
+                     KERNEL_NAMESPACE,
+                     kernel->ktype,
+                     kernel->version,
+                     kernel->release) < 0) {
                 return false;
         }
 
         /* i.e. default-kvm */
-        if (!asprintf(&link_target,
-                      "%s/%s/default-%s",
-                      PLAYGROUND_ROOT,
-                      KERNEL_DIRECTORY,
-                      kernel->ktype)) {
+        if (asprintf(&link_target,
+                     "%s/%s/default-%s",
+                     PLAYGROUND_ROOT,
+                     KERNEL_DIRECTORY,
+                     kernel->ktype) < 0) {
                 return false;
         }
 
@@ -211,35 +211,35 @@ bool push_kernel_update(PlaygroundKernel *kernel)
         autofree(char) *link_target = NULL;
 
         /* $root/$kerneldir/$prefix.native.4.2.1-137 */
-        if (!asprintf(&kfile,
-                      "%s/%s/%s.%s.%s-%d",
-                      PLAYGROUND_ROOT,
-                      KERNEL_DIRECTORY,
-                      KERNEL_NAMESPACE,
-                      kernel->ktype,
-                      kernel->version,
-                      kernel->release)) {
+        if (asprintf(&kfile,
+                     "%s/%s/%s.%s.%s-%d",
+                     PLAYGROUND_ROOT,
+                     KERNEL_DIRECTORY,
+                     KERNEL_NAMESPACE,
+                     kernel->ktype,
+                     kernel->version,
+                     kernel->release) < 0) {
                 return false;
         }
 
         /* $root/$kerneldir/cmdline-$version-$release.$type */
-        if (!asprintf(&cmdfile,
-                      "%s/%s/cmdline-%s-%d.%s",
-                      PLAYGROUND_ROOT,
-                      KERNEL_DIRECTORY,
-                      kernel->version,
-                      kernel->release,
-                      kernel->ktype)) {
+        if (asprintf(&cmdfile,
+                     "%s/%s/cmdline-%s-%d.%s",
+                     PLAYGROUND_ROOT,
+                     KERNEL_DIRECTORY,
+                     kernel->version,
+                     kernel->release,
+                     kernel->ktype) < 0) {
                 return false;
         }
         /* $root/$kerneldir/config-$version-$release.$type */
-        if (!asprintf(&conffile,
-                      "%s/%s/config-%s-%d.%s",
-                      PLAYGROUND_ROOT,
-                      KERNEL_DIRECTORY,
-                      kernel->version,
-                      kernel->release,
-                      kernel->ktype)) {
+        if (asprintf(&conffile,
+                     "%s/%s/config-%s-%d.%s",
+                     PLAYGROUND_ROOT,
+                     KERNEL_DIRECTORY,
+                     kernel->version,
+                     kernel->release,
+                     kernel->ktype) < 0) {
                 return false;
         }
 
@@ -262,13 +262,13 @@ bool push_kernel_update(PlaygroundKernel *kernel)
                 autofree(char) *t = NULL;
 
                 /* $root/$moduledir/$version-$rel/$p */
-                if (!asprintf(&t,
-                              "%s/%s/%s-%d/%s",
-                              PLAYGROUND_ROOT,
-                              KERNEL_MODULES_DIRECTORY,
-                              kernel->version,
-                              kernel->release,
-                              p)) {
+                if (asprintf(&t,
+                             "%s/%s/%s-%d/%s",
+                             PLAYGROUND_ROOT,
+                             KERNEL_MODULES_DIRECTORY,
+                             kernel->version,
+                             kernel->release,
+                             p) < 0) {
                         return false;
                 }
                 if (!nc_mkdir_p(t, 00755)) {
@@ -282,13 +282,13 @@ bool push_kernel_update(PlaygroundKernel *kernel)
                 autofree(char) *t = NULL;
 
                 /* $root/$moduledir/$version-$rel/$p */
-                if (!asprintf(&t,
-                              "%s/%s/%s-%d/%s",
-                              PLAYGROUND_ROOT,
-                              KERNEL_MODULES_DIRECTORY,
-                              kernel->version,
-                              kernel->release,
-                              p)) {
+                if (asprintf(&t,
+                             "%s/%s/%s-%d/%s",
+                             PLAYGROUND_ROOT,
+                             KERNEL_MODULES_DIRECTORY,
+                             kernel->version,
+                             kernel->release,
+                             p) < 0) {
                         return false;
                 }
                 if (!file_set_text((const char *)t, (char *)kernel->version)) {
@@ -303,7 +303,7 @@ bool push_bootloader_update(int revision)
 {
         autofree(char) *text = NULL;
 
-        if (!asprintf(&text, "faux-bootloader-revision: %d\n", revision)) {
+        if (asprintf(&text, "faux-bootloader-revision: %d\n", revision) < 0) {
                 return false;
         }
 
@@ -421,22 +421,22 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
 
         vendor = boot_manager_get_vendor_prefix(manager);
 
-        if (!asprintf(&kernel_blob,
-                      "%s/%s.%s.%s-%d",
-                      BOOT_FULL,
-                      KERNEL_NAMESPACE,
-                      kernel->ktype,
-                      kernel->version,
-                      kernel->release)) {
+        if (asprintf(&kernel_blob,
+                     "%s/%s.%s.%s-%d",
+                     BOOT_FULL,
+                     KERNEL_NAMESPACE,
+                     kernel->ktype,
+                     kernel->version,
+                     kernel->release) < 0) {
                 abort();
         }
-        if (!asprintf(&conf_file,
-                      "%s/loader/entries/%s-%s-%s-%d.conf",
-                      BOOT_FULL,
-                      vendor,
-                      kernel->ktype,
-                      kernel->version,
-                      kernel->release)) {
+        if (asprintf(&conf_file,
+                     "%s/loader/entries/%s-%s-%s-%d.conf",
+                     BOOT_FULL,
+                     vendor,
+                     kernel->ktype,
+                     kernel->version,
+                     kernel->release) < 0) {
                 abort();
         }
 
@@ -462,11 +462,8 @@ bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
 bool create_timeout_conf(void)
 {
         autofree(char) *timeout_conf = NULL;
-        if (!asprintf(&timeout_conf,
-                      "%s/%s/%s",
-                      PLAYGROUND_ROOT,
-                      SYSCONFDIR,
-                      "boot_timeout.conf")) {
+        if (asprintf(&timeout_conf, "%s/%s/%s", PLAYGROUND_ROOT, SYSCONFDIR, "boot_timeout.conf") <
+            0) {
                 return false;
         }
         if (!file_set_text((const char *)timeout_conf, (char *)"5")) {

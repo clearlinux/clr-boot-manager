@@ -34,7 +34,7 @@ bool boot_manager_set_timeout_value(BootManager *self, int timeout)
                 return false;
         }
 
-        if (!asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG)) {
+        if (asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG) < 0) {
                 DECLARE_OOM();
                 return -1;
         }
@@ -74,7 +74,7 @@ int boot_manager_get_timeout_value(BootManager *self)
                 return false;
         }
 
-        if (!asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG)) {
+        if (asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG) < 0) {
                 DECLARE_OOM();
                 return -1;
         }

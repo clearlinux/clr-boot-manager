@@ -6,8 +6,11 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/LICENSE.LGPL2.1 \
 	     ${top_srcdir}/HACKING \
 	     ${top_srcdir}/findstatic.pl \
-	     ${top_srcdir}/tests/data/hashfile \
 	     ${top_srcdir}/tests/data/blobfile \
+	     ${top_srcdir}/tests/data/match \
+	     ${top_srcdir}/tests/data/match1 \
+	     ${top_srcdir}/tests/data/nomatch1 \
+	     ${top_srcdir}/tests/data/nomatch2 \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/compat/kernel_updater.sh \
@@ -110,7 +113,6 @@ libcbm_la_SOURCES =			\
 
 libcbm_la_CFLAGS =		\
 	-D_BOOTMAN_INTERNAL_	\
-	$(CRYPTO_CFLAGS)	\
 	$(BLKID_CFLAGS)		\
 	$(AM_CFLAGS)
 
@@ -129,14 +131,12 @@ clr_boot_manager_SOURCES =		\
 	src/cli/main.c
 
 clr_boot_manager_CFLAGS =	\
-	$(CRYPTO_CFLAGS)	\
 	$(BLKID_CFLAGS)		\
 	$(AM_CFLAGS)
 
 clr_boot_manager_LDADD =	\
 	libcbm.la		\
 	libnica.la		\
-	$(CRYPTO_LIBS)		\
 	$(BLKID_LIBS)
 
 install-exec-hook:
@@ -168,7 +168,6 @@ check_core_SOURCES =		\
 	tests/harness.c
 
 check_core_CFLAGS =		\
-	$(CRYPTO_CFLAGS)	\
 	$(BLKID_CFLAGS)		\
 	$(CHECK_CFLAGS)		\
 	$(AM_CFLAGS)
@@ -176,7 +175,6 @@ check_core_CFLAGS =		\
 check_core_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
-	$(CRYPTO_LIBS)	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -184,7 +182,6 @@ check_files_SOURCES = \
 	tests/check-files.c
 
 check_files_CFLAGS =		\
-	$(CRYPTO_CFLAGS)	\
 	$(BLKID_CFLAGS)		\
 	$(CHECK_CFLAGS)		\
 	$(AM_CFLAGS)
@@ -192,7 +189,6 @@ check_files_CFLAGS =		\
 check_files_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
-	$(CRYPTO_LIBS)	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -202,7 +198,6 @@ check_updates_SOURCES =		\
 	tests/harness.c
 
 check_updates_CFLAGS =		\
-	$(CRYPTO_CFLAGS)	\
 	$(BLKID_CFLAGS)		\
 	$(CHECK_CFLAGS)		\
 	$(AM_CFLAGS)
@@ -210,7 +205,6 @@ check_updates_CFLAGS =		\
 check_updates_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
-	$(CRYPTO_LIBS)	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 

@@ -20,7 +20,6 @@
 #include <glob.h>
 #include <libgen.h>
 #include <limits.h>
-#include <openssl/sha.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,69 +54,29 @@ void cbm_sync(void)
         }
 }
 
-char *get_sha1sum(const char *p)
-{
-        unsigned char hash[SHA_DIGEST_LENGTH] = { 0 };
-        int fd = -1;
-        struct stat st = { 0 };
-        char *buffer = NULL;
-        char *ret = NULL;
-        size_t max_len = SHA_DIGEST_LENGTH * 2;
-        size_t st_size;
-
-        if ((fd = open(p, O_RDONLY)) < 0) {
-                goto finish;
-        }
-        if (fstat(fd, &st) < 0) {
-                goto finish;
-        }
-
-        st_size = (size_t)st.st_size;
-
-        buffer = mmap(0, st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-        if (!buffer) {
-                goto finish;
-        }
-
-        if (!SHA1((unsigned char *)buffer, st_size, hash)) {
-                goto finish;
-        }
-
-        ret = calloc((max_len) + 1, sizeof(char));
-        if (!ret) {
-                goto finish;
-        }
-
-        for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
-                snprintf(ret + (i * 2), max_len, "%02x", hash[i]);
-        }
-        ret[max_len] = '\0';
-
-finish:
-        if (fd >= 0) {
-                close(fd);
-        }
-        if (buffer) {
-                munmap(buffer, st_size);
-        }
-        return ret;
-}
-
 bool cbm_files_match(const char *p1, const char *p2)
 {
-        autofree(char) *h1 = NULL;
-        autofree(char) *h2 = NULL;
+        autofree(CbmMappedFile) *m1 = CBM_MAPPED_FILE_INIT;
+        autofree(CbmMappedFile) *m2 = CBM_MAPPED_FILE_INIT;
 
-        h1 = get_sha1sum(p1);
-        if (!h1) {
-                return false;
-        }
-        h2 = get_sha1sum(p2);
-        if (!h2) {
+        if (!cbm_mapped_file_open(p1, m1)) {
                 return false;
         }
 
-        return streq(h1, h2);
+        if (!cbm_mapped_file_open(p2, m2)) {
+                return false;
+        }
+
+        /* If the lengths are different they're clearly not the same file */
+        if (m1->length != m2->length) {
+                return false;
+        }
+
+        /* Compare both buffers */
+        if (memcmp(m1->buffer, m2->buffer, m1->length) == 0) {
+                return true;
+        }
+        return false;
 }
 
 char *get_part_uuid(const char *path)
@@ -138,7 +97,7 @@ char *get_part_uuid(const char *path)
                 return NULL;
         }
 
-        if (!asprintf(&node, "/dev/block/%u:%u", major(st.st_dev), minor(st.st_dev))) {
+        if (asprintf(&node, "/dev/block/%u:%u", major(st.st_dev), minor(st.st_dev)) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -223,7 +182,7 @@ char *get_boot_device()
         }
         read_buf[j] = '\0';
 
-        if (!asprintf(&p, "/dev/disk/by-partuuid/%s", uuid)) {
+        if (asprintf(&p, "/dev/disk/by-partuuid/%s", uuid) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -273,7 +232,7 @@ char *get_parent_disk(char *path)
                 return NULL;
         }
 
-        if (!asprintf(&node, "/dev/block/%u:%u", major(devt), minor(devt))) {
+        if (asprintf(&node, "/dev/block/%u:%u", major(devt), minor(devt)) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -330,7 +289,7 @@ char *get_legacy_boot_device(char *path)
                                 LOG_ERROR("Not a valid GPT disk");
                                 goto clean;
                         }
-                        if (!asprintf(&pt_path, "/dev/disk/by-partuuid/%s", part_id)) {
+                        if (asprintf(&pt_path, "/dev/disk/by-partuuid/%s", part_id) < 0) {
                                 DECLARE_OOM();
                                 goto clean;
                         }
@@ -456,7 +415,7 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
         autofree(char) *new_name = NULL;
         struct stat st = { 0 };
 
-        if (!asprintf(&new_name, "%s.TmpWrite", target)) {
+        if (asprintf(&new_name, "%s.TmpWrite", target) < 0) {
                 return false;
         }
 
@@ -554,6 +513,47 @@ bool cbm_system_has_uefi()
 void cbm_set_sync_filesystems(bool should_sync)
 {
         cbm_should_sync = should_sync;
+}
+
+bool cbm_mapped_file_open(const char *path, CbmMappedFile *file)
+{
+        if (!file) {
+                return false;
+        }
+        int fd = -1;
+        struct stat st = { 0 };
+        ssize_t length = -1;
+        char *buffer = NULL;
+
+        fd = open(path, O_RDONLY);
+        if (fd < 0) {
+                return false;
+        }
+        if (fstat(fd, &st) != 0) {
+                close(fd);
+                return false;
+        }
+        length = st.st_size;
+
+        buffer = mmap(NULL, (size_t)length, PROT_READ, MAP_PRIVATE, fd, 0);
+        if (!buffer) {
+                close(fd);
+                return false;
+        }
+        file->length = (size_t)length;
+        file->buffer = buffer;
+        file->fd = fd;
+        return true;
+}
+
+void cbm_mapped_file_close(CbmMappedFile *file)
+{
+        if (!file) {
+                return;
+        }
+        munmap(file->buffer, file->length);
+        close(file->fd);
+        memset(file, 0, sizeof(CbmMappedFile));
 }
 
 /*
