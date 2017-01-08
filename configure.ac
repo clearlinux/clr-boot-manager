@@ -82,6 +82,7 @@ AM_CONDITIONAL([HAVE_SYSTEMD_BOOT], [test x$have_systemdboot = "xyes"])
 AM_CONDITIONAL([HAVE_GUMMIBOOT], [test x$have_gummiboot = "xyes"])
 AM_CONDITIONAL([HAVE_GOOFIBOOT], [test x$have_goofiboot = "xyes"])
 
+# Kernel directory (/usr/lib/kernel)
 AC_ARG_WITH([kernel-dir], AS_HELP_STRING([--with-kernel-dir],
         [the kernel directory to use]), [kerneldir=${withval}],
         [kerneldir="/usr/lib/kernel"])
@@ -90,6 +91,7 @@ AC_SUBST(kerneldir)
 AC_DEFINE_UNQUOTED(KERNEL_DIRECTORY, "$kerneldir",
                    [The location of kernels in this OS configuration])
 
+# Kernel modules directory (/usr/lib/modules)
 AC_ARG_WITH([kernel-modules-dir], AS_HELP_STRING([--with-kernel-modules-dir],
         [the kernel modules directory to use]), [kernelmodulesdir=${withval}],
         [kernelmodulesdir="/usr/lib/modules"])
@@ -98,6 +100,7 @@ AC_SUBST(kernelmodulesdir)
 AC_DEFINE_UNQUOTED(KERNEL_MODULES_DIRECTORY, "$kernelmodulesdir",
                    [The location of kernel modules in this OS configuration])
 
+# Namespace for the kernel (org.clearlinux)
 AC_ARG_WITH([kernel-namespace], AS_HELP_STRING([--with-kernel-namespace],
         [the kernel path namespace to use]), [kernelnamespace=${withval}],
         [kernelnamespace="org.clearlinux"])
@@ -107,6 +110,7 @@ AC_DEFINE_UNQUOTED(KERNEL_NAMESPACE, "$kernelnamespace",
                    [The path namespace for kernels in this OS configuration])
 
 
+# The boot directory (/boot)
 AC_ARG_WITH([boot-dir], AS_HELP_STRING([--with-boot-dir],
         [the path to the normalised ESP mount]), [bootdir=${withval}],
         [bootdir="/boot"])
@@ -114,6 +118,24 @@ AC_ARG_WITH([boot-dir], AS_HELP_STRING([--with-boot-dir],
 AC_SUBST(bootdir)
 AC_DEFINE_UNQUOTED(BOOT_DIRECTORY, "$bootdir",
                    [The normalised path to the boot/ESP mount])
+
+# The vendor name to be used in emitted boot entries
+AC_ARG_WITH([os-name], AS_HELP_STRING([--with-os-name],
+        [the OS name]), [osname=${withval}],
+        [osname="Clear Linux Software for Intel Architecture"])
+
+AC_SUBST(osname)
+AC_DEFINE_UNQUOTED(OS_NAME, "$osname",
+                   [The OS display name])
+
+# The vendor prefix used for files created by clr-boot-manager within bootdir
+AC_ARG_WITH([vendor-prefix], AS_HELP_STRING([--with-vendor-prefix],
+        [the OS name]), [vendorprefix=${withval}],
+        [vendorprefix="Clear-linux"])
+
+AC_SUBST(vendorprefix)
+AC_DEFINE_UNQUOTED(VENDOR_PREFIX, "$vendorprefix",
+                   [The vendor prefix])
 
 # Options
 AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
@@ -147,6 +169,8 @@ AC_MSG_RESULT([
         kernel-modules-dir:     ${kernelmodulesdir}
         kernel-namespace:       ${kernelnamespace}
         boot-dir:               ${bootdir}
+        os-name:                ${osname}
+        vendor-prefix:          ${vendorprefix}
 
         compatibility scripts:  ${use_compat_scripts}
 ])

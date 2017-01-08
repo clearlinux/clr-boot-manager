@@ -54,8 +54,8 @@ BootManager *boot_manager_new()
         }
 
         /* Potentially consider a configure or os-release check */
-        boot_manager_set_vendor_prefix(r, "Clear-linux");
-        boot_manager_set_os_name(r, "Clear Linux Software for Intel Architecture");
+        boot_manager_set_vendor_prefix(r, VENDOR_PREFIX);
+        boot_manager_set_os_name(r, OS_NAME);
         /* CLI should override these */
         boot_manager_set_can_mount(r, false);
         boot_manager_set_image_mode(r, false);
