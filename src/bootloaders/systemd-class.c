@@ -233,6 +233,10 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         autofree(char) *kname_copy = NULL;
         const char *os_name = NULL;
         char *kname_base = NULL;
+        autofree(char) *initrd_copy = NULL;
+        char *initrd_base = NULL;
+        autofree(char) *boot_sect = NULL;
+        int ret = 0;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
@@ -260,11 +264,26 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         kname_copy = strdup(kernel->path);
         kname_base = basename(kname_copy);
 
+        if (kernel->initrd_file) {
+                initrd_copy = strdup(kernel->initrd_file);
+                initrd_base = basename(initrd_copy);
+        }
+
+        /* Formulate the boot section */
+        if (initrd_base) {
+                ret = asprintf(&boot_sect, "linux /%s\ninitrd /%s", kname_base, initrd_base);
+        } else {
+                ret = asprintf(&boot_sect, "linux /%s", kname_base);
+        }
+        if (ret < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+
         os_name = boot_manager_get_os_name((BootManager *)manager);
 
         /* Kernels are installed to the root of the ESP, namespaced */
-        if (asprintf(&conf_entry, "title %s\nlinux /%s\n%s\n", os_name, kname_base, boot_options) <
-            0) {
+        if (asprintf(&conf_entry, "title %s\n%s\n%s\n", os_name, boot_sect, boot_options) < 0) {
                 DECLARE_OOM();
                 abort();
         }
