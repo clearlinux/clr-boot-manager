@@ -55,6 +55,7 @@ typedef struct Kernel {
         char *module_dir;   /**<Path to the modules directory */
         bool boots;         /**<Is this known to boot? */
         char *kboot_file;   /**<Path to the k_booted_$(uname -r) file */
+        char *initrd_file;  /**<Path to the initrd file */
 } Kernel;
 
 typedef NcArray KernelArray;
@@ -298,8 +299,6 @@ bool boot_manager_set_timeout_value(BootManager *manager, int timeout);
 bool boot_manager_needs_install(BootManager *manager);
 
 bool boot_manager_needs_update(BootManager *manager);
-
-bool boot_manager_is_kernel_installed(BootManager *manager, const Kernel *kernel);
 
 /**
  * Get the SystemKernel, if any, for this BootManager.

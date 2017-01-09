@@ -97,13 +97,6 @@ static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager, c
         return true;
 }
 
-/* hack to get all kernels that should be installed in the conf */
-static bool syslinux_is_kernel_installed(__cbm_unused__ const BootManager *manager,
-                                         __cbm_unused__ const Kernel *kernel)
-{
-        return false;
-}
-
 /* No op due since conf file will only have queued kernels anyway */
 static bool syslinux_remove_kernel(__cbm_unused__ const BootManager *manager,
                                    __cbm_unused__ const Kernel *kernel)
@@ -299,8 +292,6 @@ static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
 __cbm_export__ const BootLoader syslinux_bootloader = {.name = "syslinux",
                                                        .init = syslinux_init,
                                                        .install_kernel = syslinux_install_kernel,
-                                                       .is_kernel_installed =
-                                                           syslinux_is_kernel_installed,
                                                        .remove_kernel = syslinux_remove_kernel,
                                                        .set_default_kernel =
                                                            syslinux_set_default_kernel,

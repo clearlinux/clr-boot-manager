@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#define INITRD_DIRECTORY "/etc/kernel"
+
 /**
  * Determine the applicable kboot file
  */
@@ -55,6 +57,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *module_dir = NULL;
         autofree(char) *kconfig_file = NULL;
         autofree(char) *default_file = NULL;
+        autofree(char) *initrd_file = NULL;
         /* Consider making this a namespace option */
         autofree(FILE) *f = NULL;
         size_t sn;
@@ -87,6 +90,33 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         if (asprintf(&kconfig_file, "%s/config-%s-%d.%s", parent, version, release, type) < 0) {
                 DECLARE_OOM();
                 abort();
+        }
+
+        /* i.e. /etc/kernel/initrd-org.clearlinux.lts.4.9.1-1 */
+        if (asprintf(&initrd_file,
+                     "%s/initrd-%s.%s.%s-%d",
+                     INITRD_DIRECTORY,
+                     KERNEL_NAMESPACE,
+                     type,
+                     version,
+                     release) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        if (!nc_file_exists(initrd_file)) {
+                free(initrd_file);
+                /* i.e. /usr/lib/kernel/initrd-org.clearlinux.lts.4.9.1-1 */
+                if (asprintf(&initrd_file,
+                             "%s/initrd-%s.%s.%s-%d",
+                             parent,
+                             KERNEL_NAMESPACE,
+                             type,
+                             version,
+                             release) < 0) {
+                        DECLARE_OOM();
+                        abort();
+                }
         }
 
         /* TODO: We may actually be uninstalling a partially flopped kernel,
@@ -143,6 +173,10 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 kern->kconfig_file = strdup(kconfig_file);
         }
 
+        if (nc_file_exists(initrd_file)) {
+                kern->initrd_file = strdup(initrd_file);
+        }
+
         kern->release = (int16_t)release;
 
         if (!(f = fopen(cmdline, "r"))) {
@@ -172,7 +206,19 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 buf = NULL;
         }
 
+        /* Use kernel's command line and /etc/kernel/cmdline if present */
+        if (self->cmdline) {
+                char *cm = NULL;
+                if (asprintf(&cm, "%s %s", kern->cmdline, self->cmdline) < 0) {
+                        DECLARE_OOM();
+                        abort();
+                }
+                free(kern->cmdline);
+                kern->cmdline = cm;
+        }
+
         kern->cmdline_file = strdup(cmdline);
+
         if (buf) {
                 free(buf);
         }
@@ -256,6 +302,7 @@ void free_kernel(Kernel *t)
         free(t->cmdline_file);
         free(t->kconfig_file);
         free(t->kboot_file);
+        free(t->initrd_file);
         free(t->ktype);
         free(t);
 }
@@ -476,39 +523,6 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
 }
 
 /**
- * Internal check to see if the kernel blob is installed
- */
-bool boot_manager_is_kernel_installed_internal(const BootManager *manager, const Kernel *kernel)
-{
-        autofree(char) *path = NULL;
-        autofree(char) *path2 = NULL;
-        autofree(char) *kname_copy = NULL;
-        char *kname_base = NULL;
-        autofree(char) *base_path = NULL;
-
-        assert(manager != NULL);
-        assert(kernel != NULL);
-
-        /* Boot path */
-        base_path = boot_manager_get_boot_dir((BootManager *)manager);
-        OOM_CHECK_RET(base_path, false);
-
-        path = strdup(kernel->path);
-        if (!path) {
-                DECLARE_OOM();
-                abort();
-        }
-        kname_base = basename(path);
-
-        if (asprintf(&path2, "%s/%s", base_path, kname_base) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
-
-        return nc_file_exists(path2);
-}
-
-/**
  * Internal function to install the kernel blob itself
  */
 bool boot_manager_install_kernel_internal(const BootManager *manager, const Kernel *kernel)
@@ -517,6 +531,9 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         char *kname_base = NULL;
         autofree(char) *kfile_target = NULL;
         autofree(char) *base_path = NULL;
+        autofree(char) *initrd_copy = NULL;
+        char *initrd_base = NULL;
+        autofree(char) *initrd_target = NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -534,8 +551,34 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
                 return false;
         }
 
-        if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
-                LOG_FATAL("Failed to install kernel %s: %s", kfile_target, strerror(errno));
+        /* Don't rewrite the same file to disk */
+        if (!cbm_files_match(kernel->path, kfile_target)) {
+                if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
+                        LOG_FATAL("Failed to install kernel %s: %s", kfile_target, strerror(errno));
+                        return false;
+                }
+        }
+
+        /* Copy the initrd if it exists */
+        if (!kernel->initrd_file) {
+                return true;
+        }
+
+        initrd_copy = strdup(kernel->initrd_file);
+        initrd_base = basename(initrd_copy);
+
+        if (asprintf(&initrd_target, "%s/%s", base_path, initrd_base) < 0) {
+                DECLARE_OOM();
+                return false;
+        }
+
+        /* Don't rewrite the same initrd to disk */
+        if (cbm_files_match(kernel->initrd_file, initrd_target)) {
+                return true;
+        }
+
+        if (!copy_file_atomic(kernel->initrd_file, initrd_target, 00644)) {
+                LOG_FATAL("Failed to install initrd %s: %s", initrd_target, strerror(errno));
                 return false;
         }
 
@@ -551,6 +594,9 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         autofree(char) *kfile_target = NULL;
         char *kname_base = NULL;
         autofree(char) *base_path = NULL;
+        autofree(char) *initrd_copy = NULL;
+        char *initrd_base = NULL;
+        autofree(char) *initrd_target = NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -572,6 +618,23 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                 LOG_ERROR("Failed to remove kernel %s: %s", kfile_target, strerror(errno));
         } else {
                 cbm_sync();
+        }
+
+        /* Handle cleanup of the initrd */
+        if (kernel->initrd_file) {
+                initrd_copy = strdup(kernel->initrd_file);
+                initrd_base = basename(initrd_copy);
+
+                if (asprintf(&initrd_target, "%s/%s", base_path, initrd_base) < 0) {
+                        DECLARE_OOM();
+                        return false;
+                }
+
+                if (nc_file_exists(initrd_target) && unlink(initrd_target) < 0) {
+                        LOG_ERROR("Failed to remove initrd %s: %s", initrd_target, strerror(errno));
+                } else {
+                        cbm_sync();
+                }
         }
 
         /* Purge the kernel modules from disk */
@@ -605,6 +668,13 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                                   kernel->kboot_file,
                                   strerror(errno));
                 }
+        }
+
+        /* Remove the source initrd in non-fatal fashion */
+        if (kernel->initrd_file && unlink(kernel->initrd_file) < 0) {
+                LOG_ERROR("Failed to remove initrd file %s: %s",
+                          kernel->initrd_file,
+                          strerror(errno));
         }
 
         /* Lastly, remove the source */

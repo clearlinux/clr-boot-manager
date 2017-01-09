@@ -26,7 +26,7 @@
 struct BootManager {
         char *kernel_dir;             /**<Kernel directory */
         const BootLoader *bootloader; /**<Selected bootloader */
-        char *vendor_prefix;          /**Vendor prefix, i.e. com.blah */
+        char *vendor_prefix;          /**<Vendor prefix, i.e. com.blah */
         char *os_name;                /**<Operating system name */
         char *abs_bootdir;            /**<Real boot dir */
         SystemKernel sys_kernel;      /**<Native kernel info, if any */
@@ -34,12 +34,8 @@ struct BootManager {
         bool can_mount;               /**<Are we allowed to mount? */
         bool image_mode;              /**<Are we in image mode? */
         SystemConfig *sysconfig;      /**<System configuration */
+        char *cmdline;                /**<Additional cmdline to append */
 };
-
-/**
- * Internal check to see if the kernel blob is installed
- */
-bool boot_manager_is_kernel_installed_internal(const BootManager *manager, const Kernel *kernel);
 
 /**
  * Internal function to install the kernel blob itself

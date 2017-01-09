@@ -35,6 +35,8 @@ extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
 extern const BootLoader syslinux_bootloader;
 
+static void boot_manager_load_cmdline(BootManager *self);
+
 BootManager *boot_manager_new()
 {
         struct BootManager *r = NULL;
@@ -54,13 +56,68 @@ BootManager *boot_manager_new()
         }
 
         /* Potentially consider a configure or os-release check */
-        boot_manager_set_vendor_prefix(r, "Clear-linux");
-        boot_manager_set_os_name(r, "Clear Linux Software for Intel Architecture");
+        boot_manager_set_vendor_prefix(r, VENDOR_PREFIX);
+        boot_manager_set_os_name(r, OS_NAME);
         /* CLI should override these */
         boot_manager_set_can_mount(r, false);
         boot_manager_set_image_mode(r, false);
 
         return r;
+}
+
+/**
+ * Set the command line to append into cmdline options on a global basis
+ */
+static void boot_manager_load_cmdline(BootManager *self)
+{
+        autofree(FILE) *f = NULL;
+        autofree(char) *cmdline = NULL;
+        size_t sn;
+        ssize_t r = 0;
+        char *buf = NULL;
+
+        if (self->cmdline) {
+                free(self->cmdline);
+                self->cmdline = NULL;
+        }
+
+        if (asprintf(&cmdline, "%s/etc/kernel/cmdline", self->sysconfig->prefix) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        if (!nc_file_exists(cmdline)) {
+                return;
+        }
+
+        if (!(f = fopen(cmdline, "r"))) {
+                LOG_ERROR("Unable to open %s: %s", cmdline, strerror(errno));
+                return;
+        }
+
+        /* Keep cmdline in a single "line" with no spaces */
+        while ((r = getline(&buf, &sn, f)) > 0) {
+                char *tmp = NULL;
+                /* Strip newlines */
+                if (r > 1 && buf[r - 1] == '\n') {
+                        buf[r - 1] = '\0';
+                }
+                if (self->cmdline) {
+                        if (asprintf(&tmp, "%s %s", self->cmdline, buf) < 0) {
+                                DECLARE_OOM();
+                                abort();
+                        }
+                        free(self->cmdline);
+                        self->cmdline = tmp;
+                        free(buf);
+                } else {
+                        self->cmdline = buf;
+                }
+                buf = NULL;
+        }
+        if (buf) {
+                free(buf);
+        }
 }
 
 void boot_manager_free(BootManager *self)
@@ -78,6 +135,7 @@ void boot_manager_free(BootManager *self)
         free(self->vendor_prefix);
         free(self->os_name);
         free(self->abs_bootdir);
+        free(self->cmdline);
         free(self);
 }
 
@@ -100,6 +158,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
                 return false;
         }
         self->sysconfig = config;
+        boot_manager_load_cmdline(self);
 
         if (self->kernel_dir) {
                 free(self->kernel_dir);
@@ -419,18 +478,6 @@ bool boot_manager_needs_update(BootManager *self)
         assert(self != NULL);
 
         return self->bootloader->needs_update(self);
-}
-
-bool boot_manager_is_kernel_installed(BootManager *self, const Kernel *kernel)
-{
-        assert(self != NULL);
-
-        /* Ensure the blob is in place */
-        if (!boot_manager_is_kernel_installed_internal(self, kernel)) {
-                return false;
-        }
-        /* Last bits, like config files */
-        return self->bootloader->is_kernel_installed(self, kernel);
 }
 
 bool boot_manager_set_uname(BootManager *self, const char *uname)

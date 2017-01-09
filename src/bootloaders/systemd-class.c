@@ -233,6 +233,11 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         autofree(char) *kname_copy = NULL;
         const char *os_name = NULL;
         char *kname_base = NULL;
+        autofree(char) *initrd_copy = NULL;
+        char *initrd_base = NULL;
+        autofree(char) *boot_sect = NULL;
+        int ret = 0;
+        autofree(char) *old_conf = NULL;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
@@ -260,13 +265,35 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         kname_copy = strdup(kernel->path);
         kname_base = basename(kname_copy);
 
+        if (kernel->initrd_file) {
+                initrd_copy = strdup(kernel->initrd_file);
+                initrd_base = basename(initrd_copy);
+        }
+
+        /* Formulate the boot section */
+        if (initrd_base) {
+                ret = asprintf(&boot_sect, "linux /%s\ninitrd /%s", kname_base, initrd_base);
+        } else {
+                ret = asprintf(&boot_sect, "linux /%s", kname_base);
+        }
+        if (ret < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+
         os_name = boot_manager_get_os_name((BootManager *)manager);
 
         /* Kernels are installed to the root of the ESP, namespaced */
-        if (asprintf(&conf_entry, "title %s\nlinux /%s\n%s\n", os_name, kname_base, boot_options) <
-            0) {
+        if (asprintf(&conf_entry, "title %s\n%s\n%s\n", os_name, boot_sect, boot_options) < 0) {
                 DECLARE_OOM();
                 abort();
+        }
+
+        /* If our new config matches the old config, just return.  */
+        if (file_get_text(conf_path, &old_conf)) {
+                if (streq(old_conf, conf_entry)) {
+                        return true;
+                }
         }
 
         if (!file_set_text(conf_path, conf_entry)) {
@@ -322,6 +349,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         autofree(char) *item_name = NULL;
         int timeout = 0;
         const char *prefix = NULL;
+        autofree(char) *old_conf = NULL;
 
         prefix = boot_manager_get_vendor_prefix((BootManager *)manager);
 
@@ -343,7 +371,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         if (timeout > 0) {
                 /* Set the timeout as configured by the user */
                 if (asprintf(&item_name,
-                             "timeout %d\ndefault %s-%s-%s-%d\n\n",
+                             "timeout %d\ndefault %s-%s-%s-%d\n",
                              timeout,
                              prefix,
                              kernel->ktype,
@@ -363,6 +391,14 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                         return false;
                 }
         }
+
+        /* If the loader.conf is the same, then don't write it again */
+        if (file_get_text(sd_class_config.loader_config, &old_conf)) {
+                if (streq(old_conf, item_name)) {
+                        return true;
+                }
+        }
+
         if (!file_set_text(sd_class_config.loader_config, item_name)) {
                 LOG_FATAL("sd_class_set_default_kernel: Failed to write %s: %s",
                           sd_class_config.loader_config,
@@ -677,14 +713,6 @@ bool sd_class_remove(const BootManager *manager)
         cbm_sync();
 
         return true;
-}
-
-bool sd_class_is_kernel_installed(const BootManager *manager, const Kernel *kernel)
-{
-        autofree(char) *conf_path = NULL;
-
-        conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
-        return nc_file_exists(conf_path);
 }
 
 /*
