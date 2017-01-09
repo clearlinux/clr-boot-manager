@@ -462,39 +462,6 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
 }
 
 /**
- * Internal check to see if the kernel blob is installed
- */
-bool boot_manager_is_kernel_installed_internal(const BootManager *manager, const Kernel *kernel)
-{
-        autofree(char) *path = NULL;
-        autofree(char) *path2 = NULL;
-        autofree(char) *kname_copy = NULL;
-        char *kname_base = NULL;
-        autofree(char) *base_path = NULL;
-
-        assert(manager != NULL);
-        assert(kernel != NULL);
-
-        /* Boot path */
-        base_path = boot_manager_get_boot_dir((BootManager *)manager);
-        OOM_CHECK_RET(base_path, false);
-
-        path = strdup(kernel->path);
-        if (!path) {
-                DECLARE_OOM();
-                abort();
-        }
-        kname_base = basename(path);
-
-        if (asprintf(&path2, "%s/%s", base_path, kname_base) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
-
-        return nc_file_exists(path2);
-}
-
-/**
  * Internal function to install the kernel blob itself
  */
 bool boot_manager_install_kernel_internal(const BootManager *manager, const Kernel *kernel)

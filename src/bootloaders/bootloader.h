@@ -15,7 +15,6 @@
 
 typedef bool (*boot_loader_init)(const BootManager *);
 typedef bool (*boot_loader_install_kernel)(const BootManager *, const Kernel *);
-typedef bool (*boot_loader_is_kernel_installed)(const BootManager *, const Kernel *);
 typedef bool (*boot_loader_remove_kernel)(const BootManager *, const Kernel *);
 typedef bool (*boot_loader_set_default_kernel)(const BootManager *, const Kernel *kernel);
 typedef bool (*boot_loader_needs_update)(const BootManager *);
@@ -29,12 +28,10 @@ typedef void (*boot_loader_destroy)(const BootManager *);
  * Virtual BootLoader provider
  */
 typedef struct BootLoader {
-        const char *name;                          /**<Name of the implementation */
-        boot_loader_init init;                     /**<Init function */
-        boot_loader_install_kernel install_kernel; /**<Install a given kernel */
-        boot_loader_is_kernel_installed
-            is_kernel_installed;                 /**<Determine if the given kernel is installed */
-        boot_loader_remove_kernel remove_kernel; /**<Remove a given kernel */
+        const char *name;                                  /**<Name of the implementation */
+        boot_loader_init init;                             /**<Init function */
+        boot_loader_install_kernel install_kernel;         /**<Install a given kernel */
+        boot_loader_remove_kernel remove_kernel;           /**<Remove a given kernel */
         boot_loader_set_default_kernel set_default_kernel; /**<Set the default kernel */
         boot_loader_needs_update needs_update;             /**<Check if an update is required */
         boot_loader_needs_install needs_install;           /**<Check if an install is required */

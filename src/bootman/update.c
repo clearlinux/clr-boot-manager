@@ -188,11 +188,6 @@ static bool boot_manager_update_image(BootManager *self)
         /* Go ahead and install the kernels */
         for (uint16_t i = 0; i < kernels->len; i++) {
                 const Kernel *k = nc_array_get(kernels, i);
-                /* Already installed, skip it */
-                if (boot_manager_is_kernel_installed(self, k)) {
-                        LOG_INFO("update_image: Already installed: %s", k->path);
-                        continue;
-                }
                 LOG_DEBUG("update_image: Attempting install of %s", k->path);
                 if (!boot_manager_install_kernel(self, k)) {
                         LOG_FATAL("Cannot install kernel %s", k->path);
@@ -279,14 +274,11 @@ static bool boot_manager_update_native(BootManager *self)
 
         /* This is mostly to allow a repair-situation */
         if (running) {
-                if (!boot_manager_is_kernel_installed(self, running)) {
-                        /* Not necessarily fatal. */
-                        if (!boot_manager_install_kernel(self, running)) {
-                                LOG_ERROR("Failed to repair running kernel");
-                        }
-                        LOG_SUCCESS("update_native: Repaired running kernel %s", running->path);
+                /* Not necessarily fatal. */
+                if (!boot_manager_install_kernel(self, running)) {
+                        LOG_ERROR("Failed to repair running kernel");
                 } else {
-                        LOG_INFO("update_native: Running kernel is installed %s", running->path);
+                        LOG_SUCCESS("update_native: Repaired running kernel %s", running->path);
                 }
         }
 
@@ -314,41 +306,25 @@ static bool boot_manager_update_native(BootManager *self)
                 }
 
                 /* Ensure this tip kernel is installed */
-                if (!boot_manager_is_kernel_installed(self, tip)) {
-                        if (!boot_manager_install_kernel(self, tip)) {
-                                LOG_FATAL("Failed to install default-%s kernel: %s",
-                                          tip->ktype,
-                                          tip->path);
-                                goto cleanup;
-                        }
-                        LOG_SUCCESS("update_native: Installed tip for %s: %s",
-                                    kernel_type,
-                                    tip->path);
-                } else {
-                        LOG_DEBUG("update_native: Tip for %s already installed: %s",
-                                  kernel_type,
-                                  tip->path);
+                if (!boot_manager_install_kernel(self, tip)) {
+                        LOG_FATAL("Failed to install default-%s kernel: %s", tip->ktype, tip->path);
+                        goto cleanup;
                 }
+                LOG_SUCCESS("update_native: Installed tip for %s: %s", kernel_type, tip->path);
 
                 /* Last known booting kernel, might be null. */
                 last_good = boot_manager_get_last_booted(self, typed_kernels);
 
                 /* Ensure this guy is still installed/repaired */
                 if (last_good) {
-                        if (!boot_manager_is_kernel_installed(self, last_good)) {
-                                if (!boot_manager_install_kernel(self, last_good)) {
-                                        LOG_FATAL("Failed to install last-good kernel: %s",
-                                                  last_good->path);
-                                        goto cleanup;
-                                }
-                                LOG_SUCCESS("update_native: Installed last_good kernel (%s) (%s)",
-                                            kernel_type,
-                                            last_good->path);
-                        } else {
-                                LOG_INFO("update_native: last_good for %s is installed from %s",
-                                         kernel_type,
-                                         last_good->path);
+                        if (!boot_manager_install_kernel(self, last_good)) {
+                                LOG_FATAL("Failed to install last-good kernel: %s",
+                                          last_good->path);
+                                goto cleanup;
                         }
+                        LOG_SUCCESS("update_native: Installed last_good kernel (%s) (%s)",
+                                    kernel_type,
+                                    last_good->path);
                 } else {
                         LOG_DEBUG("update_native: No last_good kernel for type %s", kernel_type);
                 }
