@@ -551,9 +551,12 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
                 return false;
         }
 
-        if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
-                LOG_FATAL("Failed to install kernel %s: %s", kfile_target, strerror(errno));
-                return false;
+        /* Don't rewrite the same file to disk */
+        if (!cbm_files_match(kernel->path, kfile_target)) {
+                if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
+                        LOG_FATAL("Failed to install kernel %s: %s", kfile_target, strerror(errno));
+                        return false;
+                }
         }
 
         /* Copy the initrd if it exists */
@@ -567,6 +570,11 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         if (asprintf(&initrd_target, "%s/%s", base_path, initrd_base) < 0) {
                 DECLARE_OOM();
                 return false;
+        }
+
+        /* Don't rewrite the same initrd to disk */
+        if (cbm_files_match(kernel->initrd_file, initrd_target)) {
+                return true;
         }
 
         if (!copy_file_atomic(kernel->initrd_file, initrd_target, 00644)) {
