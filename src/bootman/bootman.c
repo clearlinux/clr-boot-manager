@@ -480,18 +480,6 @@ bool boot_manager_needs_update(BootManager *self)
         return self->bootloader->needs_update(self);
 }
 
-bool boot_manager_is_kernel_installed(BootManager *self, const Kernel *kernel)
-{
-        assert(self != NULL);
-
-        /* Ensure the blob is in place */
-        if (!boot_manager_is_kernel_installed_internal(self, kernel)) {
-                return false;
-        }
-        /* Last bits, like config files */
-        return self->bootloader->is_kernel_installed(self, kernel);
-}
-
 bool boot_manager_set_uname(BootManager *self, const char *uname)
 {
         assert(self != NULL);

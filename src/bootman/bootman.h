@@ -300,8 +300,6 @@ bool boot_manager_needs_install(BootManager *manager);
 
 bool boot_manager_needs_update(BootManager *manager);
 
-bool boot_manager_is_kernel_installed(BootManager *manager, const Kernel *kernel);
-
 /**
  * Get the SystemKernel, if any, for this BootManager.
  *

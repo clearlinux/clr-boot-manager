@@ -698,14 +698,6 @@ bool sd_class_remove(const BootManager *manager)
         return true;
 }
 
-bool sd_class_is_kernel_installed(const BootManager *manager, const Kernel *kernel)
-{
-        autofree(char) *conf_path = NULL;
-
-        conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
-        return nc_file_exists(conf_path);
-}
-
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

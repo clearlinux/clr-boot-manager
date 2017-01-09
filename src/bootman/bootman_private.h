@@ -38,11 +38,6 @@ struct BootManager {
 };
 
 /**
- * Internal check to see if the kernel blob is installed
- */
-bool boot_manager_is_kernel_installed_internal(const BootManager *manager, const Kernel *kernel);
-
-/**
  * Internal function to install the kernel blob itself
  */
 bool boot_manager_install_kernel_internal(const BootManager *manager, const Kernel *kernel);
