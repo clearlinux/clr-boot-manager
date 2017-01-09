@@ -492,8 +492,7 @@ bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
 bool create_timeout_conf(void)
 {
         autofree(char) *timeout_conf = NULL;
-        if (asprintf(&timeout_conf, "%s/%s/%s", PLAYGROUND_ROOT, SYSCONFDIR, "boot_timeout.conf") <
-            0) {
+        if (asprintf(&timeout_conf, "%s/%s", PLAYGROUND_ROOT, "etc/kernel/timeout") < 0) {
                 return false;
         }
         if (!file_set_text((const char *)timeout_conf, (char *)"5")) {
