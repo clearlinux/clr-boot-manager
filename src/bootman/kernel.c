@@ -206,7 +206,19 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 buf = NULL;
         }
 
+        /* Use kernel's command line and /etc/kernel/cmdline if present */
+        if (self->cmdline) {
+                char *cm = NULL;
+                if (asprintf(&cm, "%s %s", kern->cmdline, self->cmdline) < 0) {
+                        DECLARE_OOM();
+                        abort();
+                }
+                free(kern->cmdline);
+                kern->cmdline = cm;
+        }
+
         kern->cmdline_file = strdup(cmdline);
+
         if (buf) {
                 free(buf);
         }
