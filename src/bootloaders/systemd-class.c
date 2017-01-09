@@ -343,7 +343,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         if (timeout > 0) {
                 /* Set the timeout as configured by the user */
                 if (asprintf(&item_name,
-                             "timeout %d\ndefault %s-%s-%s-%d\n\n",
+                             "timeout %d\ndefault %s-%s-%s-%d\n",
                              timeout,
                              prefix,
                              kernel->ktype,
