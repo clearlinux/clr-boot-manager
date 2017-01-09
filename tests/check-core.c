@@ -515,9 +515,9 @@ START_TEST(bootman_timeout_test)
         fail_if(!boot_manager_set_timeout_value(m, 7), "Failed to set timeout value.");
         fail_if(boot_manager_get_timeout_value(m) != 7, "Failed to get correct timeout value.");
         fail_if(!boot_manager_set_timeout_value(m, 0), "Failed to disable timeout value.");
-        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" SYSCONFDIR
-                                             "/boot_timeout.conf"),
-                "boot_timeout.conf present.");
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" KERNEL_CONF_DIRECTORY
+                                             "/timeout"),
+                "kernel/timeout present.");
         fail_if(boot_manager_get_timeout_value(m) != -1, "Failed to get default timeout value.");
 }
 END_TEST

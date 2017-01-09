@@ -17,26 +17,33 @@
 
 #include "bootman.h"
 #include "bootman_private.h"
+#include "config.h"
 #include "log.h"
 #include "nica/files.h"
-
-/**
- * In future we'll replace with an INI file for all of CBM config
- */
-#define BOOT_TIMEOUT_CONFIG SYSCONFDIR "/boot_timeout.conf"
 
 bool boot_manager_set_timeout_value(BootManager *self, int timeout)
 {
         autofree(FILE) *fp = NULL;
         autofree(char) *path = NULL;
+        autofree(char) *dir = NULL;
 
         if (!self || !self->sysconfig) {
                 return false;
         }
 
-        if (asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG) < 0) {
+        if (asprintf(&dir, "%s%s", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY) < 0) {
                 DECLARE_OOM();
-                return -1;
+                return false;
+        }
+
+        if (!nc_mkdir_p(dir, 00755)) {
+                LOG_ERROR("Failed to create directory %s: %s", dir, strerror(errno));
+                return false;
+        }
+
+        if (asprintf(&path, "%s%s/timeout", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY) < 0) {
+                DECLARE_OOM();
+                return false;
         }
 
         if (timeout <= 0) {
@@ -74,7 +81,7 @@ int boot_manager_get_timeout_value(BootManager *self)
                 return false;
         }
 
-        if (asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG) < 0) {
+        if (asprintf(&path, "%s%s/timeout", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY) < 0) {
                 DECLARE_OOM();
                 return -1;
         }

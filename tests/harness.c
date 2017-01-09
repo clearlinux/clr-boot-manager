@@ -359,6 +359,11 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        /* Construct kernel config directory */
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_CONF_DIRECTORY, 00755)) {
+                goto fail;
+        }
+
         if (!boot_manager_set_prefix(m, PLAYGROUND_ROOT)) {
                 goto fail;
         }
@@ -467,8 +472,7 @@ bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
 bool create_timeout_conf(void)
 {
         autofree(char) *timeout_conf = NULL;
-        if (asprintf(&timeout_conf, "%s/%s/%s", PLAYGROUND_ROOT, SYSCONFDIR, "boot_timeout.conf") <
-            0) {
+        if (asprintf(&timeout_conf, "%s/%s/timeout", PLAYGROUND_ROOT, KERNEL_CONF_DIRECTORY) < 0) {
                 return false;
         }
         if (!file_set_text((const char *)timeout_conf, (char *)"5")) {
