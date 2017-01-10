@@ -349,6 +349,16 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 return false;
         }
 
+        /* Construct /etc directory for os-release */
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/" SYSCONFDIR, 00755)) {
+                goto fail;
+        }
+
+        if (!file_set_text(PLAYGROUND_ROOT "/" SYSCONFDIR "/os-release",
+                           "PRETTY_NAME=\"clr-boot-manager testing\"\n")) {
+                goto fail;
+        }
+
         if (!boot_manager_set_prefix(m, PLAYGROUND_ROOT)) {
                 goto fail;
         }
@@ -368,11 +378,6 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         }
 
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" BOOT_DIRECTORY, 00755)) {
-                goto fail;
-        }
-
-        /* Construct /etc directory for boot_timeout.conf */
-        if (!nc_mkdir_p(PLAYGROUND_ROOT "/" SYSCONFDIR, 00755)) {
                 goto fail;
         }
 
