@@ -15,10 +15,12 @@
 
 #include "nica/util.h"
 
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #define DECLARE_OOM() (fputs("Out of memory", stderr))
 
@@ -49,6 +51,31 @@
  * For quicker development
  */
 #define __cbm_unused__ __attribute__((unused))
+
+/**
+ * Strip the right side of a string of it's whitespace
+ * This must be allocated memory
+ */
+static inline char *rstrip(char *a, size_t len, ssize_t *newlen)
+{
+        char *e = a + len - 1;
+        if (len < 1) {
+                return a;
+        }
+
+        for (;;) {
+                if (!isspace(*e) || e <= a) {
+                        break;
+                }
+                --e;
+        }
+        if (newlen) {
+                *newlen = e - a + 1;
+        }
+
+        *(e + 1) = '\0';
+        return a;
+}
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

@@ -18,6 +18,8 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/ini/just_assign.ini \
 	     ${top_srcdir}/tests/data/ini/broken_section_start.ini \
 	     ${top_srcdir}/tests/data/ini/broken_section_end.ini \
+	     ${top_srcdir}/tests/data/clear.os-release \
+	     ${top_srcdir}/tests/data/solus.os-release \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/compat/kernel_updater.sh \
@@ -114,6 +116,8 @@ libcbm_la_SOURCES =			\
 	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
+	src/lib/os-release.h            \
+	src/lib/os-release.c            \
 	src/lib/log.h			\
 	src/lib/log.c			\
 	src/lib/util.h
@@ -165,6 +169,7 @@ distclean-local:
 TESTS = 		\
 	check_core 	\
 	check_files 	\
+	check_os_release \
 	check_updates   \
 	check_array     \
 	check_list      \
@@ -198,6 +203,20 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
+	libcbm.la	\
+	libnica.la	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_os_release_SOURCES = \
+	tests/check-os-release.c
+
+check_os_release_CFLAGS =		\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_os_release_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
 	$(BLKID_LIBS)	\
