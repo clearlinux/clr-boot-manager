@@ -20,6 +20,14 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/ini/broken_section_end.ini \
 	     ${top_srcdir}/tests/data/clear.os-release \
 	     ${top_srcdir}/tests/data/solus.os-release \
+	     ${top_srcdir}/tests/data/cmdline/comments \
+	     ${top_srcdir}/tests/data/cmdline/mangledmess \
+	     ${top_srcdir}/tests/data/cmdline/multi \
+	     ${top_srcdir}/tests/data/cmdline/oneline \
+	     ${top_srcdir}/tests/data/etc/kernel/cmdline \
+	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/10_first.conf \
+	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/20_second.conf \
+	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/30_third.conf \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/compat/kernel_updater.sh \
@@ -116,6 +124,8 @@ libcbm_la_SOURCES =			\
 	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
+	src/lib/cmdline.h               \
+	src/lib/cmdline.c               \
 	src/lib/os-release.h            \
 	src/lib/os-release.c            \
 	src/lib/log.h			\
@@ -168,6 +178,7 @@ distclean-local:
 
 TESTS = 		\
 	check_core 	\
+	check_cmdline   \
 	check_files 	\
 	check_os_release \
 	check_updates   \
@@ -189,6 +200,20 @@ check_core_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_core_LDADD =	\
+	libcbm.la	\
+	libnica.la	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_cmdline_SOURCES =		\
+	tests/check-cmdline.c
+
+check_cmdline_CFLAGS =		\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_cmdline_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
 	$(BLKID_LIBS)	\

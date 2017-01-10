@@ -19,6 +19,7 @@ GRTAGS
 
 # test suite junk
 check_core
+check_cmdline
 check_files
 check_os_release
 check_updates
