@@ -20,6 +20,7 @@
 #include "bootloader.h"
 #include "bootman.h"
 #include "bootman_private.h"
+#include "cmdline.h"
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
@@ -77,6 +78,7 @@ void boot_manager_free(BootManager *self)
         cbm_free_sysconfig(self->sysconfig);
         free(self->kernel_dir);
         free(self->abs_bootdir);
+        free(self->cmdline);
         free(self);
 }
 
@@ -130,6 +132,13 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
                 DECLARE_OOM();
                 abort();
         }
+
+        /* Load cmdline */
+        if (self->cmdline) {
+                free(self->cmdline);
+                self->cmdline = NULL;
+        }
+        self->cmdline = cbm_parse_cmdline_files(config->prefix);
 
         /* Find legacy */
         if (config->legacy) {

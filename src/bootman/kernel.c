@@ -19,6 +19,7 @@
 
 #include "bootman.h"
 #include "bootman_private.h"
+#include "cmdline.h"
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
@@ -55,11 +56,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *module_dir = NULL;
         autofree(char) *kconfig_file = NULL;
         autofree(char) *default_file = NULL;
-        /* Consider making this a namespace option */
-        autofree(FILE) *f = NULL;
-        size_t sn;
         ssize_t r = 0;
-        char *buf = NULL;
         char *bcp = NULL;
 
         if (!self || !path) {
@@ -145,37 +142,26 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 
         kern->release = (int16_t)release;
 
-        if (!(f = fopen(cmdline, "r"))) {
-                LOG_ERROR("Unable to open %s: %s", cmdline, strerror(errno));
+        /* cmdline */
+        kern->cmdline = cbm_parse_cmdline_file(cmdline);
+        if (!kern->cmdline) {
+                LOG_ERROR("Unable to load cmdline %s: %s", cmdline, strerror(errno));
                 free_kernel(kern);
                 return NULL;
         }
 
-        /* Keep cmdline in a single "line" with no spaces */
-        while ((r = getline(&buf, &sn, f)) > 0) {
-                char *tmp = NULL;
-                /* Strip newlines */
-                if (r > 1 && buf[r - 1] == '\n') {
-                        buf[r - 1] = '\0';
+        /* Merge global cmdline if we have one */
+        if (self->cmdline) {
+                char *cm = NULL;
+                if (asprintf(&cm, "%s %s", kern->cmdline, self->cmdline) < 0) {
+                        DECLARE_OOM();
+                        abort();
                 }
-                if (kern->cmdline) {
-                        if (asprintf(&tmp, "%s %s", kern->cmdline, buf) < 0) {
-                                DECLARE_OOM();
-                                abort();
-                        }
-                        free(kern->cmdline);
-                        kern->cmdline = tmp;
-                        free(buf);
-                } else {
-                        kern->cmdline = buf;
-                }
-                buf = NULL;
+                free(kern->cmdline);
+                kern->cmdline = cm;
         }
 
         kern->cmdline_file = strdup(cmdline);
-        if (buf) {
-                free(buf);
-        }
 
         /** Determine if the kernel boots */
         kern->kboot_file = boot_manager_get_kboot_file(self, kern);

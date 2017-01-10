@@ -34,6 +34,7 @@ struct BootManager {
         bool can_mount;               /**<Are we allowed to mount? */
         bool image_mode;              /**<Are we in image mode? */
         SystemConfig *sysconfig;      /**<System configuration */
+        char *cmdline;                /**<Additional cmdline to append */
 };
 
 /**
