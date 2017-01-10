@@ -154,11 +154,6 @@ const char *boot_manager_get_boot_device(BootManager *manager);
 const char *boot_manager_get_kernel_dir(BootManager *manager);
 
 /**
- * Set the vendor prefix for all relevant files
- */
-void boot_manager_set_vendor_prefix(BootManager *manager, char *vendor_prefix);
-
-/**
  * Return the vendor prefix, if any
  *
  * @note This string is owned by BootManager, do not modify or free

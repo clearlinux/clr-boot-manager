@@ -115,6 +115,16 @@ AC_SUBST(bootdir)
 AC_DEFINE_UNQUOTED(BOOT_DIRECTORY, "$bootdir",
                    [The normalised path to the boot/ESP mount])
 
+# The vendor prefix used for files created by clr-boot-manager within bootdir
+AC_ARG_WITH([vendor-prefix], AS_HELP_STRING([--with-vendor-prefix],
+        [the config file vendor prefix]), [vendorprefix=${withval}],
+        [vendorprefix="generic-linux-os"])
+
+AC_SUBST(vendorprefix)
+AC_DEFINE_UNQUOTED(VENDOR_PREFIX, "$vendorprefix",
+                   [The vendor prefix])
+
+
 # Options
 AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
 	[path to systemd system service directory]), [path_systemdsystemunit=${withval}],
@@ -147,6 +157,7 @@ AC_MSG_RESULT([
         kernel-modules-dir:     ${kernelmodulesdir}
         kernel-namespace:       ${kernelnamespace}
         boot-dir:               ${bootdir}
+        vendor-prefix:          ${vendorprefix}
 
         compatibility scripts:  ${use_compat_scripts}
 ])

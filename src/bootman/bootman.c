@@ -53,9 +53,6 @@ BootManager *boot_manager_new()
                 }
         }
 
-        /* Potentially consider a configure or os-release check */
-        boot_manager_set_vendor_prefix(r, "Clear-linux");
-        boot_manager_set_os_name(r, "Clear Linux Software for Intel Architecture");
         /* CLI should override these */
         boot_manager_set_can_mount(r, false);
         boot_manager_set_image_mode(r, false);
@@ -73,10 +70,12 @@ void boot_manager_free(BootManager *self)
                 self->bootloader->destroy(self);
         }
 
+        if (self->os_release) {
+                cbm_os_release_free(self->os_release);
+        }
+
         cbm_free_sysconfig(self->sysconfig);
         free(self->kernel_dir);
-        free(self->vendor_prefix);
-        free(self->os_name);
         free(self->abs_bootdir);
         free(self);
 }
@@ -119,6 +118,17 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         if (self->bootloader) {
                 self->bootloader->destroy(self);
                 self->bootloader = NULL;
+        }
+
+        if (self->os_release) {
+                cbm_os_release_free(self->os_release);
+                self->os_release = NULL;
+        }
+
+        self->os_release = cbm_os_release_new_for_root(prefix);
+        if (!self->os_release) {
+                DECLARE_OOM();
+                abort();
         }
 
         /* Find legacy */
@@ -166,46 +176,17 @@ const char *boot_manager_get_kernel_dir(BootManager *self)
         return (const char *)self->kernel_dir;
 }
 
-void boot_manager_set_vendor_prefix(BootManager *self, char *vendor_prefix)
+const char *boot_manager_get_vendor_prefix(__cbm_unused__ BootManager *self)
 {
-        assert(self != NULL);
-
-        if (!vendor_prefix) {
-                return;
-        }
-        if (self->vendor_prefix) {
-                free(self->vendor_prefix);
-                self->vendor_prefix = NULL;
-        }
-        self->vendor_prefix = strdup(vendor_prefix);
-}
-
-const char *boot_manager_get_vendor_prefix(BootManager *self)
-{
-        assert(self != NULL);
-
-        return (const char *)self->vendor_prefix;
-}
-
-void boot_manager_set_os_name(BootManager *self, char *os_name)
-{
-        assert(self != NULL);
-
-        if (!os_name) {
-                return;
-        }
-        if (self->os_name) {
-                free(self->os_name);
-                self->os_name = NULL;
-        }
-        self->os_name = strdup(os_name);
+        return VENDOR_PREFIX;
 }
 
 const char *boot_manager_get_os_name(BootManager *self)
 {
         assert(self != NULL);
+        assert(self->os_release != NULL);
 
-        return (const char *)self->os_name;
+        return cbm_os_release_get_value(self->os_release, OS_RELEASE_PRETTY_NAME);
 }
 
 const char *boot_manager_get_root_uuid(BootManager *self)

@@ -22,12 +22,12 @@
 
 #include "bootloader.h"
 #include "bootman.h"
+#include "os-release.h"
 
 struct BootManager {
         char *kernel_dir;             /**<Kernel directory */
         const BootLoader *bootloader; /**<Selected bootloader */
-        char *vendor_prefix;          /**Vendor prefix, i.e. com.blah */
-        char *os_name;                /**<Operating system name */
+        CbmOsRelease *os_release;     /**<Parsed os-release file */
         char *abs_bootdir;            /**<Real boot dir */
         SystemKernel sys_kernel;      /**<Native kernel info, if any */
         bool have_sys_kernel;         /**<Whether sys_kernel is set */
