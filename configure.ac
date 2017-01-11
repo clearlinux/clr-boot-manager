@@ -142,7 +142,11 @@ SYSTEMD_SYSTEMUNITDIR="${path_systemdsystemunit}"
 AC_SUBST(SYSTEMD_SYSTEMUNITDIR)
 AM_CONDITIONAL(SYSTEMD, test -n "${path_systemdsystemunit}")
 
-AC_CONFIG_FILES([Makefile])
+# Turn on the nica submodule support
+AM_CONDITIONAL([NICA_SUBMODULE], true)
+
+AC_CONFIG_FILES([Makefile
+                 src/libnica/Makefile])
 
 AC_OUTPUT
 
