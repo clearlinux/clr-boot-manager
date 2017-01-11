@@ -52,16 +52,19 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -std=c99 \
         -DSYSCONFDIR=\"$(sysconfdir)\"
 
-AM_CPPFLAGS = 					\
-	-I $(top_srcdir)/src			\
-	-I $(top_srcdir)/src/bootman		\
-	-I $(top_srcdir)/src/cli		\
-	-I $(top_srcdir)/src/bootloaders	\
-	-I $(top_srcdir)/src/lib		\
-	-DTOP_DIR=\"$(abs_top_srcdir)\"		\
+AM_CPPFLAGS = 					 \
+	-I $(top_srcdir)/src			 \
+	-I $(top_srcdir)/src/bootman		 \
+	-I $(top_srcdir)/src/cli		 \
+	-I $(top_srcdir)/src/bootloaders	 \
+	-I $(top_srcdir)/src/lib		 \
+	-I $(top_srcdir)/src/libnica/src/include \
+	-DTOP_DIR=\"$(abs_top_srcdir)\"		 \
 	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
 
 AUTOMAKE_OPTIONS = color-tests parallel-tests
+
+SUBDIRS = src/libnica
 
 if COVERAGE
 coverage:
@@ -109,7 +112,7 @@ libcbm_la_CFLAGS =		\
 	$(AM_CFLAGS)
 
 libcbm_LIBADD =			\
-	libnica.la
+	src/libnica/libnica.la
 
 clr_boot_manager_SOURCES =		\
 	src/cli/cli.h 			\
@@ -128,7 +131,7 @@ clr_boot_manager_CFLAGS =	\
 
 clr_boot_manager_LDADD =	\
 	libcbm.la		\
-	libnica.la		\
+	src/libnica/libnica.la		\
 	$(BLKID_LIBS)
 
 install-exec-hook:
@@ -168,7 +171,7 @@ check_core_CFLAGS =		\
 
 check_core_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -182,7 +185,7 @@ check_cmdline_CFLAGS =		\
 
 check_cmdline_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -196,7 +199,7 @@ check_files_CFLAGS =		\
 
 check_files_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -210,7 +213,7 @@ check_os_release_CFLAGS =		\
 
 check_os_release_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -226,7 +229,7 @@ check_updates_CFLAGS =		\
 
 check_updates_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
