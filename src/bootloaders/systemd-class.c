@@ -233,6 +233,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         autofree(char) *kname_copy = NULL;
         const char *os_name = NULL;
         char *kname_base = NULL;
+        autofree(char) *old_conf = NULL;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
@@ -267,6 +268,13 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
             0) {
                 DECLARE_OOM();
                 abort();
+        }
+
+        /* If our new config matches the old config, just return. */
+        if (file_get_text(conf_path, &old_conf)) {
+                if (streq(old_conf, conf_entry)) {
+                        return true;
+                }
         }
 
         if (!file_set_text(conf_path, conf_entry)) {
@@ -322,20 +330,19 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         autofree(char) *item_name = NULL;
         int timeout = 0;
         const char *prefix = NULL;
+        autofree(char) *old_conf = NULL;
 
         prefix = boot_manager_get_vendor_prefix((BootManager *)manager);
 
         /* No default possible, set high time out */
         if (!kernel) {
-                if (file_set_text(sd_class_config.loader_config, "timeout 10\n")) {
-                        cbm_sync();
-                        return true;
+                item_name = strdup("timeout 10\n");
+                if (!item_name) {
+                        DECLARE_OOM();
+                        return false;
                 }
-
-                LOG_FATAL("sd_class_set_default_kernel: Failed to write %s: %s",
-                          sd_class_config.loader_config,
-                          strerror(errno));
-                return false;
+                /* Check if the config changed and write the new one */
+                goto write_config;
         }
 
         timeout = boot_manager_get_timeout_value((BootManager *)manager);
@@ -363,6 +370,14 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                         return false;
                 }
         }
+
+write_config:
+        if (file_get_text(sd_class_config.loader_config, &old_conf)) {
+                if (streq(old_conf, item_name)) {
+                        return true;
+                }
+        }
+
         if (!file_set_text(sd_class_config.loader_config, item_name)) {
                 LOG_FATAL("sd_class_set_default_kernel: Failed to write %s: %s",
                           sd_class_config.loader_config,
