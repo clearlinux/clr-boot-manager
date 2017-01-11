@@ -1,7 +1,7 @@
 /*
  * This file is part of clr-boot-manager.
  *
- * Copyright © 2016 Intel Corporation
+ * Copyright © 2016-2017 Intel Corporation
  *
  * clr-boot-manager is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -75,7 +75,7 @@ static bool print_version(__cbm_unused__ int argc, __cbm_unused__ char **argv)
                 PACKAGE_NAME " - version " PACKAGE_VERSION
                              "\n\
 \n\
-Copyright \u00A9 2016 Intel Corporation\n\n\
+Copyright \u00A9 2016-2017 Intel Corporation\n\n\
 " PACKAGE_NAME " is free software; you can redistribute it and/or modify\n\
 it under the terms of the GNU General Public License as published by\n\
 the Free Software Foundation; either version 2 of the License, or\n\
