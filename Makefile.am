@@ -11,13 +11,6 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/match1 \
 	     ${top_srcdir}/tests/data/nomatch1 \
 	     ${top_srcdir}/tests/data/nomatch2 \
-	     ${top_srcdir}/tests/data/ini/wellformed.ini \
-	     ${top_srcdir}/tests/data/ini/valid_padding.ini \
-	     ${top_srcdir}/tests/data/ini/sectionless.ini \
-	     ${top_srcdir}/tests/data/ini/empty_key.ini \
-	     ${top_srcdir}/tests/data/ini/just_assign.ini \
-	     ${top_srcdir}/tests/data/ini/broken_section_start.ini \
-	     ${top_srcdir}/tests/data/ini/broken_section_end.ini \
 	     ${top_srcdir}/tests/data/clear.os-release \
 	     ${top_srcdir}/tests/data/solus.os-release \
 	     ${top_srcdir}/tests/data/cmdline/comments \
@@ -59,16 +52,19 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -std=c99 \
         -DSYSCONFDIR=\"$(sysconfdir)\"
 
-AM_CPPFLAGS = 					\
-	-I $(top_srcdir)/src			\
-	-I $(top_srcdir)/src/bootman		\
-	-I $(top_srcdir)/src/cli		\
-	-I $(top_srcdir)/src/bootloaders	\
-	-I $(top_srcdir)/src/lib		\
-	-DTOP_DIR=\"$(abs_top_srcdir)\"		\
+AM_CPPFLAGS = 					 \
+	-I $(top_srcdir)/src			 \
+	-I $(top_srcdir)/src/bootman		 \
+	-I $(top_srcdir)/src/cli		 \
+	-I $(top_srcdir)/src/bootloaders	 \
+	-I $(top_srcdir)/src/lib		 \
+	-I $(top_srcdir)/src/libnica/src/include \
+	-DTOP_DIR=\"$(abs_top_srcdir)\"		 \
 	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
 
 AUTOMAKE_OPTIONS = color-tests parallel-tests
+
+SUBDIRS = src/libnica
 
 if COVERAGE
 coverage:
@@ -81,29 +77,7 @@ AM_CFLAGS += --coverage
 endif
 
 noinst_LTLIBRARIES = \
-	libnica.la       \
 	libcbm.la
-
-libnica_la_SOURCES =     \
-	src/nica/array.c     \
-	src/nica/array.h     \
-	src/nica/files.c     \
-	src/nica/files.h     \
-	src/nica/hashmap.c   \
-	src/nica/hashmap.h   \
-	src/nica/inifile.c   \
-	src/nica/inifile.h   \
-	src/nica/list.c      \
-	src/nica/list.h      \
-	src/nica/macros.h    \
-	src/nica/util.c      \
-	src/nica/util.h
-
-libnica_la_CFLAGS =      \
-	$(AM_CFLAGS)         \
-	-DLIBNICA_INTERNAL   \
-	-fvisibility=hidden
-
 
 bin_PROGRAMS = clr-boot-manager
 
@@ -138,7 +112,7 @@ libcbm_la_CFLAGS =		\
 	$(AM_CFLAGS)
 
 libcbm_LIBADD =			\
-	libnica.la
+	src/libnica/libnica.la
 
 clr_boot_manager_SOURCES =		\
 	src/cli/cli.h 			\
@@ -157,7 +131,7 @@ clr_boot_manager_CFLAGS =	\
 
 clr_boot_manager_LDADD =	\
 	libcbm.la		\
-	libnica.la		\
+	src/libnica/libnica.la		\
 	$(BLKID_LIBS)
 
 install-exec-hook:
@@ -181,11 +155,7 @@ TESTS = 		\
 	check_cmdline   \
 	check_files 	\
 	check_os_release \
-	check_updates   \
-	check_array     \
-	check_list      \
-	check_hashmap   \
-	check_inifile
+	check_updates
 
 check_PROGRAMS = $(TESTS)
 
@@ -201,7 +171,7 @@ check_core_CFLAGS =		\
 
 check_core_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -215,7 +185,7 @@ check_cmdline_CFLAGS =		\
 
 check_cmdline_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -229,7 +199,7 @@ check_files_CFLAGS =		\
 
 check_files_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -243,7 +213,7 @@ check_os_release_CFLAGS =		\
 
 check_os_release_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
@@ -259,53 +229,8 @@ check_updates_CFLAGS =		\
 
 check_updates_LDADD =	\
 	libcbm.la	\
-	libnica.la	\
+	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
-
-# Nica tests
-# Test array
-check_array_SOURCES = \
-	tests/check-array.c
-
-check_array_CFLAGS = \
-	$(CHECK_CFLAGS) \
-	$(AM_CFLAGS)
-
-check_array_LDADD = \
-	$(CHECK_LIBS)
-
-# Test hashmap
-check_hashmap_SOURCES = \
-	tests/check-hashmap.c
-
-check_hashmap_CFLAGS = \
-	$(CHECK_CFLAGS) \
-	$(AM_CFLAGS)
-
-check_hashmap_LDADD = \
-	$(CHECK_LIBS)
-
-# Test inifile
-check_inifile_SOURCES = \
-	tests/check-inifile.c
-
-check_inifile_CFLAGS = \
-	$(CHECK_CFLAGS) \
-	$(AM_CFLAGS)
-
-check_inifile_LDADD = \
-	$(CHECK_LIBS)
-
-# Test list
-check_list_SOURCES = \
-	tests/check-list.c
-
-check_list_CFLAGS = \
-	$(CHECK_CFLAGS) \
-	$(AM_CFLAGS)
-
-check_list_LDADD = \
 	$(CHECK_LIBS)
 
 @VALGRIND_CHECK_RULES@
