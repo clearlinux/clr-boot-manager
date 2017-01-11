@@ -111,6 +111,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         const char *root_uuid = NULL;
         char *config_text = NULL;
         char *_config_text = NULL;
+        autofree(char) *old_conf = NULL;
 
         root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
@@ -195,6 +196,13 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 _config_text = NULL;
         }
 
+        /* If the file is the same, don't write it again or sync */
+        if (file_get_text(config_path, &old_conf)) {
+                if (streq(old_conf, config_text)) {
+                        goto cleanup;
+                }
+        }
+
         if (!file_set_text(config_path, config_text)) {
                 LOG_FATAL("syslinux_set_default_kernel: Failed to write %s: %s",
                           config_path,
@@ -202,9 +210,11 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 return false;
         }
 
+        cbm_sync();
+
+cleanup:
         free(config_text);
         config_text = NULL;
-        cbm_sync();
 
         return true;
 }
