@@ -111,7 +111,7 @@ libcbm_la_CFLAGS =		\
 	$(BLKID_CFLAGS)		\
 	$(AM_CFLAGS)
 
-libcbm_LIBADD =			\
+libcbm_la_LIBADD =			\
 	src/libnica/libnica.la
 
 clr_boot_manager_SOURCES =		\
