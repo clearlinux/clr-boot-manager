@@ -1,4 +1,5 @@
 sudo: required
+dist: trusty
 
 branches:
   only:
@@ -11,7 +12,7 @@ os:
     - linux
 
 before_script:
-    ./autogen.sh
+    ./autogen.sh CC="gcc-5"
 
 language: c
 
@@ -23,22 +24,21 @@ addons:
             - ubuntu-toolchain-r-test
         packages:
             - check
-            - libblkid-dev
-            - valgrind
-            - lcov
             - clang-3.8
             - clang-format-3.8
+            - gcc-5
+            - libblkid-dev
+            - lcov
             - llvm-3.8
+            - valgrind
+
 
 before_install:
   - gem install coveralls-lcov
-  - wget -nc --no-check-certificate http://downloads.sourceforge.net/ltp/lcov-1.10.tar.gz
-  - tar xzf lcov-1.10.tar.gz
-  - cd lcov-1.10 && make && sudo make install
-  - cd ..
 
 script:
     - lcov --version | grep "1.10"
+    - export CC="gcc-5"
     - ./configure --enable-coverage && make && make check && make distcheck && make check-valgrind
     - clang-format-3.8 -i $(find . -name '*.[ch]') && git diff --exit-code
 
