@@ -344,27 +344,23 @@ end:
 
 bool file_get_text(const char *path, char **out_buf)
 {
-        FILE *fp = NULL;
-        char buffer[CHAR_MAX] = { 0 };
-        bool ret = false;
-        __cbm_unused__ size_t r;
+        autofree(CbmMappedFile) *mapped_file = CBM_MAPPED_FILE_INIT;
 
         if (!out_buf) {
                 return false;
         }
 
-        fp = fopen(path, "r");
-        if (!fp) {
+        *out_buf = NULL;
+
+        if (!cbm_mapped_file_open(path, mapped_file)) {
                 return false;
         }
-        r = fread(buffer, sizeof(buffer), 1, fp);
-        if (!ferror(fp)) {
-                ret = true;
-                *out_buf = strdup(buffer);
-        }
-        fclose(fp);
 
-        return ret;
+        *out_buf = strdup(mapped_file->buffer);
+        if (!*out_buf) {
+                return false;
+        }
+        return true;
 }
 
 bool copy_file(const char *src, const char *target, mode_t mode)
