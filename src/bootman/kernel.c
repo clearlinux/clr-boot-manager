@@ -56,6 +56,8 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *module_dir = NULL;
         autofree(char) *kconfig_file = NULL;
         autofree(char) *default_file = NULL;
+        autofree(char) *initrd_file = NULL;
+        autofree(char) *user_initrd_file = NULL;
         ssize_t r = 0;
         char *bcp = NULL;
 
@@ -82,6 +84,30 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         if (asprintf(&kconfig_file, "%s/config-%s-%d.%s", parent, version, release, type) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        /* i.e. /usr/lib/kernel/initrd-org.clearlinux.lts.4.9.1-1  */
+        if (asprintf(&initrd_file,
+                     "%s/initrd-%s.%s.%s-%d",
+                     parent,
+                     KERNEL_NAMESPACE,
+                     type,
+                     version,
+                     release) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        /* i.e. /etc/kernel/initrd-org.clearlinux.lts.4.9.1-1  */
+        if (asprintf(&user_initrd_file,
+                     "%s/initrd-%s.%s.%s-%d",
+                     KERNEL_CONF_DIRECTORY,
+                     KERNEL_NAMESPACE,
+                     type,
+                     version,
+                     release) < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -138,6 +164,26 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 
         if (nc_file_exists(kconfig_file)) {
                 kern->kconfig_file = strdup(kconfig_file);
+                if (!kern->kconfig_file) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+
+        if (nc_file_exists(initrd_file)) {
+                kern->initrd_file = strdup(initrd_file);
+                if (!kern->initrd_file) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+
+        if (nc_file_exists(user_initrd_file)) {
+                kern->user_initrd_file = strdup(user_initrd_file);
+                if (!kern->user_initrd_file) {
+                        DECLARE_OOM();
+                        abort();
+                }
         }
 
         kern->release = (int16_t)release;
@@ -243,6 +289,8 @@ void free_kernel(Kernel *t)
         free(t->kconfig_file);
         free(t->kboot_file);
         free(t->ktype);
+        free(t->initrd_file);
+        free(t->user_initrd_file);
         free(t);
 }
 
@@ -470,6 +518,10 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         char *kname_base = NULL;
         autofree(char) *kfile_target = NULL;
         autofree(char) *base_path = NULL;
+        autofree(char) *initrd_copy = NULL;
+        char *initrd_base = NULL;
+        autofree(char) *initrd_target = NULL;
+        const char *initrd_source = NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -494,6 +546,41 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
                 }
         }
 
+        /* Install user initrd if it exists, otherwise system initrd */
+        if (kernel->user_initrd_file) {
+                initrd_copy = strdup(kernel->user_initrd_file);
+                if (!initrd_copy) {
+                        DECLARE_OOM();
+                        return false;
+                }
+                initrd_source = kernel->user_initrd_file;
+        } else if (kernel->initrd_file) {
+                initrd_copy = strdup(kernel->initrd_file);
+                if (!initrd_copy) {
+                        DECLARE_OOM();
+                        return false;
+                }
+                initrd_source = kernel->initrd_file;
+        } else {
+                /* No initrd file for this kernel */
+                return true;
+        }
+
+        initrd_base = basename(initrd_copy);
+        if (asprintf(&initrd_target, "%s/%s", base_path, initrd_base) < 0) {
+                DECLARE_OOM();
+                return false;
+        }
+
+        if (!cbm_files_match(initrd_source, initrd_target)) {
+                if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
+                        LOG_FATAL("Failed to install initrd %s: %s",
+                                  initrd_target,
+                                  strerror(errno));
+                        return false;
+                }
+        }
+
         return true;
 }
 
@@ -506,6 +593,9 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         autofree(char) *kfile_target = NULL;
         char *kname_base = NULL;
         autofree(char) *base_path = NULL;
+        autofree(char) *initrd_copy = NULL;
+        autofree(char) *initrd_target = NULL;
+        char *initrd_base = NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -517,9 +607,24 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         kname_copy = strdup(kernel->path);
         kname_base = basename(kname_copy);
 
+        /* Group potential malloc failures together */
         if (asprintf(&kfile_target, "%s/%s", base_path, kname_base) < 0) {
                 DECLARE_OOM();
                 return false;
+        }
+
+        if (kernel->initrd_file) {
+                initrd_copy = strdup(kernel->initrd_file);
+                if (!initrd_copy) {
+                        DECLARE_OOM();
+                        return false;
+                }
+                initrd_base = basename(initrd_copy);
+
+                if (asprintf(&initrd_target, "%s/%s", base_path, initrd_base) < 0) {
+                        DECLARE_OOM();
+                        return false;
+                }
         }
 
         /* Remove the kernel from the ESP */
@@ -558,6 +663,19 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                 if (unlink(kernel->kboot_file) < 0) {
                         LOG_ERROR("Failed to remove kboot file %s: %s",
                                   kernel->kboot_file,
+                                  strerror(errno));
+                }
+        }
+
+        if (kernel->initrd_file) {
+                if (nc_file_exists(kernel->initrd_file) && unlink(kernel->initrd_file) < 0) {
+                        LOG_ERROR("Failed to remove initrd file %s: %s",
+                                  kernel->initrd_file,
+                                  strerror(errno));
+                }
+                if (nc_file_exists(initrd_target) && unlink(initrd_target) < 0) {
+                        LOG_ERROR("Failed to remove initrd blob %s: %s",
+                                  initrd_target,
                                   strerror(errno));
                 }
         }

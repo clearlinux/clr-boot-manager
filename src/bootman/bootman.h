@@ -44,17 +44,19 @@ typedef struct SystemKernel {
  * Represents a kernel in it's complete configuration
  */
 typedef struct Kernel {
-        char *path;         /**<Path to this kernel */
-        char *bpath;        /**<Basename of this kernel path */
-        char *version;      /**<Version of this kernel */
-        int release;        /**<Release number of this kernel */
-        char *ktype;        /**<Type of this kernel */
-        char *cmdline;      /**<Contents of the cmdline file */
-        char *cmdline_file; /**<Path to the cmdline file */
-        char *kconfig_file; /**<Path to the kconfig file */
-        char *module_dir;   /**<Path to the modules directory */
-        bool boots;         /**<Is this known to boot? */
-        char *kboot_file;   /**<Path to the k_booted_$(uname -r) file */
+        char *path;             /**<Path to this kernel */
+        char *bpath;            /**<Basename of this kernel path */
+        char *version;          /**<Version of this kernel */
+        int release;            /**<Release number of this kernel */
+        char *ktype;            /**<Type of this kernel */
+        char *cmdline;          /**<Contents of the cmdline file */
+        char *cmdline_file;     /**<Path to the cmdline file */
+        char *kconfig_file;     /**<Path to the kconfig file */
+        char *initrd_file;      /**<System initrd file */
+        char *user_initrd_file; /**<User's initrd file */
+        char *module_dir;       /**<Path to the modules directory */
+        bool boots;             /**<Is this known to boot? */
+        char *kboot_file;       /**<Path to the k_booted_$(uname -r) file */
 } Kernel;
 
 typedef NcArray KernelArray;

@@ -209,10 +209,23 @@ bool push_kernel_update(PlaygroundKernel *kernel)
         autofree(char) *conffile = NULL;
         autofree(char) *link_source = NULL;
         autofree(char) *link_target = NULL;
+        autofree(char) *initrd_file = NULL;
 
         /* $root/$kerneldir/$prefix.native.4.2.1-137 */
         if (asprintf(&kfile,
                      "%s/%s/%s.%s.%s-%d",
+                     PLAYGROUND_ROOT,
+                     KERNEL_DIRECTORY,
+                     KERNEL_NAMESPACE,
+                     kernel->ktype,
+                     kernel->version,
+                     kernel->release) < 0) {
+                return false;
+        }
+
+        /* $root/$kerneldir/initrd-$prefix.native.4.2.1-137 */
+        if (asprintf(&initrd_file,
+                     "%s/%s/initrd-%s.%s.%s-%d",
                      PLAYGROUND_ROOT,
                      KERNEL_DIRECTORY,
                      KERNEL_NAMESPACE,
@@ -253,6 +266,10 @@ bool push_kernel_update(PlaygroundKernel *kernel)
         }
         /* Write the "config file" */
         if (!file_set_text((const char *)conffile, (char *)kernel->version)) {
+                return false;
+        }
+        /* Write the initrd file */
+        if (!file_set_text((const char *)initrd_file, (char *)kernel->version)) {
                 return false;
         }
 
@@ -426,6 +443,7 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
 
         autofree(char) *conf_file = NULL;
         autofree(char) *kernel_blob = NULL;
+        autofree(char) *initrd_file = NULL;
         const char *vendor = NULL;
         int file_count = 0;
 
@@ -433,6 +451,15 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
 
         if (asprintf(&kernel_blob,
                      "%s/%s.%s.%s-%d",
+                     BOOT_FULL,
+                     KERNEL_NAMESPACE,
+                     kernel->ktype,
+                     kernel->version,
+                     kernel->release) < 0) {
+                abort();
+        }
+        if (asprintf(&initrd_file,
+                     "%s/initrd-%s.%s.%s-%d",
                      BOOT_FULL,
                      KERNEL_NAMESPACE,
                      kernel->ktype,
@@ -456,12 +483,15 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
         if (nc_file_exists(conf_file)) {
                 ++file_count;
         }
+        if (nc_file_exists(initrd_file)) {
+                ++file_count;
+        }
         return file_count;
 }
 
 bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel)
 {
-        return kernel_installed_files_count(manager, kernel) == 2;
+        return kernel_installed_files_count(manager, kernel) == 3;
 }
 
 bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
