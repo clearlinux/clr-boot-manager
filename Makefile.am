@@ -104,6 +104,8 @@ libcbm_la_SOURCES =			\
 	src/lib/os-release.c            \
 	src/lib/log.h			\
 	src/lib/log.c			\
+	src/lib/writer.h                \
+	src/lib/writer.c                \
 	src/lib/util.h
 
 libcbm_la_CFLAGS =		\

@@ -11,6 +11,7 @@
 
 #define _GNU_SOURCE
 #include <check.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +24,7 @@
 #include "nica/files.h"
 #include "util.h"
 #include "util.h"
+#include "writer.h"
 
 #include "harness.h"
 
@@ -522,6 +524,68 @@ START_TEST(bootman_timeout_test)
 }
 END_TEST
 
+START_TEST(bootman_writer_simple_test)
+{
+        autofree(CbmWriter) *writer = CBM_WRITER_INIT;
+
+        fail_if(!cbm_writer_open(writer), "Failed to create writer");
+
+        cbm_writer_append(writer, "Bob");
+        cbm_writer_append(writer, "-");
+        cbm_writer_append(writer, "Jim");
+
+        fail_if(cbm_writer_error(writer) != 0, "Error should be 0");
+
+        cbm_writer_close(writer);
+        fail_if(!writer->buffer, "Failed to get writer data");
+        fail_if(!streq(writer->buffer, "Bob-Jim"), "Returned data is incorrect");
+}
+END_TEST
+
+START_TEST(bootman_writer_printf_test)
+{
+        autofree(CbmWriter) *writer = CBM_WRITER_INIT;
+
+        fail_if(!cbm_writer_open(writer), "Failed to create writer");
+
+        cbm_writer_append_printf(writer, "%s = %d", "Jim", 12);
+        fail_if(cbm_writer_error(writer) != 0, "Error should be 0");
+
+        cbm_writer_close(writer);
+        fail_if(!writer->buffer, "Failed to get writer data");
+        fail_if(!streq(writer->buffer, "Jim = 12"), "Returned data is incorrect");
+}
+END_TEST
+
+START_TEST(bootman_writer_mut_test)
+{
+        autofree(CbmWriter) *writer = CBM_WRITER_INIT;
+        char *data = NULL;
+
+        fail_if(!cbm_writer_open(writer), "Failed to create writer");
+
+        cbm_writer_append(writer, "One");
+        cbm_writer_append(writer, "Two");
+        cbm_writer_close(writer);
+        data = writer->buffer;
+        fail_if(!data, "Failed to get data");
+
+        /* Should actually result in EBADF */
+        cbm_writer_append(writer, "Three");
+        fail_if(cbm_writer_error(writer) == 0, "Error should be zero");
+        /* The expected behaviour */
+        fail_if(cbm_writer_error(writer) != EBADF, "Invalid error on closed stream");
+
+        cbm_writer_close(writer);
+        fail_if(!writer->buffer, "Failed to get comparison");
+
+        /* Test mutability */
+        fail_if(!streq(data, "OneTwo"), "Invalid return data");
+        fail_if(writer->buffer != data, "Pointers mutated between writes");
+        fail_if(!streq(data, writer->buffer), "Returned data does not match comparison data");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -545,6 +609,12 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_install_bootloader_test);
         tcase_add_test(tc, bootman_remove_bootloader_test);
         tcase_add_test(tc, bootman_timeout_test);
+        suite_add_tcase(s, tc);
+
+        tc = tcase_create("bootman_writer_functions");
+        tcase_add_test(tc, bootman_writer_simple_test);
+        tcase_add_test(tc, bootman_writer_printf_test);
+        tcase_add_test(tc, bootman_writer_mut_test);
         suite_add_tcase(s, tc);
 
         return s;
