@@ -23,6 +23,7 @@
 #include "nica/files.h"
 #include "systemd-class.h"
 #include "util.h"
+#include "writer.h"
 
 /**
  * Private to systemd-class implementation
@@ -228,12 +229,13 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         }
         autofree(char) *conf_path = NULL;
         const char *root_uuid = NULL;
-        autofree(char) *boot_options = NULL;
-        autofree(char) *conf_entry = NULL;
         autofree(char) *kname_copy = NULL;
-        const char *os_name = NULL;
         char *kname_base = NULL;
+        autofree(char) *initrd_copy = NULL;
+        char *initrd_base = NULL;
+        const char *os_name = NULL;
         autofree(char) *old_conf = NULL;
+        autofree(CbmWriter) *writer = CBM_WRITER_INIT;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
@@ -243,41 +245,64 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                 return false;
         }
 
+        if (!cbm_writer_open(writer)) {
+                DECLARE_OOM();
+                abort();
+        }
+
         /* Build the options for the entry */
         root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
                 LOG_FATAL("PartUUID unknown, this should never happen! %s", kernel->path);
                 return false;
-        } else {
-                if (asprintf(&boot_options,
-                             "options root=PARTUUID=%s %s",
-                             root_uuid,
-                             kernel->cmdline) < 0) {
-                        DECLARE_OOM();
-                        abort();
-                }
         }
 
         kname_copy = strdup(kernel->path);
+        if (!kname_copy) {
+                DECLARE_OOM();
+                abort();
+        }
         kname_base = basename(kname_copy);
+
+        /* Get the basename of the initrd blob, if it exists */
+        if (kernel->initrd_file) {
+                initrd_copy = strdup(kernel->initrd_file);
+                if (!initrd_copy) {
+                        DECLARE_OOM();
+                        abort();
+                }
+                initrd_base = basename(initrd_copy);
+        }
 
         os_name = boot_manager_get_os_name((BootManager *)manager);
 
-        /* Kernels are installed to the root of the ESP, namespaced */
-        if (asprintf(&conf_entry, "title %s\nlinux /%s\n%s\n", os_name, kname_base, boot_options) <
-            0) {
+        /* Standard title + linux lines */
+        cbm_writer_append_printf(writer, "title %s\n", os_name);
+        cbm_writer_append_printf(writer, "linux /%s\n", kname_base);
+        /* Optional initrd */
+        if (initrd_base) {
+                cbm_writer_append_printf(writer, "initrd /%s\n", initrd_base);
+        }
+        /* Finish it off with the command line options */
+        cbm_writer_append_printf(writer,
+                                 "options root=PARTUUID=%s %s\n",
+                                 root_uuid,
+                                 kernel->cmdline);
+        cbm_writer_close(writer);
+
+        if (cbm_writer_error(writer) != 0) {
                 DECLARE_OOM();
                 abort();
         }
 
         /* If our new config matches the old config, just return. */
         if (file_get_text(conf_path, &old_conf)) {
-                if (streq(old_conf, conf_entry)) {
+                if (streq(old_conf, writer->buffer)) {
                         return true;
                 }
         }
 
-        if (!file_set_text(conf_path, conf_entry)) {
+        if (!file_set_text(conf_path, writer->buffer)) {
                 LOG_FATAL("Failed to create loader entry for: %s [%s]",
                           kernel->path,
                           strerror(errno));
