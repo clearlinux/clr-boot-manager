@@ -28,6 +28,7 @@
 #include "log.h"
 #include "nica/files.h"
 #include "util.h"
+#include "writer.h"
 
 #define CBM_MBR_SYSLINUX_SIZE 440
 
@@ -109,9 +110,8 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
 {
         autofree(char) *config_path = NULL;
         const char *root_uuid = NULL;
-        char *config_text = NULL;
-        char *_config_text = NULL;
         autofree(char) *old_conf = NULL;
+        autofree(CbmWriter) *writer = CBM_WRITER_INIT;
 
         root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
@@ -124,28 +124,23 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 abort();
         }
 
-        /* no default set timeout or initialize config_text for looping */
+        if (!cbm_writer_open(writer)) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        /* No default kernel for set timeout */
         if (!kernel) {
-                if (asprintf(&config_text, "TIMEOUT 100\n") < 0) {
-                        DECLARE_OOM();
-                        abort();
-                }
-        } else {
-                if (asprintf(&config_text, "\n") < 0) {
-                        DECLARE_OOM();
-                        abort();
-                }
+                cbm_writer_append(writer, "TIMEOUT 100\n");
         }
 
         for (uint16_t i = 0; i < kernel_queue->len; i++) {
                 const Kernel *k = nc_array_get(kernel_queue, i);
-                char *boot_options = NULL;
-                char *kname_base = NULL;
+                autofree(char) *kname_base = NULL;
                 char *kname_copy = NULL;
-                char *default_text = NULL;
+                autofree(char) *initrd_copy = NULL;
+                char *initrd_base = NULL;
 
-                _config_text = config_text;
-                config_text = NULL;
                 kname_copy = strdup(k->path);
                 if (!kname_copy) {
                         DECLARE_OOM();
@@ -153,57 +148,52 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 }
                 kname_base = basename(kname_copy);
 
-                /* Build the options for the entry */
-                if (!root_uuid) {
-                        if (asprintf(&boot_options, "%s", k->cmdline) < 0) {
+                /* Get the basename of the initrd blob, if it exists */
+                if (kernel->initrd_file) {
+                        initrd_copy = strdup(kernel->initrd_file);
+                        if (!initrd_copy) {
                                 DECLARE_OOM();
                                 abort();
                         }
-                } else {
-                        if (asprintf(&boot_options, "root=PARTUUID=%s %s", root_uuid, k->cmdline) <
-                            0) {
-                                DECLARE_OOM();
-                                abort();
-                        }
+                        initrd_base = basename(initrd_copy);
                 }
+
+                /* Mark it default */
                 if (kernel && streq(k->path, kernel->path)) {
-                        if (asprintf(&default_text, "DEFAULT %s\n", kname_base) < 0) {
-                                DECLARE_OOM();
-                                abort();
-                        }
+                        cbm_writer_append_printf(writer, "DEFAULT %s\n", kname_base);
                 }
 
-                if (asprintf(&config_text,
-                             "%s%sLABEL %s\n  KERNEL %s\n  APPEND %s\n",
-                             _config_text,
-                             default_text ? default_text : "",
-                             kname_base,
-                             kname_base,
-                             boot_options) < 0) {
-                        DECLARE_OOM();
-                        abort();
+                cbm_writer_append_printf(writer, "LABEL %s\n", kname_base);
+                cbm_writer_append_printf(writer, "  KERNEL %s\n", kname_base);
+                /* Add the initrd if we found one */
+                if (initrd_base) {
+                        cbm_writer_append_printf(writer, "  INITRD %s\n", initrd_base);
                 }
+                if (root_uuid) {
+                        cbm_writer_append_printf(writer,
+                                                 "  APPEND root=PARTUUID=%s %s\n",
+                                                 root_uuid,
+                                                 k->cmdline);
+                } else {
+                        cbm_writer_append_printf(writer, "  APPEND %s\n", k->cmdline);
+                }
+        }
 
-                free(kname_copy);
-                kname_copy = NULL;
-                free(boot_options);
-                boot_options = NULL;
-                if (default_text) {
-                        free(default_text);
-                }
-                default_text = NULL;
-                free(_config_text);
-                _config_text = NULL;
+        cbm_writer_close(writer);
+
+        if (cbm_writer_error(writer) != 0) {
+                DECLARE_OOM();
+                abort();
         }
 
         /* If the file is the same, don't write it again or sync */
         if (file_get_text(config_path, &old_conf)) {
-                if (streq(old_conf, config_text)) {
-                        goto cleanup;
+                if (streq(old_conf, writer->buffer)) {
+                        return true;
                 }
         }
 
-        if (!file_set_text(config_path, config_text)) {
+        if (!file_set_text(config_path, writer->buffer)) {
                 LOG_FATAL("syslinux_set_default_kernel: Failed to write %s: %s",
                           config_path,
                           strerror(errno));
@@ -211,11 +201,6 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         }
 
         cbm_sync();
-
-cleanup:
-        free(config_text);
-        config_text = NULL;
-
         return true;
 }
 
