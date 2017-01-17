@@ -87,6 +87,11 @@ char *get_part_uuid(const char *path)
         const char *value = NULL;
         char *ret = NULL;
 
+        ret = getenv("PART_UUID");
+        if (ret != NULL) {
+                return strdup(ret);
+        }
+
         if (stat(path, &st) != 0) {
                 LOG_ERROR("Path does not exist: %s", path);
                 return NULL;
