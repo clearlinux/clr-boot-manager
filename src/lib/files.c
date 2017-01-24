@@ -79,60 +79,6 @@ bool cbm_files_match(const char *p1, const char *p2)
         return false;
 }
 
-char *get_part_uuid(const char *path)
-{
-        struct stat st = { 0 };
-        autofree(char) *node = NULL;
-        blkid_probe probe = NULL;
-        const char *value = NULL;
-        char *ret = NULL;
-
-        if (stat(path, &st) != 0) {
-                LOG_ERROR("Path does not exist: %s", path);
-                return NULL;
-        }
-
-        if (major(st.st_dev) == 0) {
-                LOG_ERROR("Invalid block device: %s", path);
-                return NULL;
-        }
-
-        if (asprintf(&node, "/dev/block/%u:%u", major(st.st_dev), minor(st.st_dev)) < 0) {
-                DECLARE_OOM();
-                return NULL;
-        }
-
-        probe = blkid_new_probe_from_filename(node);
-        if (!probe) {
-                LOG_ERROR("Unable to probe %u:%u", major(st.st_dev), minor(st.st_dev));
-                return NULL;
-        }
-
-        blkid_probe_enable_superblocks(probe, 1);
-        blkid_probe_set_superblocks_flags(probe, BLKID_SUBLKS_TYPE);
-        blkid_probe_enable_partitions(probe, 1);
-        blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
-
-        if (blkid_do_safeprobe(probe) != 0) {
-                LOG_ERROR("Error probing filesystem: %s", strerror(errno));
-                goto clean;
-        }
-
-        if (blkid_probe_lookup_value(probe, "PART_ENTRY_UUID", &value, NULL) != 0) {
-                LOG_ERROR("Unable to find UUID for %s: %s", node, strerror(errno));
-                value = NULL;
-                goto clean;
-        }
-
-        LOG_DEBUG("UUID for %s is %s", node, value);
-
-        ret = strdup(value);
-clean:
-        blkid_free_probe(probe);
-        errno = 0;
-        return ret;
-}
-
 char *get_boot_device()
 {
         glob_t glo = { 0 };

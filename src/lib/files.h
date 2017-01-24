@@ -39,14 +39,6 @@ typedef struct CbmMappedFile {
 } CbmMappedFile;
 
 /**
- * Get the PartUUID for a given path
- *
- * @param path Path to get the PartUUID for
- * @return a newly allocated string, or NULL on error
- */
-char *get_part_uuid(const char *path);
-
-/**
  * Return the UEFI device that is used for booting (/boot)
  *
  * @return a newly allocated string, or NULL on error

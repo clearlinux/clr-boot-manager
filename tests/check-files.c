@@ -56,22 +56,6 @@ START_TEST(bootman_match_test)
 }
 END_TEST
 
-START_TEST(bootman_uuid_test)
-{
-        if (geteuid() != 0) {
-                LOG_INFO("Skipping UUID test as root privileges are required");
-                return;
-        }
-        const char *path = TOP_DIR "/tests/data/hashfile";
-        autofree(char) *puuid = NULL;
-
-        puuid = get_part_uuid(path);
-        fail_if(!puuid, "Failed to get filesystem UUID");
-
-        LOG_INFO("PUUID: %s", puuid);
-}
-END_TEST
-
 START_TEST(bootman_find_boot)
 {
         if (!nc_file_exists("/sys/firmware/efi")) {
@@ -105,7 +89,6 @@ static Suite *core_suite(void)
         s = suite_create("bootman_files");
         tc = tcase_create("bootman_files");
         tcase_add_test(tc, bootman_match_test);
-        tcase_add_test(tc, bootman_uuid_test);
         tcase_add_test(tc, bootman_mount_test);
         tcase_add_test(tc, bootman_find_boot);
         suite_add_tcase(s, tc);
