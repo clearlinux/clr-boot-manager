@@ -179,6 +179,11 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 } else {
                         cbm_writer_append_printf(writer, "root=UUID=%s ", root_dev->uuid);
                 }
+                /* Add LUKS information if relevant */
+                if (root_dev->luks_uuid) {
+                        cbm_writer_append_printf(writer, "rd.luks.uuid=%s ", root_dev->luks_uuid);
+                }
+
                 /* Write out the cmdline */
                 cbm_writer_append_printf(writer, "%s\n", k->cmdline);
         }
