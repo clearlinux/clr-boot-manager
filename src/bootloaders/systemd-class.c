@@ -289,6 +289,11 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         } else {
                 cbm_writer_append_printf(writer, "options root=UUID=%s ", root_dev->uuid);
         }
+        /* Add LUKS information if relevant */
+        if (root_dev->luks_uuid) {
+                cbm_writer_append_printf(writer, "rd.luks.uuid=%s ", root_dev->luks_uuid);
+        }
+
         /* Finish it off with the command line options */
         cbm_writer_append_printf(writer, "%s\n", kernel->cmdline);
         cbm_writer_close(writer);
