@@ -228,7 +228,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                 return false;
         }
         autofree(char) *conf_path = NULL;
-        const char *root_uuid = NULL;
+        const CbmDeviceProbe *root_dev = NULL;
         autofree(char) *kname_copy = NULL;
         char *kname_base = NULL;
         autofree(char) *initrd_copy = NULL;
@@ -251,9 +251,9 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         }
 
         /* Build the options for the entry */
-        root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
-        if (!root_uuid) {
-                LOG_FATAL("PartUUID unknown, this should never happen! %s", kernel->path);
+        root_dev = boot_manager_get_root_device((BootManager *)manager);
+        if (!root_dev) {
+                LOG_FATAL("Root device unknown, this should never happen! %s", kernel->path);
                 return false;
         }
 
@@ -283,11 +283,14 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         if (initrd_base) {
                 cbm_writer_append_printf(writer, "initrd /%s\n", initrd_base);
         }
+        /* Add the root= section */
+        if (root_dev->part_uuid) {
+                cbm_writer_append_printf(writer, "options root=PARTUUID=%s ", root_dev->part_uuid);
+        } else {
+                cbm_writer_append_printf(writer, "options root=UUID=%s ", root_dev->uuid);
+        }
         /* Finish it off with the command line options */
-        cbm_writer_append_printf(writer,
-                                 "options root=PARTUUID=%s %s\n",
-                                 root_uuid,
-                                 kernel->cmdline);
+        cbm_writer_append_printf(writer, "%s\n", kernel->cmdline);
         cbm_writer_close(writer);
 
         if (cbm_writer_error(writer) != 0) {

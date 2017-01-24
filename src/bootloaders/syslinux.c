@@ -109,13 +109,13 @@ static bool syslinux_remove_kernel(__cbm_unused__ const BootManager *manager,
 static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel *kernel)
 {
         autofree(char) *config_path = NULL;
-        const char *root_uuid = NULL;
+        const CbmDeviceProbe *root_dev = NULL;
         autofree(char) *old_conf = NULL;
         autofree(CbmWriter) *writer = CBM_WRITER_INIT;
 
-        root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
-        if (!root_uuid) {
-                LOG_FATAL("PartUUID unknown, this should never happen! %s", kernel->path);
+        root_dev = boot_manager_get_root_device((BootManager *)manager);
+        if (!root_dev) {
+                LOG_FATAL("Root device unknown, this should never happen! %s", kernel->path);
                 return false;
         }
 
@@ -169,14 +169,18 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 if (initrd_base) {
                         cbm_writer_append_printf(writer, "  INITRD %s\n", initrd_base);
                 }
-                if (root_uuid) {
-                        cbm_writer_append_printf(writer,
-                                                 "  APPEND root=PARTUUID=%s %s\n",
-                                                 root_uuid,
-                                                 k->cmdline);
+
+                /* Begin options */
+                cbm_writer_append(writer, "APPEND ");
+
+                /* Write out root UUID */
+                if (root_dev->part_uuid) {
+                        cbm_writer_append_printf(writer, "root=PARTUUID=%s ", root_dev->part_uuid);
                 } else {
-                        cbm_writer_append_printf(writer, "  APPEND %s\n", k->cmdline);
+                        cbm_writer_append_printf(writer, "root=UUID=%s ", root_dev->uuid);
                 }
+                /* Write out the cmdline */
+                cbm_writer_append_printf(writer, "%s\n", k->cmdline);
         }
 
         cbm_writer_close(writer);

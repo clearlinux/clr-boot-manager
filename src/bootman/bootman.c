@@ -198,12 +198,12 @@ const char *boot_manager_get_os_name(BootManager *self)
         return cbm_os_release_get_value(self->os_release, OS_RELEASE_PRETTY_NAME);
 }
 
-const char *boot_manager_get_root_uuid(BootManager *self)
+const CbmDeviceProbe *boot_manager_get_root_device(BootManager *self)
 {
         assert(self != NULL);
         assert(self->sysconfig != NULL);
 
-        return (const char *)self->sysconfig->root_uuid;
+        return (const CbmDeviceProbe *)self->sysconfig->root_device;
 }
 
 bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)

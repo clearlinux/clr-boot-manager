@@ -337,6 +337,8 @@ bool push_bootloader_update(int revision)
         return true;
 }
 
+static int prepare_count = 0;
+
 BootManager *prepare_playground(PlaygroundConfig *config)
 {
         assert(config != NULL);
@@ -385,10 +387,26 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
-        if (m->sysconfig->root_uuid) {
-                free(m->sysconfig->root_uuid);
+        if (m->sysconfig->root_device) {
+                cbm_probe_free(m->sysconfig->root_device);
         }
-        m->sysconfig->root_uuid = strdup("DUMMY_UUID");
+        m->sysconfig->root_device = calloc(1, sizeof(struct CbmDeviceProbe));
+        if (!m->sysconfig->root_device) {
+                DECLARE_OOM();
+                abort();
+        }
+        /* Create fake root device, and increase coverage */
+        CbmDeviceProbe *root = m->sysconfig->root_device;
+        if (prepare_count % 2 == 0) {
+                *root = (CbmDeviceProbe){
+                        .dev = 0, .part_uuid = strdup("DUMMY_UUID"), .uuid = strdup("UUID"),
+                };
+        } else {
+                *root = (CbmDeviceProbe){
+                        .dev = 0, .uuid = strdup("UUID"),
+                };
+        }
+        ++prepare_count;
 
         /* Construct the root kernels directory */
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_DIRECTORY, 00755)) {

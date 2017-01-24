@@ -13,6 +13,7 @@
 
 #include "nica/array.h"
 #include "nica/hashmap.h"
+#include "probe.h"
 #include "util.h"
 
 typedef struct BootManager BootManager;
@@ -66,10 +67,10 @@ typedef NcArray KernelArray;
  * This is populated upon examination by @boot_manager_set_prefix.
  */
 typedef struct SystemConfig {
-        char *prefix;      /**<Prefix for all operations */
-        char *root_uuid;   /**<The physical root device PARTUUID */
-        char *boot_device; /**<The physical boot device */
-        bool legacy;       /**<Legacy or UEFI */
+        char *prefix;                /**<Prefix for all operations */
+        CbmDeviceProbe *root_device; /**<The physical root device */
+        char *boot_device;           /**<The physical boot device */
+        bool legacy;                 /**<Legacy or UEFI */
 } SystemConfig;
 
 /**
@@ -221,12 +222,12 @@ bool boot_manager_remove_kernel(BootManager *manager, const Kernel *kernel);
 bool boot_manager_set_default_kernel(BootManager *manager, const Kernel *kernel);
 
 /**
- * Return the PartUUID for the root partition
+ * Return the CbmDeviceProbe for the root partition
  *
- * @note This string belongs to BootManager and should not be freed. Also
+ * @note This struct belongs to BootManager and should not be freed. Also
  * note that it is only initialised during @boot_manager_set_prefix
  */
-const char *boot_manager_get_root_uuid(BootManager *manager);
+const CbmDeviceProbe *boot_manager_get_root_device(BootManager *manager);
 
 /**
  * Attempt installation of the bootloader

@@ -29,7 +29,7 @@ void cbm_free_sysconfig(SystemConfig *config)
         }
         free(config->prefix);
         free(config->boot_device);
-        free(config->root_uuid);
+        cbm_probe_free(config->root_device);
         free(config);
 }
 
@@ -81,7 +81,7 @@ SystemConfig *cbm_inspect_root(const char *path)
                                 LOG_INFO("Discovered boot device: %s", rel);
                         }
                 }
-                c->root_uuid = get_part_uuid(realp);
+                c->root_device = cbm_probe_path(realp);
         }
 
         return c;
@@ -93,8 +93,8 @@ bool cbm_is_sysconfig_sane(SystemConfig *config)
                 LOG_FATAL("sysconfig insane: Missing config");
                 return false;
         }
-        if (!config->root_uuid) {
-                LOG_FATAL("sysconfig insane: Missing root_uuid");
+        if (!config->root_device) {
+                LOG_FATAL("sysconfig insane: Missing root device");
                 return false;
         }
         return true;
