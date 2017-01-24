@@ -92,14 +92,14 @@ libcbm_la_SOURCES =			\
 	src/bootman/bootman.h		\
 	src/bootman/bootman_private.h	\
 	src/bootman/bootman.c		\
-	src/bootman/files.h		\
-	src/bootman/files.c		\
 	src/bootman/kernel.c		\
 	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
 	src/lib/cmdline.h               \
 	src/lib/cmdline.c               \
+	src/lib/files.h			\
+	src/lib/files.c			\
 	src/lib/os-release.h            \
 	src/lib/os-release.c            \
 	src/lib/log.h			\
