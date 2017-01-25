@@ -38,6 +38,104 @@ static char *cbm_devnode_to_devpath(dev_t dev)
         return realpath(c, NULL);
 }
 
+/**
+ * Convert a sysfs dev file to the target device path
+ */
+static char *cbm_dev_file_to_devpath(const char *devfile)
+{
+        int fd = 0;
+        unsigned int dev_major, dev_minor = 0;
+        char read_buf[PATH_MAX] = { 0 };
+        ssize_t size = -1;
+
+        /* Read the dev file */
+        fd = open(devfile, O_RDONLY | O_NOCTTY | O_CLOEXEC);
+
+        if (fd < 0) {
+                return NULL;
+        }
+
+        size = read(fd, read_buf, sizeof(read_buf));
+        close(fd);
+        if (size < 1) {
+                return NULL;
+        }
+
+        if (sscanf(read_buf, "%u:%u", &dev_major, &dev_minor) != 2) {
+                return NULL;
+        }
+
+        return cbm_devnode_to_devpath(makedev(dev_major, dev_minor));
+}
+
+static char *cbm_get_luks_uuid(const char *part)
+{
+        autofree(char) *npath = NULL;
+        autofree(char) *dpath = NULL;
+        glob_t glo = { 0 };
+        blkid_probe blk_probe = NULL;
+        char *ret = NULL;
+        const char *value = NULL;
+
+        /* i.e. /sys/block/dm-1/slaves/dm-0/slaves/sdb1/dev */
+        if (asprintf(&npath, "/sys/block/%s/slaves/*/slaves/*/dev", part) < 0) {
+                DECLARE_OOM();
+                return NULL;
+        }
+
+        glob(npath, GLOB_DOOFFS, NULL, &glo);
+
+        if (glo.gl_pathc < 1) {
+                globfree(&glo);
+                return NULL;
+        }
+
+        dpath = cbm_dev_file_to_devpath(glo.gl_pathv[0]);
+        globfree(&glo);
+        if (!dpath) {
+                return NULL;
+        }
+
+        blk_probe = blkid_new_probe_from_filename(dpath);
+        if (!blk_probe) {
+                LOG_ERROR("Unable to probe %s", dpath);
+                return NULL;
+        }
+
+        blkid_probe_enable_superblocks(blk_probe, 1);
+        blkid_probe_set_superblocks_flags(blk_probe, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_UUID);
+        blkid_probe_enable_partitions(blk_probe, 1);
+        blkid_probe_set_partitions_flags(blk_probe, BLKID_PARTS_ENTRY_DETAILS);
+
+        if (blkid_do_safeprobe(blk_probe) != 0) {
+                LOG_ERROR("Error probing filesystem: %s", strerror(errno));
+                goto clean;
+        }
+
+        /* Grab the type */
+        if (blkid_probe_lookup_value(blk_probe, "TYPE", &value, NULL) != 0) {
+                LOG_ERROR("Error determining type of device %s: %s\n", dpath, strerror(errno));
+                goto clean;
+        }
+
+        /* Ensure that this parent disk really is LUKS */
+        if (!streq(value, "crypto_LUKS")) {
+                goto clean;
+        }
+
+        if (blkid_probe_lookup_value(blk_probe, "UUID", &value, NULL) == 0) {
+                ret = strdup(value);
+                if (!ret) {
+                        DECLARE_OOM();
+                        goto clean;
+                }
+        }
+
+clean:
+        blkid_free_probe(blk_probe);
+        return ret;
+}
+
 CbmDeviceProbe *cbm_probe_path(const char *path)
 {
         CbmDeviceProbe probe = { 0 };
@@ -46,6 +144,7 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
         struct stat st = { 0 };
         blkid_probe blk_probe = NULL;
         const char *value = NULL;
+        char *basenom = NULL;
 
         if (stat(path, &st) != 0) {
                 LOG_ERROR("Path does not exist: %s", path);
@@ -99,6 +198,13 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
                 LOG_ERROR("Unable to find UUID for %s: %s", devnode, strerror(errno));
         }
 
+        /* Lastly check if its a device-mapper device */
+        basenom = basename(devnode);
+        if (strncmp(basenom, "dm-", 3) == 0) {
+                LOG_DEBUG("Root device exists on device-mapper configuration");
+                probe.luks_uuid = cbm_get_luks_uuid(basenom);
+        }
+
         ret = calloc(1, sizeof(CbmDeviceProbe));
         if (!ret) {
                 DECLARE_OOM();
@@ -119,6 +225,7 @@ void cbm_probe_free(CbmDeviceProbe *probe)
 
         free(probe->uuid);
         free(probe->part_uuid);
+        free(probe->luks_uuid);
         free(probe);
         return;
 }
