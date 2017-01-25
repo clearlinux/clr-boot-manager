@@ -399,7 +399,10 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         CbmDeviceProbe *root = m->sysconfig->root_device;
         if (prepare_count % 2 == 0) {
                 *root = (CbmDeviceProbe){
-                        .dev = 0, .part_uuid = strdup("DUMMY_UUID"), .uuid = strdup("UUID"),
+                        .dev = 0,
+                        .part_uuid = strdup("DUMMY_UUID"),
+                        .uuid = strdup("UUID"),
+                        .luks_uuid = strdup("fakeLuksUUID"),
                 };
         } else {
                 *root = (CbmDeviceProbe){
