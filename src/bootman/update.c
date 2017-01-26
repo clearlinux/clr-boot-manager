@@ -74,7 +74,7 @@ bool boot_manager_update(BootManager *self)
         /* Prepare mounts */
         LOG_INFO("Checking for mounted boot dir");
         /* Already mounted at the default boot dir, nothing for us to do */
-        if (cbm_is_mounted(boot_dir, NULL)) {
+        if (cbm_system_is_mounted(boot_dir)) {
                 LOG_INFO("boot_dir is already mounted: %s", boot_dir);
                 goto perform;
         }
@@ -86,7 +86,7 @@ bool boot_manager_update(BootManager *self)
                 return false;
         }
 
-        abs_bootdir = cbm_get_mountpoint_for_device(root_base);
+        abs_bootdir = cbm_system_get_mountpoint_for_device(root_base);
 
         if (abs_bootdir) {
                 LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
