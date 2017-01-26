@@ -31,13 +31,25 @@ static inline int test_system(__cbm_unused__ const char *command)
         return 0;
 }
 
+static inline bool test_is_mounted(__cbm_unused__ const char *target)
+{
+        return false;
+}
+
+static inline char *test_get_mountpoint_for_device(__cbm_unused__ const char *device)
+{
+        return NULL;
+}
+
 /**
  * Default vtable for testing. Copy into a local struct and override specific
  * fields.
  */
-CbmSystemOps SystemTestOps = {
-        .mount = test_mount, .umount = test_umount, .system = test_system,
-};
+CbmSystemOps SystemTestOps = {.mount = test_mount,
+                              .umount = test_umount,
+                              .system = test_system,
+                              .is_mounted = test_is_mounted,
+                              .get_mountpoint_for_device = test_get_mountpoint_for_device };
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
