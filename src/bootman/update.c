@@ -48,6 +48,8 @@ bool boot_manager_update(BootManager *self)
         bool ret = false;
         autofree(char) *boot_dir = NULL;
         bool did_mount = false;
+        char *root_base = NULL;
+        autofree(char) *abs_bootdir = NULL;
 
         /* Image mode is very simple, no prep/cleanup */
         if (boot_manager_is_image_mode(self)) {
@@ -70,53 +72,49 @@ bool boot_manager_update(BootManager *self)
         }
 
         /* Prepare mounts */
-        if (boot_manager_get_can_mount(self)) {
-                LOG_INFO("Checking for mounted boot dir");
-                /* Already mounted at the default boot dir, nothing for us to do */
-                if (cbm_is_mounted(boot_dir, NULL)) {
-                        LOG_INFO("boot_dir is already mounted: %s", boot_dir);
-                        goto perform;
-                }
-                char *root_base = NULL;
-                autofree(char) *abs_bootdir = NULL;
-
-                /* Determine root device */
-                root_base = self->sysconfig->boot_device;
-                if (!root_base) {
-                        LOG_FATAL("Cannot determine boot device");
-                        return false;
-                }
-
-                abs_bootdir = cbm_get_mountpoint_for_device(root_base);
-
-                if (abs_bootdir) {
-                        LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
-                        /* User has already mounted the ESP somewhere else, use that */
-                        if (!boot_manager_set_boot_dir(self, abs_bootdir)) {
-                                LOG_FATAL("Cannot initialise with premounted ESP");
-                                return false;
-                        }
-                        /* Successfully using their premounted ESP, go use it */
-                        LOG_INFO("Skipping to native update");
-                        goto perform;
-                }
-
-                /* The boot directory isn't mounted, so we'll mount it now */
-                if (!nc_file_exists(boot_dir)) {
-                        LOG_INFO("Creating boot dir");
-                        nc_mkdir_p(boot_dir, 0755);
-                }
-                LOG_INFO("Mounting boot device %s at %s", root_base, boot_dir);
-                if (cbm_system_mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
-                        LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
-                                  root_base,
-                                  boot_dir,
-                                  strerror(errno));
-                        return false;
-                }
-                LOG_SUCCESS("%s successfully mounted at %s", root_base, boot_dir);
-                did_mount = true;
+        LOG_INFO("Checking for mounted boot dir");
+        /* Already mounted at the default boot dir, nothing for us to do */
+        if (cbm_is_mounted(boot_dir, NULL)) {
+                LOG_INFO("boot_dir is already mounted: %s", boot_dir);
+                goto perform;
         }
+
+        /* Determine root device */
+        root_base = self->sysconfig->boot_device;
+        if (!root_base) {
+                LOG_FATAL("Cannot determine boot device");
+                return false;
+        }
+
+        abs_bootdir = cbm_get_mountpoint_for_device(root_base);
+
+        if (abs_bootdir) {
+                LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
+                /* User has already mounted the ESP somewhere else, use that */
+                if (!boot_manager_set_boot_dir(self, abs_bootdir)) {
+                        LOG_FATAL("Cannot initialise with premounted ESP");
+                        return false;
+                }
+                /* Successfully using their premounted ESP, go use it */
+                LOG_INFO("Skipping to native update");
+                goto perform;
+        }
+
+        /* The boot directory isn't mounted, so we'll mount it now */
+        if (!nc_file_exists(boot_dir)) {
+                LOG_INFO("Creating boot dir");
+                nc_mkdir_p(boot_dir, 0755);
+        }
+        LOG_INFO("Mounting boot device %s at %s", root_base, boot_dir);
+        if (cbm_system_mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
+                LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
+                          root_base,
+                          boot_dir,
+                          strerror(errno));
+                return false;
+        }
+        LOG_SUCCESS("%s successfully mounted at %s", root_base, boot_dir);
+        did_mount = true;
 
 perform:
         /* Do a native update */
