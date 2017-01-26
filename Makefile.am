@@ -97,6 +97,8 @@ libcbm_la_SOURCES =			\
 	src/lib/log.c			\
 	src/lib/probe.h                 \
 	src/lib/probe.c                 \
+	src/lib/system_stub.h           \
+	src/lib/system_stub.c           \
 	src/lib/writer.h                \
 	src/lib/writer.c                \
 	src/lib/util.h
