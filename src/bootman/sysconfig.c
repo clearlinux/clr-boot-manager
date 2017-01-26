@@ -41,6 +41,7 @@ SystemConfig *cbm_inspect_root(const char *path)
         SystemConfig *c = NULL;
         char *realp = NULL;
         char *boot = NULL;
+        char *rel = NULL;
 
         realp = realpath(path, NULL);
         if (!realp) {
@@ -56,33 +57,29 @@ SystemConfig *cbm_inspect_root(const char *path)
         }
         c->prefix = realp;
 
-        if (geteuid() == 0) {
-                char *rel = NULL;
-
-                /* Find legacy relative to root */
-                boot = get_legacy_boot_device(realp);
-                if (boot) {
-                        c->boot_device = boot;
-                        c->legacy = true;
-                        LOG_INFO("Discovered legacy boot device: %s", boot);
-                } else {
-                        c->boot_device = get_boot_device();
-                }
-
-                if (c->boot_device) {
-                        rel = realpath(c->boot_device, NULL);
-                        if (!rel) {
-                                LOG_FATAL("Cannot determine boot device: %s %s",
-                                          c->boot_device,
-                                          strerror(errno));
-                        } else {
-                                free(c->boot_device);
-                                c->boot_device = rel;
-                                LOG_INFO("Discovered boot device: %s", rel);
-                        }
-                }
-                c->root_device = cbm_probe_path(realp);
+        /* Find legacy relative to root */
+        boot = get_legacy_boot_device(realp);
+        if (boot) {
+                c->boot_device = boot;
+                c->legacy = true;
+                LOG_INFO("Discovered legacy boot device: %s", boot);
+        } else {
+                c->boot_device = get_boot_device();
         }
+
+        if (c->boot_device) {
+                rel = realpath(c->boot_device, NULL);
+                if (!rel) {
+                        LOG_FATAL("Cannot determine boot device: %s %s",
+                                  c->boot_device,
+                                  strerror(errno));
+                } else {
+                        free(c->boot_device);
+                        c->boot_device = rel;
+                        LOG_INFO("Discovered boot device: %s", rel);
+                }
+        }
+        c->root_device = cbm_probe_path(realp);
 
         return c;
 }
