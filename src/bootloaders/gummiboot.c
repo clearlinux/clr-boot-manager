@@ -15,8 +15,7 @@
 
 static BootLoaderConfig gummiboot_config = {.vendor_dir = "gummiboot",
                                             .efi_dir = "/usr/lib/gummiboot",
-                                            .x64_blob = "gummibootx64.efi",
-                                            .ia32_blob = "gummibootia32.efi",
+                                            .efi_blob = "gummiboot" SYSTEMD_EFI_SUFFIX,
                                             .name = "gummiboot" };
 
 static bool gummiboot_init(const BootManager *manager)

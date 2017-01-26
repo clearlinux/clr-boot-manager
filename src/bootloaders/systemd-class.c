@@ -33,12 +33,9 @@ typedef struct SdClassConfig {
         char *vendor_dir;
         char *entries_dir;
         char *base_path;
-        char *ia32_source;
-        char *ia32_dest;
-        char *x64_source;
-        char *x64_dest;
-        char *default_path_ia32;
-        char *default_path_x64;
+        char *efi_blob_source;
+        char *efi_blob_dest;
+        char *default_path_efi_blob;
         char *loader_config;
 } SdClassConfig;
 
@@ -53,24 +50,15 @@ static BootLoaderConfig *sd_config = NULL;
                 }                                                                                  \
         }
 
-static bool sd_class_install_x64(const BootManager *manager);
-static bool sd_class_update_x64(const BootManager *manager);
-
-static bool sd_class_install_ia32(const BootManager *manager);
-static bool sd_class_update_ia32(const BootManager *manager);
-
 bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
 {
         char *base_path = NULL;
         char *efi_dir = NULL;
         char *vendor_dir = NULL;
         char *entries_dir = NULL;
-        char *ia32_source = NULL;
-        char *ia32_dest = NULL;
-        char *x64_source = NULL;
-        char *x64_dest = NULL;
-        char *default_path_ia32 = NULL;
-        char *default_path_x64 = NULL;
+        char *efi_blob_source = NULL;
+        char *efi_blob_dest = NULL;
+        char *default_path_efi_blob = NULL;
         char *loader_config = NULL;
         const char *prefix = NULL;
 
@@ -95,57 +83,34 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
 
         prefix = boot_manager_get_prefix((BootManager *)manager);
 
-        /* ia32 paths */
-        if (asprintf(&ia32_source, "%s/%s/%s", prefix, sd_config->efi_dir, sd_config->ia32_blob) <
-            0) {
+        /* EFI paths */
+        if (asprintf(&efi_blob_source,
+                     "%s/%s/%s",
+                     prefix,
+                     sd_config->efi_dir,
+                     sd_config->efi_blob) < 0) {
                 sd_class_destroy(manager);
                 DECLARE_OOM();
                 return false;
         }
-        sd_class_config.ia32_source = ia32_source;
+        sd_class_config.efi_blob_source = efi_blob_source;
 
-        ia32_dest = nc_build_case_correct_path(sd_class_config.base_path,
-                                               "EFI",
-                                               sd_config->vendor_dir,
-                                               sd_config->ia32_blob,
-                                               NULL);
-        OOM_CHECK_RET(ia32_source, false);
-        sd_class_config.ia32_dest = ia32_dest;
+        efi_blob_dest = nc_build_case_correct_path(sd_class_config.base_path,
+                                                   "EFI",
+                                                   sd_config->vendor_dir,
+                                                   sd_config->efi_blob,
+                                                   NULL);
+        OOM_CHECK_RET(efi_blob_dest, false);
+        sd_class_config.efi_blob_dest = efi_blob_dest;
 
-        /* x64 paths */
-        if (asprintf(&x64_source, "%s/%s/%s", prefix, sd_config->efi_dir, sd_config->x64_blob) <
-            0) {
-                sd_class_destroy(manager);
-                DECLARE_OOM();
-                return false;
-        }
-        sd_class_config.x64_source = x64_source;
-
-        x64_dest = nc_build_case_correct_path(sd_class_config.base_path,
-                                              "EFI",
-                                              sd_config->vendor_dir,
-                                              sd_config->x64_blob,
-                                              NULL);
-        OOM_CHECK_RET(x64_dest, false);
-        sd_class_config.x64_dest = x64_dest;
-
-        /* default x64 path */
-        default_path_x64 = nc_build_case_correct_path(sd_class_config.base_path,
-                                                      "EFI",
-                                                      "Boot",
-                                                      "BOOTX64.EFI",
-                                                      NULL);
-        OOM_CHECK_RET(default_path_x64, false);
-        sd_class_config.default_path_x64 = default_path_x64;
-
-        /* default ia32 path */
-        default_path_ia32 = nc_build_case_correct_path(sd_class_config.base_path,
-                                                       "EFI",
-                                                       "Boot",
-                                                       "BOOTIA32.EFI",
-                                                       NULL);
-        OOM_CHECK_RET(default_path_ia32, false);
-        sd_class_config.default_path_ia32 = default_path_ia32;
+        /* default EFI loader path */
+        default_path_efi_blob = nc_build_case_correct_path(sd_class_config.base_path,
+                                                           "EFI",
+                                                           "Boot",
+                                                           DEFAULT_EFI_BLOB,
+                                                           NULL);
+        OOM_CHECK_RET(default_path_efi_blob, false);
+        sd_class_config.default_path_efi_blob = default_path_efi_blob;
 
         /* Loader entry */
         loader_config =
@@ -162,12 +127,9 @@ void sd_class_destroy(__cbm_unused__ const BootManager *manager)
         FREE_IF_SET(sd_class_config.vendor_dir);
         FREE_IF_SET(sd_class_config.entries_dir);
         FREE_IF_SET(sd_class_config.base_path);
-        FREE_IF_SET(sd_class_config.ia32_source);
-        FREE_IF_SET(sd_class_config.ia32_dest);
-        FREE_IF_SET(sd_class_config.x64_source);
-        FREE_IF_SET(sd_class_config.x64_dest);
-        FREE_IF_SET(sd_class_config.default_path_ia32);
-        FREE_IF_SET(sd_class_config.default_path_x64);
+        FREE_IF_SET(sd_class_config.efi_blob_source);
+        FREE_IF_SET(sd_class_config.efi_blob_dest);
+        FREE_IF_SET(sd_class_config.default_path_efi_blob);
         FREE_IF_SET(sd_class_config.loader_config);
 }
 
@@ -429,24 +391,9 @@ bool sd_class_needs_install(const BootManager *manager)
                 return false;
         }
 
-        const char *paths[2] = { 0 };
-        const char *source_path = NULL;
-
-        if (boot_manager_get_architecture_size((BootManager *)manager) == 64) {
-                if (boot_manager_get_platform_size((BootManager *)manager) != 64) {
-                        paths[0] = sd_class_config.ia32_dest;
-                        paths[1] = sd_class_config.default_path_ia32;
-                        source_path = sd_class_config.ia32_source;
-                } else {
-                        paths[0] = sd_class_config.x64_dest;
-                        paths[1] = sd_class_config.default_path_x64;
-                        source_path = sd_class_config.x64_source;
-                }
-        } else {
-                paths[0] = sd_class_config.ia32_dest;
-                paths[1] = sd_class_config.default_path_ia32;
-                source_path = sd_class_config.ia32_source;
-        }
+        const char *paths[] = { sd_class_config.efi_blob_dest,
+                                sd_class_config.default_path_efi_blob };
+        const char *source_path = sd_class_config.efi_blob_source;
 
         /* Catch this in the install */
         if (!nc_file_exists(source_path)) {
@@ -471,24 +418,9 @@ bool sd_class_needs_update(const BootManager *manager)
                 return false;
         }
 
-        const char *paths[2] = { 0 };
-        const char *source_path = NULL;
-
-        if (boot_manager_get_architecture_size((BootManager *)manager) == 64) {
-                if (boot_manager_get_platform_size((BootManager *)manager) != 64) {
-                        paths[0] = sd_class_config.ia32_dest;
-                        paths[1] = sd_class_config.default_path_ia32;
-                        source_path = sd_class_config.ia32_source;
-                } else {
-                        paths[0] = sd_class_config.x64_dest;
-                        paths[1] = sd_class_config.default_path_x64;
-                        source_path = sd_class_config.x64_source;
-                }
-        } else {
-                paths[0] = sd_class_config.ia32_dest;
-                paths[1] = sd_class_config.default_path_ia32;
-                source_path = sd_class_config.ia32_source;
-        }
+        const char *paths[] = { sd_class_config.efi_blob_dest,
+                                sd_class_config.default_path_efi_blob };
+        const char *source_path = sd_class_config.efi_blob_source;
 
         for (size_t i = 0; i < ARRAY_SIZE(paths); i++) {
                 const char *check_p = paths[i];
@@ -499,63 +431,6 @@ bool sd_class_needs_update(const BootManager *manager)
         }
 
         return false;
-}
-
-/**
- * Install the 64-bit specific components
- */
-static bool sd_class_install_x64(const BootManager *manager)
-{
-        if (!manager) {
-                return false;
-        }
-
-        /* Install vendor x64 blob */
-        if (!copy_file_atomic(sd_class_config.x64_source, sd_class_config.x64_dest, 00644)) {
-                LOG_FATAL("Failed to install %s: %s", sd_class_config.x64_dest, strerror(errno));
-                return false;
-        }
-        cbm_sync();
-
-        /* Install default x64 blob */
-        if (!copy_file_atomic(sd_class_config.x64_source,
-                              sd_class_config.default_path_x64,
-                              00644)) {
-                LOG_FATAL("Failed to install %s: %s",
-                          sd_class_config.default_path_x64,
-                          strerror(errno));
-                return false;
-        }
-        cbm_sync();
-
-        return true;
-}
-
-static bool sd_class_install_ia32(const BootManager *manager)
-{
-        if (!manager) {
-                return false;
-        }
-
-        /* Install vendor ia32 blob */
-        if (!copy_file_atomic(sd_class_config.ia32_source, sd_class_config.ia32_dest, 00644)) {
-                LOG_FATAL("Failed to install %s: %s", sd_class_config.ia32_dest, strerror(errno));
-                return false;
-        }
-        cbm_sync();
-
-        /* Install default ia32 blob */
-        if (!copy_file_atomic(sd_class_config.ia32_source,
-                              sd_class_config.default_path_ia32,
-                              00644)) {
-                LOG_FATAL("Failed to install %s: %s",
-                          sd_class_config.default_path_ia32,
-                          strerror(errno));
-                return false;
-        }
-        cbm_sync();
-
-        return true;
 }
 
 bool sd_class_install(const BootManager *manager)
@@ -569,85 +444,25 @@ bool sd_class_install(const BootManager *manager)
                 return false;
         }
 
-        if (boot_manager_get_architecture_size((BootManager *)manager) == 32) {
-                if (boot_manager_get_platform_size((BootManager *)manager) == 64 &&
-                    nc_file_exists(sd_class_config.x64_source)) {
-                        /* 32-bit OS that has access to 64-bit sdclass bootloader, use this */
-                        return sd_class_install_x64(manager);
-                } else {
-                        /* Either 32-bit UEFI or no 64-bit loader available */
-                        return sd_class_install_ia32(manager);
-                }
-        } else {
-                if (boot_manager_get_platform_size((BootManager *)manager) == 32) {
-                        /* 64-bit OS on 32-bit UEFI */
-                        return sd_class_install_ia32(manager);
-                } else {
-                        return sd_class_install_x64(manager);
-                }
-        }
-}
-
-static bool sd_class_update_ia32(const BootManager *manager)
-{
-        if (!manager) {
+        /* Install vendor EFI blob */
+        if (!copy_file_atomic(sd_class_config.efi_blob_source,
+                              sd_class_config.efi_blob_dest,
+                              00644)) {
+                LOG_FATAL("Failed to install %s: %s",
+                          sd_class_config.efi_blob_dest,
+                          strerror(errno));
                 return false;
         }
-
-        if (!cbm_files_match(sd_class_config.ia32_source, sd_class_config.ia32_dest)) {
-                if (!copy_file_atomic(sd_class_config.ia32_source,
-                                      sd_class_config.ia32_dest,
-                                      00644)) {
-                        LOG_FATAL("Failed to update %s: %s",
-                                  sd_class_config.ia32_dest,
-                                  strerror(errno));
-                        return false;
-                }
-        }
         cbm_sync();
 
-        if (!cbm_files_match(sd_class_config.ia32_source, sd_class_config.default_path_ia32)) {
-                if (!copy_file_atomic(sd_class_config.ia32_source,
-                                      sd_class_config.default_path_ia32,
-                                      00644)) {
-                        LOG_FATAL("Failed to update %s: %s",
-                                  sd_class_config.default_path_ia32,
-                                  strerror(errno));
-                        return false;
-                }
-        }
-        cbm_sync();
-
-        return true;
-}
-
-static bool sd_class_update_x64(const BootManager *manager)
-{
-        if (!manager) {
+        /* Install default EFI blob */
+        if (!copy_file_atomic(sd_class_config.efi_blob_source,
+                              sd_class_config.default_path_efi_blob,
+                              00644)) {
+                LOG_FATAL("Failed to install %s: %s",
+                          sd_class_config.default_path_efi_blob,
+                          strerror(errno));
                 return false;
-        }
-
-        if (!cbm_files_match(sd_class_config.x64_source, sd_class_config.x64_dest)) {
-                if (!copy_file_atomic(sd_class_config.x64_source,
-                                      sd_class_config.x64_dest,
-                                      00644)) {
-                        LOG_FATAL("Failed to update %s: %s",
-                                  sd_class_config.x64_dest,
-                                  strerror(errno));
-                        return false;
-                }
-        }
-        cbm_sync();
-
-        if (!cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_x64)) {
-                if (!copy_file_atomic(sd_class_config.x64_source,
-                                      sd_class_config.default_path_x64,
-                                      00644)) {
-                        LOG_FATAL("Failed to update %s: %s",
-                                  sd_class_config.default_path_x64,
-                                  strerror(errno));
-                        return false;
-                }
         }
         cbm_sync();
 
@@ -664,23 +479,32 @@ bool sd_class_update(const BootManager *manager)
                 return false;
         }
 
-        if (boot_manager_get_architecture_size((BootManager *)manager) == 32) {
-                if (boot_manager_get_platform_size((BootManager *)manager) == 64 &&
-                    nc_file_exists(sd_class_config.x64_source)) {
-                        /* 32-bit OS that has access to 64-bit sdclass bootloader, use this */
-                        return sd_class_update_x64(manager);
-                } else {
-                        /* Either 32-bit UEFI or no 64-bit loader available */
-                        return sd_class_update_ia32(manager);
-                }
-        } else {
-                if (boot_manager_get_platform_size((BootManager *)manager) == 32) {
-                        /* 64-bit OS on 32-bit UEFI */
-                        return sd_class_update_ia32(manager);
-                } else {
-                        return sd_class_update_x64(manager);
+        if (!cbm_files_match(sd_class_config.efi_blob_source, sd_class_config.efi_blob_dest)) {
+                if (!copy_file_atomic(sd_class_config.efi_blob_source,
+                                      sd_class_config.efi_blob_dest,
+                                      00644)) {
+                        LOG_FATAL("Failed to update %s: %s",
+                                  sd_class_config.efi_blob_dest,
+                                  strerror(errno));
+                        return false;
                 }
         }
+        cbm_sync();
+
+        if (!cbm_files_match(sd_class_config.efi_blob_source,
+                             sd_class_config.default_path_efi_blob)) {
+                if (!copy_file_atomic(sd_class_config.efi_blob_source,
+                                      sd_class_config.default_path_efi_blob,
+                                      00644)) {
+                        LOG_FATAL("Failed to update %s: %s",
+                                  sd_class_config.default_path_efi_blob,
+                                  strerror(errno));
+                        return false;
+                }
+        }
+        cbm_sync();
+
+        return true;
 }
 
 bool sd_class_remove(const BootManager *manager)
@@ -697,19 +521,10 @@ bool sd_class_remove(const BootManager *manager)
         }
         cbm_sync();
 
-        if (nc_file_exists(sd_class_config.default_path_ia32) &&
-            unlink(sd_class_config.default_path_ia32) < 0) {
+        if (nc_file_exists(sd_class_config.default_path_efi_blob) &&
+            unlink(sd_class_config.default_path_efi_blob) < 0) {
                 LOG_FATAL("Failed to remove %s: %s",
-                          sd_class_config.default_path_ia32,
-                          strerror(errno));
-                return false;
-        }
-        cbm_sync();
-
-        if (nc_file_exists(sd_class_config.default_path_x64) &&
-            unlink(sd_class_config.default_path_x64) < 0) {
-                LOG_FATAL("Failed to remove %s: %s",
-                          sd_class_config.default_path_x64,
+                          sd_class_config.default_path_efi_blob,
                           strerror(errno));
                 return false;
         }

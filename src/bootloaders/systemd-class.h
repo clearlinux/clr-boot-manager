@@ -16,11 +16,16 @@
 
 #pragma once
 
+#if UINTPTR_MAX == 0xffffffffffffffff
+#define SYSTEMD_EFI_SUFFIX "x64.efi"
+#else
+#define SYSTEMD_EFI_SUFFIX "ia32.efi"
+#endif
+
 typedef struct BootLoaderConfig {
         const char *vendor_dir;
         const char *efi_dir;
-        const char *x64_blob;
-        const char *ia32_blob;
+        const char *efi_blob;
         const char *name;
 } BootLoaderConfig;
 
