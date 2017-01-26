@@ -24,6 +24,7 @@
 #include "log.h"
 #include "nica/files.h"
 
+#include "blkid-harness.h"
 #include "config.h"
 #include "harness.h"
 
@@ -290,6 +291,9 @@ int main(void)
         /* Ensure that logging is set up properly. */
         setenv("CBM_DEBUG", "1", 1);
         cbm_log_init(stderr);
+
+        /* Override vtable for safety */
+        cbm_blkid_set_vtable(&BlkidTestOps);
 
         s = core_suite();
         sr = srunner_create(s);
