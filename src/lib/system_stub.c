@@ -15,12 +15,17 @@
 #include <stdlib.h>
 #include <sys/mount.h>
 
+#include "files.h"
+
 /**
  * Default vtable for system call passthrough
  */
-static CbmSystemOps default_system_ops = {
-        .mount = mount, .umount = umount, .system = system,
-};
+static CbmSystemOps default_system_ops = {.mount = mount,
+                                          .umount = umount,
+                                          .system = system,
+                                          .is_mounted = cbm_is_mounted,
+                                          .get_mountpoint_for_device =
+                                              cbm_get_mountpoint_for_device };
 
 /**
  * Pointer to the currently active vtable
@@ -42,6 +47,8 @@ void cbm_system_set_vtable(CbmSystemOps *ops)
         /* Ensure the vtable is valid at this point. */
         assert(system_ops->mount != NULL);
         assert(system_ops->umount != NULL);
+        assert(system_ops->is_mounted != NULL);
+        assert(system_ops->get_mountpoint_for_device != NULL);
         assert(system_ops->system != NULL);
 }
 
@@ -59,6 +66,16 @@ int cbm_system_umount(const char *target)
 int cbm_system_system(const char *command)
 {
         return system_ops->system(command);
+}
+
+bool cbm_system_is_mounted(const char *target)
+{
+        return system_ops->is_mounted(target);
+}
+
+char *cbm_system_get_mountpoint_for_device(const char *device)
+{
+        return system_ops->get_mountpoint_for_device(device);
 }
 
 /*
