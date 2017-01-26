@@ -13,6 +13,8 @@
 
 #define _GNU_SOURCE
 
+#include <stdbool.h>
+
 /**
  * Defines the vtable used for all systen operations within clr-boot-manager.
  * The default internal vtable will pass through all operations to the standard
@@ -23,6 +25,10 @@ typedef struct CbmSystemOps {
         int (*mount)(const char *source, const char *target, const char *filesystemtype,
                      unsigned long mountflags, const void *data);
         int (*umount)(const char *target);
+
+        /* wrap cbm lib functions */
+        bool (*is_mounted)(const char *target);
+        char *(*get_mountpoint_for_device)(const char *device);
 
         /* exec family */
         int (*system)(const char *command);
@@ -47,6 +53,16 @@ void cbm_system_set_vtable(CbmSystemOps *ops);
  */
 int cbm_system_mount(const char *source, const char *target, const char *filesystemtype,
                      unsigned long mountflags, const void *data);
+
+/**
+ * Determine if the given mount point is already mounted
+ */
+bool cbm_system_is_mounted(const char *target);
+
+/**
+ * Get the mountpoint for the given device path
+ */
+char *cbm_system_get_mountpoint_for_device(const char *device);
 
 /**
  * Wrap the umount syscall

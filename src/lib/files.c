@@ -386,22 +386,15 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
         return true;
 }
 
-bool cbm_is_mounted(const char *path, bool *error)
+bool cbm_is_mounted(const char *path)
 {
         autofree(FILE_MNT) *tab = NULL;
         struct mntent *ent = NULL;
         struct mntent mnt = { 0 };
         char buf[8192];
 
-        if (error) {
-                *error = false;
-        }
-
         tab = setmntent("/proc/self/mounts", "r");
         if (!tab) {
-                if (error) {
-                        *error = true;
-                }
                 return false;
         }
 
