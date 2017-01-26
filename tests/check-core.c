@@ -28,6 +28,7 @@
 
 #include "blkid-harness.h"
 #include "harness.h"
+#include "system-harness.h"
 
 static PlaygroundKernel core_kernels[] = { { "4.2.1", "kvm", 121, false },
                                            { "4.2.3", "kvm", 124, true },
@@ -635,6 +636,7 @@ int main(void)
         cbm_log_init(stderr);
 
         cbm_blkid_set_vtable(&BlkidTestOps);
+        cbm_system_set_vtable(&SystemTestOps);
 
         s = core_suite();
         sr = srunner_create(s);

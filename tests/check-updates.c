@@ -27,6 +27,7 @@
 #include "blkid-harness.h"
 #include "config.h"
 #include "harness.h"
+#include "system-harness.h"
 
 START_TEST(bootman_image_test_simple)
 {
@@ -294,6 +295,7 @@ int main(void)
 
         /* Override vtable for safety */
         cbm_blkid_set_vtable(&BlkidTestOps);
+        cbm_system_set_vtable(&SystemTestOps);
 
         s = core_suite();
         sr = srunner_create(s);
