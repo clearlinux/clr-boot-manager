@@ -26,6 +26,7 @@
 #include "util.h"
 #include "writer.h"
 
+#include "blkid-harness.h"
 #include "harness.h"
 
 static PlaygroundKernel core_kernels[] = { { "4.2.1", "kvm", 121, false },
@@ -632,6 +633,8 @@ int main(void)
         /* Ensure that logging is set up properly. */
         setenv("CBM_DEBUG", "1", 1);
         cbm_log_init(stderr);
+
+        cbm_blkid_set_vtable(&BlkidTestOps);
 
         s = core_suite();
         sr = srunner_create(s);

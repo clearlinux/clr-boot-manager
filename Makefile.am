@@ -156,6 +156,7 @@ check_PROGRAMS = $(TESTS)
 
 check_core_SOURCES =		\
 	tests/check-core.c	\
+	tests/blkid-harness.h   \
 	tests/harness.h		\
 	tests/harness.c
 
@@ -214,6 +215,7 @@ check_os_release_LDADD =	\
 
 check_updates_SOURCES =		\
 	tests/check-updates.c	\
+	tests/blkid-harness.h   \
 	tests/harness.h		\
 	tests/harness.c
 
