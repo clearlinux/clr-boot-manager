@@ -21,7 +21,8 @@ typedef enum {
         CBM_LOG_SUCCESS,
         CBM_LOG_ERROR,
         CBM_LOG_WARNING,
-        CBM_LOG_FATAL
+        CBM_LOG_FATAL,
+        CBM_LOG_MAX /* Unused */
 } CbmLogLevel;
 
 /**

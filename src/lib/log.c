@@ -31,28 +31,17 @@ void cbm_log_init(FILE *log)
 {
         const char *env_level = NULL;
         log_file = log;
+        int nlog_level = CBM_LOG_ERROR;
 
         env_level = getenv("CBM_DEBUG");
-        if (!env_level) {
-                min_log_level = CBM_LOG_ERROR;
-                return;
+        if (env_level) {
+                /* =1 becomes 0 */
+                nlog_level = atoi(env_level) - 1;
         }
-
-        if (streq(env_level, "1")) {
-                min_log_level = CBM_LOG_DEBUG;
-        } else if (streq(env_level, "2")) {
-                min_log_level = CBM_LOG_INFO;
-        } else if (streq(env_level, "3")) {
-                min_log_level = CBM_LOG_SUCCESS;
-        } else if (streq(env_level, "4")) {
-                min_log_level = CBM_LOG_ERROR;
-        } else if (streq(env_level, "5")) {
-                min_log_level = CBM_LOG_WARNING;
-        } else if (streq(env_level, "6")) {
-                min_log_level = CBM_LOG_FATAL;
-        } else {
-                min_log_level = CBM_LOG_ERROR;
+        if (nlog_level < CBM_LOG_DEBUG || nlog_level >= CBM_LOG_MAX) {
+                nlog_level = CBM_LOG_FATAL;
         }
+        min_log_level = nlog_level;
 }
 
 /**
