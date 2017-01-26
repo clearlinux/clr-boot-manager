@@ -22,6 +22,7 @@
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
+#include "system_stub.h"
 
 static bool boot_manager_update_image(BootManager *self);
 static bool boot_manager_update_native(BootManager *self);
@@ -72,7 +73,7 @@ bool boot_manager_update(BootManager *self)
         if (boot_manager_get_can_mount(self)) {
                 LOG_INFO("Checking for mounted boot dir");
                 /* Already mounted at the default boot dir, nothing for us to do */
-                if (cbm_is_mounted(boot_dir, NULL)) {
+                if (cbm_system_is_mounted(boot_dir)) {
                         LOG_INFO("boot_dir is already mounted: %s", boot_dir);
                         goto perform;
                 }
@@ -86,7 +87,7 @@ bool boot_manager_update(BootManager *self)
                         return false;
                 }
 
-                abs_bootdir = cbm_get_mountpoint_for_device(root_base);
+                abs_bootdir = cbm_system_get_mountpoint_for_device(root_base);
 
                 if (abs_bootdir) {
                         LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
@@ -106,7 +107,7 @@ bool boot_manager_update(BootManager *self)
                         nc_mkdir_p(boot_dir, 0755);
                 }
                 LOG_INFO("Mounting boot device %s at %s", root_base, boot_dir);
-                if (mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
+                if (cbm_system_mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
                         LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
                                   root_base,
                                   boot_dir,
@@ -124,7 +125,7 @@ perform:
         /* Cleanup and umount */
         if (did_mount) {
                 LOG_INFO("Attempting umount of %s", boot_dir);
-                if (umount(boot_dir) < 0) {
+                if (cbm_system_umount(boot_dir) < 0) {
                         LOG_WARNING("Could not unmount boot directory");
                 }
                 LOG_SUCCESS("Unmounted boot directory");
