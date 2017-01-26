@@ -96,6 +96,8 @@ libcbm_la_SOURCES =			\
 	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
+	src/lib/blkid_stub.h            \
+	src/lib/blkid_stub.c            \
 	src/lib/cmdline.h               \
 	src/lib/cmdline.c               \
 	src/lib/files.h			\
