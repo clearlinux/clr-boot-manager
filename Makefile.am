@@ -23,18 +23,7 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/30_third.conf \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
-	     ${top_srcdir}/compat/kernel_updater.sh \
-	     ${top_srcdir}/compat/systemdboot_updater.sh \
-	     ${top_srcdir}/compat/gummiboot_updaters.sh \
 	     ${top_srcdir}/man/clr-boot-manager.1
-
-
-if COMPAT_SCRIPTS
-bin_SCRIPTS = \
-	compat/kernel_updater.sh \
-	compat/systemdboot_updater.sh \
-	compat/gummiboot_updaters.sh
-endif
 
 NULL =
 CLEANFILES =

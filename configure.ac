@@ -32,18 +32,6 @@ if test "x$enable_coverage" = "xyes" ; then
 fi
 AM_CONDITIONAL([COVERAGE], [test "$have_coverage" = "yes"])
 
-# Enable compat scripts? Enabled by default
-AC_ARG_ENABLE(compat-scripts, AS_HELP_STRING([--enable-compat-scripts], [enable compat scripts]))
-use_compat_scripts=yes
-if test x$enable_compat_scripts = "xno"; then
-        use_compat_scripts="no"
-else
-        use_compat_scripts="yes"
-fi
-
-AM_CONDITIONAL([COMPAT_SCRIPTS], [test "$use_compat_scripts" = "yes"])
-
-
 AC_ARG_WITH([bootloader], AS_HELP_STRING([--with-bootloader=BOOTLOADER],
         [the bootloader to use]), [bootloader=${withval}],
         [bootloader="auto"])
@@ -172,6 +160,4 @@ AC_MSG_RESULT([
         kernel-conf-dir:        ${kernelconfdir}
         boot-dir:               ${bootdir}
         vendor-prefix:          ${vendorprefix}
-
-        compatibility scripts:  ${use_compat_scripts}
 ])
