@@ -444,7 +444,6 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 }
         }
 
-        boot_manager_set_can_mount(m, false);
         boot_manager_set_image_mode(m, false);
         if (config->uts_name && !boot_manager_set_uname(m, config->uts_name)) {
                 fprintf(stderr, "Cannot set given uname of %s\n", config->uts_name);
