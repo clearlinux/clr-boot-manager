@@ -41,6 +41,15 @@ static inline char *test_get_mountpoint_for_device(__cbm_unused__ const char *de
         return NULL;
 }
 
+static inline char *test_devnode_to_devpath(__cbm_unused__ dev_t d)
+{
+        char *a = NULL;
+        if (asprintf(&a, "%s/dev/testRoot", TOP_BUILD_DIR "/tests/update_playground") < 0) {
+                abort();
+        }
+        return a;
+}
+
 /**
  * Default vtable for testing. Copy into a local struct and override specific
  * fields.
@@ -49,7 +58,8 @@ CbmSystemOps SystemTestOps = {.mount = test_mount,
                               .umount = test_umount,
                               .system = test_system,
                               .is_mounted = test_is_mounted,
-                              .get_mountpoint_for_device = test_get_mountpoint_for_device };
+                              .get_mountpoint_for_device = test_get_mountpoint_for_device,
+                              .devnode_to_devpath = test_devnode_to_devpath };
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
