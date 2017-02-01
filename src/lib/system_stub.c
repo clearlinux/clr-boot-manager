@@ -16,16 +16,37 @@
 #include <sys/mount.h>
 
 #include "files.h"
+#include "log.h"
+
+/**
+ * Factory function to convert a dev_t to the full device path
+ * This is the default internal function
+ */
+static char *cbm_devnode_to_devpath(dev_t dev)
+{
+        if (major(dev) == 0) {
+                LOG_ERROR("Invalid block device: %u:%u", major(dev), minor(dev));
+                return NULL;
+        }
+
+        autofree(char) *c = NULL;
+        if (asprintf(&c, "/dev/block/%u:%u", major(dev), minor(dev)) < 0) {
+                return NULL;
+        }
+        return realpath(c, NULL);
+}
 
 /**
  * Default vtable for system call passthrough
  */
-static CbmSystemOps default_system_ops = {.mount = mount,
-                                          .umount = umount,
-                                          .system = system,
-                                          .is_mounted = cbm_is_mounted,
-                                          .get_mountpoint_for_device =
-                                              cbm_get_mountpoint_for_device };
+static CbmSystemOps default_system_ops = {
+        .mount = mount,
+        .umount = umount,
+        .system = system,
+        .is_mounted = cbm_is_mounted,
+        .get_mountpoint_for_device = cbm_get_mountpoint_for_device,
+        .devnode_to_devpath = cbm_devnode_to_devpath,
+};
 
 /**
  * Pointer to the currently active vtable
@@ -50,6 +71,7 @@ void cbm_system_set_vtable(CbmSystemOps *ops)
         assert(system_ops->is_mounted != NULL);
         assert(system_ops->get_mountpoint_for_device != NULL);
         assert(system_ops->system != NULL);
+        assert(system_ops->devnode_to_devpath != NULL);
 }
 
 int cbm_system_mount(const char *source, const char *target, const char *filesystemtype,
@@ -76,6 +98,11 @@ bool cbm_system_is_mounted(const char *target)
 char *cbm_system_get_mountpoint_for_device(const char *device)
 {
         return system_ops->get_mountpoint_for_device(device);
+}
+
+char *cbm_system_devnode_to_devpath(dev_t d)
+{
+        return system_ops->devnode_to_devpath(d);
 }
 
 /*

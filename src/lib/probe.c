@@ -24,19 +24,8 @@
 #include "blkid_stub.h"
 #include "log.h"
 #include "probe.h"
+#include "system_stub.h"
 #include "util.h"
-
-/**
- * Factory function to convert a dev_t to the full device path
- */
-static char *cbm_devnode_to_devpath(dev_t dev)
-{
-        autofree(char) *c = NULL;
-        if (asprintf(&c, "/dev/block/%u:%u", major(dev), minor(dev)) < 0) {
-                return NULL;
-        }
-        return realpath(c, NULL);
-}
 
 /**
  * Convert a sysfs dev file to the target device path
@@ -65,7 +54,7 @@ static char *cbm_dev_file_to_devpath(const char *devfile)
                 return NULL;
         }
 
-        return cbm_devnode_to_devpath(makedev(dev_major, dev_minor));
+        return cbm_system_devnode_to_devpath(makedev(dev_major, dev_minor));
 }
 
 static char *cbm_get_luks_uuid(const char *part)
@@ -150,13 +139,9 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
                 LOG_ERROR("Path does not exist: %s", path);
                 return NULL;
         }
-        if (major(st.st_dev) == 0) {
-                LOG_ERROR("Invalid block device: %s", path);
-                return NULL;
-        }
         probe.dev = st.st_dev;
 
-        devnode = cbm_devnode_to_devpath(probe.dev);
+        devnode = cbm_system_devnode_to_devpath(probe.dev);
         if (!devnode) {
                 DECLARE_OOM();
                 return NULL;

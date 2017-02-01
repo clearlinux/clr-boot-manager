@@ -14,6 +14,7 @@
 #define _GNU_SOURCE
 
 #include <stdbool.h>
+#include <sys/types.h>
 
 /**
  * Defines the vtable used for all systen operations within clr-boot-manager.
@@ -32,6 +33,9 @@ typedef struct CbmSystemOps {
 
         /* exec family */
         int (*system)(const char *command);
+
+        /* dev utility */
+        char *(*devnode_to_devpath)(dev_t t);
 } CbmSystemOps;
 
 /**
@@ -73,6 +77,11 @@ int cbm_system_umount(const char *target);
  * Wrap the system() call
  */
 int cbm_system_system(const char *command);
+
+/**
+ * Resolve the path for a given dev_t
+ */
+char *cbm_system_devnode_to_devpath(dev_t d);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
