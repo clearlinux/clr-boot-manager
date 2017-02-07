@@ -189,7 +189,9 @@ check_cmdline_LDADD =	\
 	$(CHECK_LIBS)
 
 check_files_SOURCES = \
-	tests/check-files.c
+	tests/check-files.c 	\
+	tests/harness.h		\
+	tests/harness.c
 
 check_files_CFLAGS =		\
 	$(BLKID_CFLAGS)		\

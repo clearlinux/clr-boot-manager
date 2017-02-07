@@ -93,6 +93,11 @@ bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel);
  */
 bool create_timeout_conf(void);
 
+/**
+ * Set up the test harness to emulate UEFI
+ */
+void set_test_system_uefi(void);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

@@ -19,6 +19,7 @@
 #include "util.h"
 
 #include "files.h"
+#include "harness.h"
 #include "log.h"
 #include "nica/files.h"
 #include "system-harness.h"
@@ -59,10 +60,8 @@ END_TEST
 
 START_TEST(bootman_find_boot)
 {
-        if (!nc_file_exists("/sys/firmware/efi")) {
-                LOG_INFO("Skipping UEFI host-specific test");
-                return;
-        }
+        set_test_system_uefi();
+
         autofree(char) *boot = NULL;
 
         boot = get_boot_device();
