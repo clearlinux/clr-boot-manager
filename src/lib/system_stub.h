@@ -36,6 +36,8 @@ typedef struct CbmSystemOps {
 
         /* dev utility */
         char *(*devnode_to_devpath)(dev_t t);
+        const char *(*get_sysfs_path)(void);
+        const char *(*get_devfs_path)(void);
 } CbmSystemOps;
 
 /**
@@ -82,6 +84,16 @@ int cbm_system_system(const char *command);
  * Resolve the path for a given dev_t
  */
 char *cbm_system_devnode_to_devpath(dev_t d);
+
+/**
+ * Help mocking by allowing /sys to be overridden
+ */
+const char *cbm_system_get_sysfs_path(void);
+
+/**
+ * Help mocking by allowing /dev to be overridden
+ */
+const char *cbm_system_get_devfs_path(void);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

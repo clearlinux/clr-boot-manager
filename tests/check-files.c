@@ -21,6 +21,7 @@
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
+#include "system-harness.h"
 
 START_TEST(bootman_match_test)
 {
@@ -104,6 +105,7 @@ int main(void)
 
         /* syncing can be problematic during test suite runs */
         cbm_set_sync_filesystems(false);
+        cbm_system_set_vtable(&SystemTestOps);
 
         /* Ensure that logging is set up properly. */
         setenv("CBM_DEBUG", "1", 1);

@@ -36,6 +36,16 @@ static char *cbm_devnode_to_devpath(dev_t dev)
         return realpath(c, NULL);
 }
 
+static const char *cbm_get_sysfs_path(void)
+{
+        return "/sys";
+}
+
+static const char *cbm_get_devfs_path(void)
+{
+        return "/dev";
+}
+
 /**
  * Default vtable for system call passthrough
  */
@@ -46,6 +56,8 @@ static CbmSystemOps default_system_ops = {
         .is_mounted = cbm_is_mounted,
         .get_mountpoint_for_device = cbm_get_mountpoint_for_device,
         .devnode_to_devpath = cbm_devnode_to_devpath,
+        .get_sysfs_path = cbm_get_sysfs_path,
+        .get_devfs_path = cbm_get_devfs_path,
 };
 
 /**
@@ -72,6 +84,8 @@ void cbm_system_set_vtable(CbmSystemOps *ops)
         assert(system_ops->get_mountpoint_for_device != NULL);
         assert(system_ops->system != NULL);
         assert(system_ops->devnode_to_devpath != NULL);
+        assert(system_ops->get_sysfs_path != NULL);
+        assert(system_ops->get_devfs_path != NULL);
 }
 
 int cbm_system_mount(const char *source, const char *target, const char *filesystemtype,
@@ -103,6 +117,16 @@ char *cbm_system_get_mountpoint_for_device(const char *device)
 char *cbm_system_devnode_to_devpath(dev_t d)
 {
         return system_ops->devnode_to_devpath(d);
+}
+
+const char *cbm_system_get_sysfs_path()
+{
+        return system_ops->get_sysfs_path();
+}
+
+const char *cbm_system_get_devfs_path()
+{
+        return system_ops->get_devfs_path();
 }
 
 /*
