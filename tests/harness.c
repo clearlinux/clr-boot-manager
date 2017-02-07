@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include "harness.h"
+#include "system_stub.h"
 
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
 
@@ -378,6 +379,9 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        /* Force UEFI for now until we have UEFI vs legacy tests */
+        set_test_system_uefi();
+
         /* Construct kernel config directory */
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_CONF_DIRECTORY, 00755)) {
                 goto fail;
@@ -530,6 +534,48 @@ bool create_timeout_conf(void)
                 return false;
         }
         return true;
+}
+
+void set_test_system_uefi(void)
+{
+        autofree(char) *root = NULL;
+        autofree(char) *lfile = NULL;
+        autofree(char) *dfile = NULL;
+        autofree(char) *ddir = NULL;
+
+        /* Create fake UEFI variables */
+        if (asprintf(&root, "%s/firmware/efi/efivars", cbm_system_get_sysfs_path()) < 0) {
+                goto mem_fail;
+        }
+        nc_mkdir_p(root, 00755);
+
+        /* Create fake LoaderDevicePartUUID */
+        if (asprintf(&lfile, "%s/LoaderDevicePartUUID-dummyRoot", root) < 0) {
+                goto mem_fail;
+        }
+        if (!file_set_text(lfile, "E90F44B5-BB8A-41AF-B680-B0BF5B0F2A65")) {
+                goto mem_fail;
+        }
+
+        /* Create /dev/disk/by-partuuid portions */
+        if (asprintf(&ddir, "%s/disk/by-partuuid", cbm_system_get_devfs_path()) < 0) {
+                goto mem_fail;
+        }
+
+        if (asprintf(&dfile, "%s/e90f44b5-bb8a-41af-b680-b0bf5b0f2a65", ddir) < 0) {
+                goto mem_fail;
+        }
+
+        /* commit them to disk */
+        nc_mkdir_p(ddir, 00755);
+        if (!file_set_text(dfile, "clr-boot-manager UEFI testing")) {
+                goto mem_fail;
+        }
+        return;
+
+mem_fail:
+        DECLARE_OOM();
+        abort();
 }
 
 /*
