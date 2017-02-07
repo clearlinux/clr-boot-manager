@@ -50,16 +50,30 @@ static inline char *test_devnode_to_devpath(__cbm_unused__ dev_t d)
         return a;
 }
 
+static inline const char *test_get_sysfs_path(void)
+{
+        return TOP_BUILD_DIR "/tests/update_playground/sys";
+}
+
+static const char *test_get_devfs_path(void)
+{
+        return TOP_BUILD_DIR "/tests/update_playground/dev";
+}
+
 /**
  * Default vtable for testing. Copy into a local struct and override specific
  * fields.
  */
-CbmSystemOps SystemTestOps = {.mount = test_mount,
-                              .umount = test_umount,
-                              .system = test_system,
-                              .is_mounted = test_is_mounted,
-                              .get_mountpoint_for_device = test_get_mountpoint_for_device,
-                              .devnode_to_devpath = test_devnode_to_devpath };
+CbmSystemOps SystemTestOps = {
+        .mount = test_mount,
+        .umount = test_umount,
+        .system = test_system,
+        .is_mounted = test_is_mounted,
+        .get_mountpoint_for_device = test_get_mountpoint_for_device,
+        .devnode_to_devpath = test_devnode_to_devpath,
+        .get_sysfs_path = test_get_sysfs_path,
+        .get_devfs_path = test_get_devfs_path,
+};
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
