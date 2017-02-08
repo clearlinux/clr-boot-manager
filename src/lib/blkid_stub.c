@@ -12,7 +12,20 @@
 #include "blkid_stub.h"
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdlib.h>
+
+/**
+ * Ensure we check here for the blkid device being correct.
+ */
+static int cbm_blkid_devno_to_wholedisk_wrapped(dev_t dev, char *diskname, size_t len,
+                                                dev_t *diskdevno)
+{
+        if (major(dev) == 0) {
+                return -1;
+        }
+        return blkid_devno_to_wholedisk(dev, diskname, len, diskdevno);
+}
 
 /**
  * Default blkid ops vtable passes through to libblkid itself
@@ -35,7 +48,7 @@ static CbmBlkidOps default_blkid_ops = {
         .partition_get_uuid = blkid_partition_get_uuid,
 
         /* Misc */
-        .devno_to_wholedisk = blkid_devno_to_wholedisk,
+        .devno_to_wholedisk = cbm_blkid_devno_to_wholedisk_wrapped,
 };
 
 /**

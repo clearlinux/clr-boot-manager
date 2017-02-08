@@ -171,12 +171,8 @@ static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
                 return false;
         }
 
-        if (major(st.st_dev) == 0) {
-                LOG_ERROR("Invalid block device: %s", path);
-                return false;
-        }
-
         if (cbm_blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
+                LOG_ERROR("Invalid block device: %s", path);
                 return false;
         }
         *diskdevno = ret;
