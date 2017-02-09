@@ -19,8 +19,10 @@
 #include "util.h"
 
 #include "files.h"
+#include "harness.h"
 #include "log.h"
 #include "nica/files.h"
+#include "system-harness.h"
 
 START_TEST(bootman_match_test)
 {
@@ -58,10 +60,8 @@ END_TEST
 
 START_TEST(bootman_find_boot)
 {
-        if (!nc_file_exists("/sys/firmware/efi")) {
-                LOG_INFO("Skipping UEFI host-specific test");
-                return;
-        }
+        set_test_system_uefi();
+
         autofree(char) *boot = NULL;
 
         boot = get_boot_device();
@@ -75,8 +75,8 @@ START_TEST(bootman_mount_test)
                 LOG_INFO("Skipping mount test as /proc/self/mounts is absent");
                 return;
         }
-        fail_if(!cbm_is_mounted("/", NULL), "Apparently / not mounted. Question physics.");
-        fail_if(cbm_is_mounted("/,^roflcopter", NULL),
+        fail_if(!cbm_is_mounted("/"), "Apparently / not mounted. Question physics.");
+        fail_if(cbm_is_mounted("/,^roflcopter"),
                 "Non-existent path mounted. Or you have a genuinely weird path");
 }
 END_TEST
@@ -104,6 +104,7 @@ int main(void)
 
         /* syncing can be problematic during test suite runs */
         cbm_set_sync_filesystems(false);
+        cbm_system_set_vtable(&SystemTestOps);
 
         /* Ensure that logging is set up properly. */
         setenv("CBM_DEBUG", "1", 1);

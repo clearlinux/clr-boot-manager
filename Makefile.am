@@ -85,6 +85,8 @@ libcbm_la_SOURCES =			\
 	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
+	src/lib/blkid_stub.h            \
+	src/lib/blkid_stub.c            \
 	src/lib/cmdline.h               \
 	src/lib/cmdline.c               \
 	src/lib/files.h			\
@@ -95,6 +97,8 @@ libcbm_la_SOURCES =			\
 	src/lib/log.c			\
 	src/lib/probe.h                 \
 	src/lib/probe.c                 \
+	src/lib/system_stub.h           \
+	src/lib/system_stub.c           \
 	src/lib/writer.h                \
 	src/lib/writer.c                \
 	src/lib/util.h
@@ -154,6 +158,8 @@ check_PROGRAMS = $(TESTS)
 
 check_core_SOURCES =		\
 	tests/check-core.c	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
 	tests/harness.h		\
 	tests/harness.c
 
@@ -183,7 +189,9 @@ check_cmdline_LDADD =	\
 	$(CHECK_LIBS)
 
 check_files_SOURCES = \
-	tests/check-files.c
+	tests/check-files.c 	\
+	tests/harness.h		\
+	tests/harness.c
 
 check_files_CFLAGS =		\
 	$(BLKID_CFLAGS)		\
@@ -212,6 +220,8 @@ check_os_release_LDADD =	\
 
 check_updates_SOURCES =		\
 	tests/check-updates.c	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
 	tests/harness.h		\
 	tests/harness.c
 

@@ -11,7 +11,6 @@
 
 #define _GNU_SOURCE
 
-#include <blkid.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -29,9 +28,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "blkid_stub.h"
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
+#include "system_stub.h"
 #include "util.h"
 
 DEF_AUTOFREE(DIR, closedir)
@@ -89,8 +90,17 @@ char *get_boot_device()
         ssize_t size = 0;
         autofree(char) *uuid = NULL;
         autofree(char) *p = NULL;
+        autofree(char) *glob_path = NULL;
+        autofree(char) *dev_path = NULL;
 
-        glob("/sys/firmware/efi/efivars/LoaderDevicePartUUID*", GLOB_DOOFFS, NULL, &glo);
+        if (asprintf(&glob_path,
+                     "%s/firmware/efi/efivars/LoaderDevicePartUUID*",
+                     cbm_system_get_sysfs_path()) < 0) {
+                DECLARE_OOM();
+                return NULL;
+        }
+
+        glob(glob_path, GLOB_DOOFFS, NULL, &glo);
 
         if (glo.gl_pathc < 1) {
                 globfree(&glo);
@@ -128,7 +138,7 @@ char *get_boot_device()
         }
         read_buf[j] = '\0';
 
-        if (asprintf(&p, "/dev/disk/by-partuuid/%s", uuid) < 0) {
+        if (asprintf(&p, "%s/disk/by-partuuid/%s", cbm_system_get_devfs_path(), uuid) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -138,8 +148,12 @@ char *get_boot_device()
         }
 next:
 
-        if (nc_file_exists("/dev/disk/by-partlabel/ESP")) {
-                return strdup("/dev/disk/by-partlabel/ESP");
+        if (asprintf(&dev_path, "%s/disk/by-partlabel/ESP", cbm_system_get_devfs_path()) < 0) {
+                DECLARE_OOM();
+                return NULL;
+        }
+        if (nc_file_exists(dev_path)) {
+                return strdup(dev_path);
         }
         return NULL;
 }
@@ -157,12 +171,8 @@ static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
                 return false;
         }
 
-        if (major(st.st_dev) == 0) {
+        if (cbm_blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
                 LOG_ERROR("Invalid block device: %s", path);
-                return false;
-        }
-
-        if (blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
                 return false;
         }
         *diskdevno = ret;
@@ -173,12 +183,13 @@ char *get_parent_disk(char *path)
 {
         dev_t devt;
         autofree(char) *node = NULL;
+        const char *devfs = cbm_system_get_devfs_path();
 
         if (!get_parent_disk_devno(path, &devt)) {
                 return NULL;
         }
 
-        if (asprintf(&node, "/dev/block/%u:%u", major(devt), minor(devt)) < 0) {
+        if (asprintf(&node, "%s/block/%u:%u", devfs, major(devt), minor(devt)) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -192,50 +203,51 @@ char *get_legacy_boot_device(char *path)
         int part_count = 0;
         char *ret = NULL;
         autofree(char) *parent_disk = NULL;
+        const char *devfs = cbm_system_get_devfs_path();
 
         parent_disk = get_parent_disk(path);
         if (!parent_disk) {
                 return NULL;
         }
 
-        probe = blkid_new_probe_from_filename(parent_disk);
+        probe = cbm_blkid_new_probe_from_filename(parent_disk);
         if (!probe) {
                 LOG_ERROR("Unable to blkid probe %s", parent_disk);
                 return NULL;
         }
 
-        blkid_probe_enable_superblocks(probe, 1);
-        blkid_probe_set_superblocks_flags(probe, BLKID_SUBLKS_TYPE);
-        blkid_probe_enable_partitions(probe, 1);
-        blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
+        cbm_blkid_probe_enable_superblocks(probe, 1);
+        cbm_blkid_probe_set_superblocks_flags(probe, BLKID_SUBLKS_TYPE);
+        cbm_blkid_probe_enable_partitions(probe, 1);
+        cbm_blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
 
-        if (blkid_do_safeprobe(probe) != 0) {
+        if (cbm_blkid_do_safeprobe(probe) != 0) {
                 LOG_ERROR("Error probing filesystem of %s: %s", parent_disk, strerror(errno));
                 goto clean;
         }
 
-        parts = blkid_probe_get_partitions(probe);
+        parts = cbm_blkid_probe_get_partitions(probe);
 
-        part_count = blkid_partlist_numof_partitions(parts);
+        part_count = cbm_blkid_partlist_numof_partitions(parts);
         if (part_count <= 0) {
                 /* No partitions */
                 goto clean;
         }
 
         for (int i = 0; i < part_count; i++) {
-                blkid_partition part = blkid_partlist_get_partition(parts, i);
+                blkid_partition part = cbm_blkid_partlist_get_partition(parts, i);
                 const char *part_id = NULL;
                 unsigned long long flags;
                 autofree(char) *pt_path = NULL;
 
-                flags = blkid_partition_get_flags(part);
+                flags = cbm_blkid_partition_get_flags(part);
                 if (flags & CBM_MBR_BOOT_FLAG) {
-                        part_id = blkid_partition_get_uuid(part);
+                        part_id = cbm_blkid_partition_get_uuid(part);
                         if (!part_id) {
                                 LOG_ERROR("Not a valid GPT disk");
                                 goto clean;
                         }
-                        if (asprintf(&pt_path, "/dev/disk/by-partuuid/%s", part_id) < 0) {
+                        if (asprintf(&pt_path, "%s/disk/by-partuuid/%s", devfs, part_id) < 0) {
                                 DECLARE_OOM();
                                 goto clean;
                         }
@@ -245,7 +257,7 @@ char *get_legacy_boot_device(char *path)
         }
 
 clean:
-        blkid_free_probe(probe);
+        cbm_blkid_free_probe(probe);
         errno = 0;
         return ret;
 }
@@ -386,22 +398,15 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
         return true;
 }
 
-bool cbm_is_mounted(const char *path, bool *error)
+bool cbm_is_mounted(const char *path)
 {
         autofree(FILE_MNT) *tab = NULL;
         struct mntent *ent = NULL;
         struct mntent mnt = { 0 };
         char buf[8192];
 
-        if (error) {
-                *error = false;
-        }
-
         tab = setmntent("/proc/self/mounts", "r");
         if (!tab) {
-                if (error) {
-                        *error = true;
-                }
                 return false;
         }
 
@@ -449,7 +454,12 @@ char *cbm_get_mountpoint_for_device(const char *device)
 
 bool cbm_system_has_uefi()
 {
-        return nc_file_exists("/sys/firmware/efi");
+        autofree(char) *p = NULL;
+        if (asprintf(&p, "%s/firmware/efi", cbm_system_get_sysfs_path()) < 0) {
+                DECLARE_OOM();
+                return false;
+        }
+        return nc_file_exists(p);
 }
 
 void cbm_set_sync_filesystems(bool should_sync)
