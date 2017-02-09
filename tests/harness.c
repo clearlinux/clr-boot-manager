@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include "harness.h"
+#include "system_stub.h"
 
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
 
@@ -261,7 +262,7 @@ bool push_kernel_update(PlaygroundKernel *kernel)
                 return false;
         }
         /* Write the "cmdline file" */
-        if (!file_set_text((const char *)cmdfile, (char *)kernel->version)) {
+        if (!file_set_text((const char *)cmdfile, "cmdline-for-kernel")) {
                 return false;
         }
         /* Write the "config file" */
@@ -337,8 +338,6 @@ bool push_bootloader_update(int revision)
         return true;
 }
 
-static int prepare_count = 0;
-
 BootManager *prepare_playground(PlaygroundConfig *config)
 {
         assert(config != NULL);
@@ -378,6 +377,13 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        /* Initialise the root devfs/sysfs */
+        if (config->uefi) {
+                set_test_system_uefi();
+        } else {
+                set_test_system_legacy();
+        }
+
         /* Construct kernel config directory */
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_CONF_DIRECTORY, 00755)) {
                 goto fail;
@@ -386,30 +392,6 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         if (!boot_manager_set_prefix(m, PLAYGROUND_ROOT)) {
                 goto fail;
         }
-
-        if (m->sysconfig->root_device) {
-                cbm_probe_free(m->sysconfig->root_device);
-        }
-        m->sysconfig->root_device = calloc(1, sizeof(struct CbmDeviceProbe));
-        if (!m->sysconfig->root_device) {
-                DECLARE_OOM();
-                abort();
-        }
-        /* Create fake root device, and increase coverage */
-        CbmDeviceProbe *root = m->sysconfig->root_device;
-        if (prepare_count % 2 == 0) {
-                *root = (CbmDeviceProbe){
-                        .dev = 0,
-                        .part_uuid = strdup("DUMMY_UUID"),
-                        .uuid = strdup("UUID"),
-                        .luks_uuid = strdup("fakeLuksUUID"),
-                };
-        } else {
-                *root = (CbmDeviceProbe){
-                        .dev = 0, .uuid = strdup("UUID"),
-                };
-        }
-        ++prepare_count;
 
         /* Construct the root kernels directory */
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_DIRECTORY, 00755)) {
@@ -444,7 +426,6 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 }
         }
 
-        boot_manager_set_can_mount(m, false);
         boot_manager_set_image_mode(m, false);
         if (config->uts_name && !boot_manager_set_uname(m, config->uts_name)) {
                 fprintf(stderr, "Cannot set given uname of %s\n", config->uts_name);
@@ -510,9 +491,10 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
         return file_count;
 }
 
-bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel)
+bool confirm_kernel_installed(BootManager *manager, PlaygroundConfig *config,
+                              PlaygroundKernel *kernel)
 {
-        return kernel_installed_files_count(manager, kernel) == 3;
+        return kernel_installed_files_count(manager, kernel) == config->uefi ? 3 : 2;
 }
 
 bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
@@ -531,6 +513,100 @@ bool create_timeout_conf(void)
                 return false;
         }
         return true;
+}
+
+void set_test_system_uefi(void)
+{
+        autofree(char) *root = NULL;
+        autofree(char) *lfile = NULL;
+        autofree(char) *dfile = NULL;
+        autofree(char) *ddir = NULL;
+
+        /* Create fake UEFI variables */
+        if (asprintf(&root, "%s/firmware/efi/efivars", cbm_system_get_sysfs_path()) < 0) {
+                goto mem_fail;
+        }
+        nc_mkdir_p(root, 00755);
+
+        /* Create fake LoaderDevicePartUUID */
+        if (asprintf(&lfile, "%s/LoaderDevicePartUUID-dummyRoot", root) < 0) {
+                goto mem_fail;
+        }
+        if (!file_set_text(lfile, "E90F44B5-BB8A-41AF-B680-B0BF5B0F2A65")) {
+                goto mem_fail;
+        }
+
+        /* Create /dev/disk/by-partuuid portions */
+        if (asprintf(&ddir, "%s/disk/by-partuuid", cbm_system_get_devfs_path()) < 0) {
+                goto mem_fail;
+        }
+
+        if (asprintf(&dfile, "%s/e90f44b5-bb8a-41af-b680-b0bf5b0f2a65", ddir) < 0) {
+                goto mem_fail;
+        }
+
+        /* commit them to disk */
+        nc_mkdir_p(ddir, 00755);
+        if (!file_set_text(dfile, "clr-boot-manager UEFI testing")) {
+                goto mem_fail;
+        }
+        return;
+
+mem_fail:
+        DECLARE_OOM();
+        abort();
+}
+
+void set_test_system_legacy(void)
+{
+        autofree(char) *ddir = NULL;
+        autofree(char) *diskdir = NULL;
+        autofree(char) *diskfile = NULL;
+        autofree(char) *dfile = NULL;
+        autofree(char) *dlink = NULL;
+        const char *devfs_path = cbm_system_get_devfs_path();
+
+        /* dev tree */
+        if (asprintf(&ddir, "%s/block", devfs_path) < 0) {
+                goto mem_fail;
+        }
+
+        /* dev/block link */
+        if (asprintf(&dlink, "%s/block/%u:%u", devfs_path, 8, 8) < 0) {
+                goto mem_fail;
+        }
+
+        /* "real" dev file for realpath()ing */
+        if (asprintf(&dfile, "%s/leRootDevice", devfs_path) < 0) {
+                goto mem_fail;
+        }
+
+        nc_mkdir_p(ddir, 00755);
+        if (!file_set_text(dfile, "le-root-device")) {
+                goto mem_fail;
+        }
+
+        if (symlink("../leRootDevice", dlink) != 0) {
+                fprintf(stderr, "Cannot create symlink: %s", strerror(errno));
+                abort();
+        }
+
+        /* Create /dev/disk/by-partuuid portions */
+        if (asprintf(&diskdir, "%s/disk/by-partuuid", cbm_system_get_devfs_path()) < 0) {
+                goto mem_fail;
+        }
+        if (asprintf(&diskfile, "%s/%s", diskdir, "Test-PartUUID") < 0) {
+                goto mem_fail;
+        }
+        nc_mkdir_p(diskdir, 00755);
+        if (!file_set_text(diskfile, "clr-boot-manager Legacy testing")) {
+                goto mem_fail;
+        }
+        return;
+
+mem_fail:
+        DECLARE_OOM();
+        abort();
 }
 
 /*

@@ -27,6 +27,7 @@
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
+#include "system_stub.h"
 #include "util.h"
 #include "writer.h"
 
@@ -258,7 +259,7 @@ static bool syslinux_install(const BootManager *manager)
         close(mbr);
         close(syslinux_mbr);
 
-        if (system(extlinux_cmd) != 0) {
+        if (cbm_system_system(extlinux_cmd) != 0) {
                 return false;
         }
 

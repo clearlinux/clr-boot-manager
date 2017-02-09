@@ -128,7 +128,7 @@ bool copy_file_atomic(const char *src, const char *dst, mode_t mode);
  *
  * @param path Path to test is mounted or not
  */
-bool cbm_is_mounted(const char *path, bool *error);
+bool cbm_is_mounted(const char *path);
 
 /**
  * Determine the mountpoint for the given device

@@ -33,6 +33,7 @@ typedef struct PlaygroundConfig {
         const char *uts_name;
         PlaygroundKernel *initial_kernels;
         size_t n_kernels;
+        bool uefi;
 } PlaygroundConfig;
 
 /**
@@ -81,7 +82,8 @@ bool confirm_bootloader_match(void);
 /**
  * Assert that the kernel is fully installed
  */
-bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel);
+bool confirm_kernel_installed(BootManager *manager, PlaygroundConfig *config,
+                              PlaygroundKernel *kernel);
 
 /**
  * Assert that the kernel is fully uninstalled
@@ -92,6 +94,16 @@ bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel);
  * Create boot_timeout.conf in /etc
  */
 bool create_timeout_conf(void);
+
+/**
+ * Set up the test harness to emulate UEFI
+ */
+void set_test_system_uefi(void);
+
+/**
+ * Set up the test harness to emulate legacy boot
+ */
+void set_test_system_legacy(void);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

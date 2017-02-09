@@ -21,6 +21,7 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/10_first.conf \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/20_second.conf \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/30_third.conf \
+	     ${top_srcdir}/tests/data/gptmbr.bin \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/man/clr-boot-manager.1
@@ -85,6 +86,8 @@ libcbm_la_SOURCES =			\
 	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
+	src/lib/blkid_stub.h            \
+	src/lib/blkid_stub.c            \
 	src/lib/cmdline.h               \
 	src/lib/cmdline.c               \
 	src/lib/files.h			\
@@ -95,6 +98,8 @@ libcbm_la_SOURCES =			\
 	src/lib/log.c			\
 	src/lib/probe.h                 \
 	src/lib/probe.c                 \
+	src/lib/system_stub.h           \
+	src/lib/system_stub.c           \
 	src/lib/writer.h                \
 	src/lib/writer.c                \
 	src/lib/util.h
@@ -147,13 +152,16 @@ TESTS = 		\
 	check_core 	\
 	check_cmdline   \
 	check_files 	\
+	check_legacy    \
 	check_os_release \
-	check_updates
+	check_uefi
 
 check_PROGRAMS = $(TESTS)
 
 check_core_SOURCES =		\
 	tests/check-core.c	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
 	tests/harness.h		\
 	tests/harness.c
 
@@ -183,7 +191,9 @@ check_cmdline_LDADD =	\
 	$(CHECK_LIBS)
 
 check_files_SOURCES = \
-	tests/check-files.c
+	tests/check-files.c 	\
+	tests/harness.h		\
+	tests/harness.c
 
 check_files_CFLAGS =		\
 	$(BLKID_CFLAGS)		\
@@ -191,6 +201,24 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
+	libcbm.la	\
+	src/libnica/libnica.la	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_legacy_SOURCES = \
+	tests/check-legacy.c 	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
+	tests/harness.h		\
+	tests/harness.c
+
+check_legacy_CFLAGS =		\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_legacy_LDADD =	\
 	libcbm.la	\
 	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
@@ -210,21 +238,24 @@ check_os_release_LDADD =	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
-check_updates_SOURCES =		\
-	tests/check-updates.c	\
+check_uefi_SOURCES = \
+	tests/check-uefi.c 	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
 	tests/harness.h		\
 	tests/harness.c
 
-check_updates_CFLAGS =		\
+check_uefi_CFLAGS =		\
 	$(BLKID_CFLAGS)		\
 	$(CHECK_CFLAGS)		\
 	$(AM_CFLAGS)
 
-check_updates_LDADD =	\
+check_uefi_LDADD =	\
 	libcbm.la	\
 	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
+
 
 @VALGRIND_CHECK_RULES@
 

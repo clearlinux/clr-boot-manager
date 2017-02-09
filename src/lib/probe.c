@@ -11,7 +11,6 @@
 
 #define _GNU_SOURCE
 
-#include <blkid.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <glob.h>
@@ -22,21 +21,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "blkid_stub.h"
 #include "log.h"
 #include "probe.h"
+#include "system_stub.h"
 #include "util.h"
-
-/**
- * Factory function to convert a dev_t to the full device path
- */
-static char *cbm_devnode_to_devpath(dev_t dev)
-{
-        autofree(char) *c = NULL;
-        if (asprintf(&c, "/dev/block/%u:%u", major(dev), minor(dev)) < 0) {
-                return NULL;
-        }
-        return realpath(c, NULL);
-}
 
 /**
  * Convert a sysfs dev file to the target device path
@@ -65,7 +54,7 @@ static char *cbm_dev_file_to_devpath(const char *devfile)
                 return NULL;
         }
 
-        return cbm_devnode_to_devpath(makedev(dev_major, dev_minor));
+        return cbm_system_devnode_to_devpath(makedev(dev_major, dev_minor));
 }
 
 static char *cbm_get_luks_uuid(const char *part)
@@ -76,9 +65,10 @@ static char *cbm_get_luks_uuid(const char *part)
         blkid_probe blk_probe = NULL;
         char *ret = NULL;
         const char *value = NULL;
+        const char *sys = cbm_system_get_sysfs_path();
 
         /* i.e. /sys/block/dm-1/slaves/dm-0/slaves/sdb1/dev */
-        if (asprintf(&npath, "/sys/block/%s/slaves/*/slaves/*/dev", part) < 0) {
+        if (asprintf(&npath, "%s/block/%s/slaves/*/slaves/*/dev", sys, part) < 0) {
                 DECLARE_OOM();
                 return NULL;
         }
@@ -96,24 +86,24 @@ static char *cbm_get_luks_uuid(const char *part)
                 return NULL;
         }
 
-        blk_probe = blkid_new_probe_from_filename(dpath);
+        blk_probe = cbm_blkid_new_probe_from_filename(dpath);
         if (!blk_probe) {
                 LOG_ERROR("Unable to probe %s", dpath);
                 return NULL;
         }
 
-        blkid_probe_enable_superblocks(blk_probe, 1);
-        blkid_probe_set_superblocks_flags(blk_probe, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_UUID);
-        blkid_probe_enable_partitions(blk_probe, 1);
-        blkid_probe_set_partitions_flags(blk_probe, BLKID_PARTS_ENTRY_DETAILS);
+        cbm_blkid_probe_enable_superblocks(blk_probe, 1);
+        cbm_blkid_probe_set_superblocks_flags(blk_probe, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_UUID);
+        cbm_blkid_probe_enable_partitions(blk_probe, 1);
+        cbm_blkid_probe_set_partitions_flags(blk_probe, BLKID_PARTS_ENTRY_DETAILS);
 
-        if (blkid_do_safeprobe(blk_probe) != 0) {
+        if (cbm_blkid_do_safeprobe(blk_probe) != 0) {
                 LOG_ERROR("Error probing filesystem: %s", strerror(errno));
                 goto clean;
         }
 
         /* Grab the type */
-        if (blkid_probe_lookup_value(blk_probe, "TYPE", &value, NULL) != 0) {
+        if (cbm_blkid_probe_lookup_value(blk_probe, "TYPE", &value, NULL) != 0) {
                 LOG_ERROR("Error determining type of device %s: %s\n", dpath, strerror(errno));
                 goto clean;
         }
@@ -123,7 +113,7 @@ static char *cbm_get_luks_uuid(const char *part)
                 goto clean;
         }
 
-        if (blkid_probe_lookup_value(blk_probe, "UUID", &value, NULL) == 0) {
+        if (cbm_blkid_probe_lookup_value(blk_probe, "UUID", &value, NULL) == 0) {
                 ret = strdup(value);
                 if (!ret) {
                         DECLARE_OOM();
@@ -132,7 +122,7 @@ static char *cbm_get_luks_uuid(const char *part)
         }
 
 clean:
-        blkid_free_probe(blk_probe);
+        cbm_blkid_free_probe(blk_probe);
         return ret;
 }
 
@@ -150,35 +140,31 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
                 LOG_ERROR("Path does not exist: %s", path);
                 return NULL;
         }
-        if (major(st.st_dev) == 0) {
-                LOG_ERROR("Invalid block device: %s", path);
-                return NULL;
-        }
         probe.dev = st.st_dev;
 
-        devnode = cbm_devnode_to_devpath(probe.dev);
+        devnode = cbm_system_devnode_to_devpath(probe.dev);
         if (!devnode) {
                 DECLARE_OOM();
                 return NULL;
         }
 
-        blk_probe = blkid_new_probe_from_filename(devnode);
+        blk_probe = cbm_blkid_new_probe_from_filename(devnode);
         if (!blk_probe) {
                 fprintf(stderr, "Unable to probe %u:%u", major(st.st_dev), minor(st.st_dev));
                 return NULL;
         }
 
-        blkid_probe_enable_superblocks(blk_probe, 1);
-        blkid_probe_set_superblocks_flags(blk_probe, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_UUID);
-        blkid_probe_enable_partitions(blk_probe, 1);
-        blkid_probe_set_partitions_flags(blk_probe, BLKID_PARTS_ENTRY_DETAILS);
+        cbm_blkid_probe_enable_superblocks(blk_probe, 1);
+        cbm_blkid_probe_set_superblocks_flags(blk_probe, BLKID_SUBLKS_TYPE | BLKID_SUBLKS_UUID);
+        cbm_blkid_probe_enable_partitions(blk_probe, 1);
+        cbm_blkid_probe_set_partitions_flags(blk_probe, BLKID_PARTS_ENTRY_DETAILS);
 
-        if (blkid_do_safeprobe(blk_probe) != 0) {
+        if (cbm_blkid_do_safeprobe(blk_probe) != 0) {
                 LOG_ERROR("Error probing filesystem: %s", strerror(errno));
                 goto clean;
         }
 
-        if (blkid_probe_lookup_value(blk_probe, "PART_ENTRY_UUID", &value, NULL) == 0) {
+        if (cbm_blkid_probe_lookup_value(blk_probe, "PART_ENTRY_UUID", &value, NULL) == 0) {
                 probe.part_uuid = strdup(value);
                 if (!probe.part_uuid) {
                         DECLARE_OOM();
@@ -186,7 +172,7 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
                 }
         }
 
-        if (blkid_probe_lookup_value(blk_probe, "UUID", &value, NULL) == 0) {
+        if (cbm_blkid_probe_lookup_value(blk_probe, "UUID", &value, NULL) == 0) {
                 probe.uuid = strdup(value);
                 if (!probe.uuid) {
                         DECLARE_OOM();
@@ -213,7 +199,7 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
         *ret = probe;
 
 clean:
-        blkid_free_probe(blk_probe);
+        cbm_blkid_free_probe(blk_probe);
         return ret;
 }
 

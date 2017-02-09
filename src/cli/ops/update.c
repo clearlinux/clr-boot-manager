@@ -37,9 +37,6 @@ bool cbm_command_update(int argc, char **argv)
                 return false;
         }
 
-        /* Allow mounting of the ESP */
-        boot_manager_set_can_mount(manager, true);
-
         if (root) {
                 autofree(char) *realp = NULL;
 
