@@ -153,7 +153,8 @@ TESTS = 		\
 	check_cmdline   \
 	check_files 	\
 	check_legacy    \
-	check_os_release
+	check_os_release \
+	check_uefi
 
 check_PROGRAMS = $(TESTS)
 
@@ -236,6 +237,25 @@ check_os_release_LDADD =	\
 	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
+
+check_uefi_SOURCES = \
+	tests/check-uefi.c 	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
+	tests/harness.h		\
+	tests/harness.c
+
+check_uefi_CFLAGS =		\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_uefi_LDADD =	\
+	libcbm.la	\
+	src/libnica/libnica.la	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
 
 @VALGRIND_CHECK_RULES@
 
