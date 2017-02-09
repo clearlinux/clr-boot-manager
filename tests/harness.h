@@ -99,6 +99,11 @@ bool create_timeout_conf(void);
  */
 void set_test_system_uefi(void);
 
+/**
+ * Set up the test harness to emulate legacy boot
+ */
+void set_test_system_legacy(void);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

@@ -29,6 +29,33 @@
 #include "harness.h"
 #include "system-harness.h"
 
+/**
+ * Coerce legacy lookup
+ */
+static inline int legacy_devno_to_wholedisk(__cbm_unused__ dev_t dev, __cbm_unused__ char *diskname,
+                                            __cbm_unused__ size_t len,
+                                            __cbm_unused__ dev_t *diskdevno)
+{
+        *diskdevno = makedev(8, 8);
+        return 0;
+}
+
+/**
+ * Forces detection of GPT legacy boot partition
+ */
+static inline unsigned long long legacy_partition_get_flags(__cbm_unused__ blkid_partition par)
+{
+        return (1ULL << 2);
+}
+
+/**
+ * Force the detection of a boot partition GPT UUID
+ */
+static inline const char *legacy_partition_get_uuid(__cbm_unused__ blkid_partition par)
+{
+        return DEFAULT_PART_UUID;
+}
+
 static PlaygroundKernel legacy_kernels[] = { { "4.2.1", "kvm", 121, false },
                                              { "4.2.3", "kvm", 124, true },
                                              { "4.2.1", "native", 137, false },
@@ -44,13 +71,22 @@ static PlaygroundConfig legacy_config = { "4.2.1-121.kvm",
 START_TEST(bootman_legacy_get_boot_device)
 {
         autofree(char) *boot_device = NULL;
-        prepare_playground(&legacy_config);
+        autofree(BootManager) *m = NULL;
+        autofree(char) *exp = NULL;
+
+        /* Ensure cleanup */
+        m = prepare_playground(&legacy_config);
 
         boot_device = get_boot_device();
         fail_if(boot_device != NULL, "Found incorrect UEFI device for Legacy Boot");
 
         boot_device = get_legacy_boot_device(PLAYGROUND_ROOT);
         fail_if(!boot_device, "Failed to determine legacy boot device");
+
+        if (asprintf(&exp, "%s/dev/disk/by-partuuid/Test-PartUUID", PLAYGROUND_ROOT) < 0) {
+                abort();
+        }
+        fail_if(!streq(exp, boot_device), "Boot device does not match expected result");
 }
 END_TEST
 
@@ -72,6 +108,11 @@ int main(void)
         Suite *s;
         SRunner *sr;
         int fail;
+        /* override test ops for legacy testing */
+        CbmBlkidOps blkid_ops = BlkidTestOps;
+        blkid_ops.devno_to_wholedisk = legacy_devno_to_wholedisk;
+        blkid_ops.partition_get_flags = legacy_partition_get_flags;
+        blkid_ops.partition_get_uuid = legacy_partition_get_uuid;
 
         /* syncing can be problematic during test suite runs */
         cbm_set_sync_filesystems(false);
@@ -80,7 +121,7 @@ int main(void)
         setenv("CBM_DEBUG", "1", 1);
         cbm_log_init(stderr);
 
-        cbm_blkid_set_vtable(&BlkidTestOps);
+        cbm_blkid_set_vtable(&blkid_ops);
         cbm_system_set_vtable(&SystemTestOps);
 
         s = core_suite();
