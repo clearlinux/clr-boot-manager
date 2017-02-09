@@ -162,6 +162,7 @@ TESTS = 		\
 	check_core 	\
 	check_cmdline   \
 	check_files 	\
+	check_legacy    \
 	check_os_release
 
 check_PROGRAMS = $(TESTS)
@@ -209,6 +210,24 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
+	libcbm.la	\
+	src/libnica/libnica.la	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_legacy_SOURCES = \
+	tests/check-legacy.c 	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
+	tests/harness.h		\
+	tests/harness.c
+
+check_legacy_CFLAGS =		\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_legacy_LDADD =	\
 	libcbm.la	\
 	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
