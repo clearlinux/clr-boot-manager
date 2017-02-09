@@ -15,8 +15,7 @@
 
 static BootLoaderConfig goofiboot_config = {.vendor_dir = "goofiboot",
                                             .efi_dir = "/usr/lib/goofiboot",
-                                            .x64_blob = "goofibootx64.efi",
-                                            .ia32_blob = "goofibootia32.efi",
+                                            .efi_blob = "goofiboot" SYSTEMD_EFI_SUFFIX,
                                             .name = "goofiboot" };
 
 static bool goofiboot_init(const BootManager *manager)

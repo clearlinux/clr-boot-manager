@@ -54,8 +54,7 @@ BootManager *boot_manager_new()
                 }
         }
 
-        /* CLI should override these */
-        boot_manager_set_can_mount(r, false);
+        /* CLI can override this */
         boot_manager_set_image_mode(r, false);
 
         return r;
@@ -430,18 +429,6 @@ bool boot_manager_set_uname(BootManager *self, const char *uname)
         memcpy(&(self->sys_kernel), &k, sizeof(struct SystemKernel));
         self->have_sys_kernel = have_sys_kernel;
         return self->have_sys_kernel;
-}
-
-void boot_manager_set_can_mount(BootManager *self, bool can_mount)
-{
-        assert(self != NULL);
-        self->can_mount = can_mount;
-}
-
-bool boot_manager_get_can_mount(BootManager *self)
-{
-        assert(self != NULL);
-        return self->can_mount;
 }
 
 /*

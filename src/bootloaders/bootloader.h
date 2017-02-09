@@ -13,6 +13,12 @@
 
 #include "bootman.h"
 
+#if UINTPTR_MAX == 0xffffffffffffffff
+#define DEFAULT_EFI_BLOB "BOOTX64.EFI"
+#else
+#define DEFAULT_EFI_BLOB "BOOTIA32.EFI"
+#endif
+
 typedef bool (*boot_loader_init)(const BootManager *);
 typedef bool (*boot_loader_install_kernel)(const BootManager *, const Kernel *);
 typedef bool (*boot_loader_remove_kernel)(const BootManager *, const Kernel *);

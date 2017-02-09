@@ -11,7 +11,6 @@
 
 #define _GNU_SOURCE
 
-#include <blkid.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -29,6 +28,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "blkid_stub.h"
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
@@ -162,7 +162,7 @@ static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
                 return false;
         }
 
-        if (blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
+        if (cbm_blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
                 return false;
         }
         *diskdevno = ret;
@@ -198,39 +198,39 @@ char *get_legacy_boot_device(char *path)
                 return NULL;
         }
 
-        probe = blkid_new_probe_from_filename(parent_disk);
+        probe = cbm_blkid_new_probe_from_filename(parent_disk);
         if (!probe) {
                 LOG_ERROR("Unable to blkid probe %s", parent_disk);
                 return NULL;
         }
 
-        blkid_probe_enable_superblocks(probe, 1);
-        blkid_probe_set_superblocks_flags(probe, BLKID_SUBLKS_TYPE);
-        blkid_probe_enable_partitions(probe, 1);
-        blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
+        cbm_blkid_probe_enable_superblocks(probe, 1);
+        cbm_blkid_probe_set_superblocks_flags(probe, BLKID_SUBLKS_TYPE);
+        cbm_blkid_probe_enable_partitions(probe, 1);
+        cbm_blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
 
-        if (blkid_do_safeprobe(probe) != 0) {
+        if (cbm_blkid_do_safeprobe(probe) != 0) {
                 LOG_ERROR("Error probing filesystem of %s: %s", parent_disk, strerror(errno));
                 goto clean;
         }
 
-        parts = blkid_probe_get_partitions(probe);
+        parts = cbm_blkid_probe_get_partitions(probe);
 
-        part_count = blkid_partlist_numof_partitions(parts);
+        part_count = cbm_blkid_partlist_numof_partitions(parts);
         if (part_count <= 0) {
                 /* No partitions */
                 goto clean;
         }
 
         for (int i = 0; i < part_count; i++) {
-                blkid_partition part = blkid_partlist_get_partition(parts, i);
+                blkid_partition part = cbm_blkid_partlist_get_partition(parts, i);
                 const char *part_id = NULL;
                 unsigned long long flags;
                 autofree(char) *pt_path = NULL;
 
-                flags = blkid_partition_get_flags(part);
+                flags = cbm_blkid_partition_get_flags(part);
                 if (flags & CBM_MBR_BOOT_FLAG) {
-                        part_id = blkid_partition_get_uuid(part);
+                        part_id = cbm_blkid_partition_get_uuid(part);
                         if (!part_id) {
                                 LOG_ERROR("Not a valid GPT disk");
                                 goto clean;
@@ -245,7 +245,7 @@ char *get_legacy_boot_device(char *path)
         }
 
 clean:
-        blkid_free_probe(probe);
+        cbm_blkid_free_probe(probe);
         errno = 0;
         return ret;
 }
@@ -386,22 +386,15 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
         return true;
 }
 
-bool cbm_is_mounted(const char *path, bool *error)
+bool cbm_is_mounted(const char *path)
 {
         autofree(FILE_MNT) *tab = NULL;
         struct mntent *ent = NULL;
         struct mntent mnt = { 0 };
         char buf[8192];
 
-        if (error) {
-                *error = false;
-        }
-
         tab = setmntent("/proc/self/mounts", "r");
         if (!tab) {
-                if (error) {
-                        *error = true;
-                }
                 return false;
         }
 
