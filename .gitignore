@@ -23,6 +23,7 @@ check_cmdline
 check_legacy
 check_files
 check_os_release
+check_uefi
 
 *.log
 *.trs
