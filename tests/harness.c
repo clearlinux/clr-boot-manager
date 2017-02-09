@@ -491,9 +491,10 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
         return file_count;
 }
 
-bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel)
+bool confirm_kernel_installed(BootManager *manager, PlaygroundConfig *config,
+                              PlaygroundKernel *kernel)
 {
-        return kernel_installed_files_count(manager, kernel) == 3;
+        return kernel_installed_files_count(manager, kernel) == config->uefi ? 3 : 2;
 }
 
 bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
