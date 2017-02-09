@@ -377,9 +377,11 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
-        /* Pending: Add support for legacy boot */
+        /* Initialise the root devfs/sysfs */
         if (config->uefi) {
                 set_test_system_uefi();
+        } else {
+                set_test_system_legacy();
         }
 
         /* Construct kernel config directory */
@@ -545,6 +547,58 @@ void set_test_system_uefi(void)
         /* commit them to disk */
         nc_mkdir_p(ddir, 00755);
         if (!file_set_text(dfile, "clr-boot-manager UEFI testing")) {
+                goto mem_fail;
+        }
+        return;
+
+mem_fail:
+        DECLARE_OOM();
+        abort();
+}
+
+void set_test_system_legacy(void)
+{
+        autofree(char) *ddir = NULL;
+        autofree(char) *diskdir = NULL;
+        autofree(char) *diskfile = NULL;
+        autofree(char) *dfile = NULL;
+        autofree(char) *dlink = NULL;
+        const char *devfs_path = cbm_system_get_devfs_path();
+
+        /* dev tree */
+        if (asprintf(&ddir, "%s/block", devfs_path) < 0) {
+                goto mem_fail;
+        }
+
+        /* dev/block link */
+        if (asprintf(&dlink, "%s/block/%u:%u", devfs_path, 8, 8) < 0) {
+                goto mem_fail;
+        }
+
+        /* "real" dev file for realpath()ing */
+        if (asprintf(&dfile, "%s/leRootDevice", devfs_path) < 0) {
+                goto mem_fail;
+        }
+
+        nc_mkdir_p(ddir, 00755);
+        if (!file_set_text(dfile, "le-root-device")) {
+                goto mem_fail;
+        }
+
+        if (symlink("../leRootDevice", dlink) != 0) {
+                fprintf(stderr, "Cannot create symlink: %s", strerror(errno));
+                abort();
+        }
+
+        /* Create /dev/disk/by-partuuid portions */
+        if (asprintf(&diskdir, "%s/disk/by-partuuid", cbm_system_get_devfs_path()) < 0) {
+                goto mem_fail;
+        }
+        if (asprintf(&diskfile, "%s/%s", diskdir, "Test-PartUUID") < 0) {
+                goto mem_fail;
+        }
+        nc_mkdir_p(diskdir, 00755);
+        if (!file_set_text(diskfile, "clr-boot-manager Legacy testing")) {
                 goto mem_fail;
         }
         return;
