@@ -119,6 +119,34 @@ START_TEST(bootman_legacy_image)
 }
 END_TEST
 
+START_TEST(bootman_legacy_native)
+{
+        autofree(BootManager) *m = NULL;
+
+        m = prepare_playground(&legacy_config);
+        fail_if(!m, "Failed to prepare update playground");
+        boot_manager_set_image_mode(m, false);
+        /* Push bootloader */
+        push_syslinux();
+
+        fail_if(!set_kernel_booted(&legacy_kernels[1], true), "Failed to set kernel as booted");
+
+        fail_if(!boot_manager_update(m), "Failed to update in native mode");
+
+        /* Latest kernel for us */
+        fail_if(!confirm_kernel_installed(m, &legacy_config, &(legacy_kernels[0])),
+                "Newest kernel not installed");
+
+        /* Running kernel */
+        fail_if(!confirm_kernel_installed(m, &legacy_config, &(legacy_kernels[1])),
+                "Newest kernel not installed");
+
+        /* This guy isn't supposed to be kept around now */
+        fail_if(!confirm_kernel_uninstalled(m, &(legacy_kernels[2])),
+                "Uninteresting kernel shouldn't be kept around.");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -128,6 +156,7 @@ static Suite *core_suite(void)
         tc = tcase_create("bootman_legacy_functions");
         tcase_add_test(tc, bootman_legacy_get_boot_device);
         tcase_add_test(tc, bootman_legacy_image);
+        tcase_add_test(tc, bootman_legacy_native);
         suite_add_tcase(s, tc);
 
         return s;

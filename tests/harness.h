@@ -82,7 +82,8 @@ bool confirm_bootloader_match(void);
 /**
  * Assert that the kernel is fully installed
  */
-bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel);
+bool confirm_kernel_installed(BootManager *manager, PlaygroundConfig *config,
+                              PlaygroundKernel *kernel);
 
 /**
  * Assert that the kernel is fully uninstalled

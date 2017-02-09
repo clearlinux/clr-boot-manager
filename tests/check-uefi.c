@@ -79,6 +79,32 @@ START_TEST(bootman_uefi_image)
 }
 END_TEST
 
+START_TEST(bootman_uefi_native)
+{
+        autofree(BootManager) *m = NULL;
+
+        m = prepare_playground(&uefi_config);
+        fail_if(!m, "Failed to prepare update playground");
+        boot_manager_set_image_mode(m, false);
+
+        fail_if(!set_kernel_booted(&uefi_kernels[1], true), "Failed to set kernel as booted");
+
+        fail_if(!boot_manager_update(m), "Failed to update in native mode");
+
+        /* Latest kernel for us */
+        fail_if(!confirm_kernel_installed(m, &uefi_config, &(uefi_kernels[0])),
+                "Newest kernel not installed");
+
+        /* Running kernel */
+        fail_if(!confirm_kernel_installed(m, &uefi_config, &(uefi_kernels[1])),
+                "Newest kernel not installed");
+
+        /* This guy isn't supposed to be kept around now */
+        fail_if(!confirm_kernel_uninstalled(m, &(uefi_kernels[2])),
+                "Uninteresting kernel shouldn't be kept around.");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -88,6 +114,7 @@ static Suite *core_suite(void)
         tc = tcase_create("bootman_uefi_functions");
         tcase_add_test(tc, bootman_uefi_get_boot_device);
         tcase_add_test(tc, bootman_uefi_image);
+        tcase_add_test(tc, bootman_uefi_native);
         suite_add_tcase(s, tc);
 
         return s;
