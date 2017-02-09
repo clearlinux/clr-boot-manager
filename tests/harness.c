@@ -377,8 +377,10 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
-        /* Force UEFI for now until we have UEFI vs legacy tests */
-        set_test_system_uefi();
+        /* Pending: Add support for legacy boot */
+        if (config->uefi) {
+                set_test_system_uefi();
+        }
 
         /* Construct kernel config directory */
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_CONF_DIRECTORY, 00755)) {
