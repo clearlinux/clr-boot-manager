@@ -262,7 +262,7 @@ bool push_kernel_update(PlaygroundKernel *kernel)
                 return false;
         }
         /* Write the "cmdline file" */
-        if (!file_set_text((const char *)cmdfile, (char *)kernel->version)) {
+        if (!file_set_text((const char *)cmdfile, "cmdline-for-kernel")) {
                 return false;
         }
         /* Write the "config file" */
