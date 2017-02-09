@@ -151,8 +151,7 @@ TESTS = 		\
 	check_core 	\
 	check_cmdline   \
 	check_files 	\
-	check_os_release \
-	check_updates
+	check_os_release
 
 check_PROGRAMS = $(TESTS)
 
@@ -213,24 +212,6 @@ check_os_release_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_os_release_LDADD =	\
-	libcbm.la	\
-	src/libnica/libnica.la	\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
-
-check_updates_SOURCES =		\
-	tests/check-updates.c	\
-	tests/blkid-harness.h   \
-	tests/system-harness.h  \
-	tests/harness.h		\
-	tests/harness.c
-
-check_updates_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
-
-check_updates_LDADD =	\
 	libcbm.la	\
 	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
