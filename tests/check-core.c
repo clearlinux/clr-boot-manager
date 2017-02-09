@@ -35,7 +35,10 @@ static PlaygroundKernel core_kernels[] = { { "4.2.1", "kvm", 121, false },
                                            { "4.2.1", "native", 137, false },
                                            { "4.2.3", "native", 138, true } };
 
-static PlaygroundConfig core_config = { "4.2.1-121.kvm", core_kernels, ARRAY_SIZE(core_kernels) };
+static PlaygroundConfig core_config = { "4.2.1-121.kvm",
+                                        core_kernels,
+                                        ARRAY_SIZE(core_kernels),
+                                        .uefi = true };
 
 /**
  * Ensure scope based management is functional

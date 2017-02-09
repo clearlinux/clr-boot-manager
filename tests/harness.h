@@ -33,6 +33,7 @@ typedef struct PlaygroundConfig {
         const char *uts_name;
         PlaygroundKernel *initial_kernels;
         size_t n_kernels;
+        bool uefi;
 } PlaygroundConfig;
 
 /**
