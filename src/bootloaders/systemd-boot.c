@@ -15,8 +15,7 @@
 
 static BootLoaderConfig systemd_boot_config = {.vendor_dir = "systemd",
                                                .efi_dir = "/usr/lib/systemd/boot/efi",
-                                               .x64_blob = "systemd-bootx64.efi",
-                                               .ia32_blob = "systemd-bootia32.efi",
+                                               .efi_blob = "systemd-boot" SYSTEMD_EFI_SUFFIX,
                                                .name = "systemd-boot" };
 
 static bool systemd_boot_init(const BootManager *manager)
