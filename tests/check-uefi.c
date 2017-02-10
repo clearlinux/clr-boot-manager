@@ -175,7 +175,7 @@ END_TEST
 static void internal_loader_test(bool image_mode)
 {
         autofree(BootManager) *m = NULL;
-        PlaygroundConfig start_conf = { 0 };
+        PlaygroundConfig start_conf = {.uefi = true };
 
         m = prepare_playground(&start_conf);
         fail_if(!m, "Fatal: Cannot initialise playground");

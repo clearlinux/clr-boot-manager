@@ -112,6 +112,18 @@ __cbm_inline__ static inline bool noisy_file_exists(const char *p)
         return b;
 }
 
+/**
+ * Make a fake gptmbr.bin (440 bytes) available within the rootfs
+ */
+static void push_syslinux(void)
+{
+        const char *mbr_src = TOP_DIR "/tests/data/gptmbr.bin";
+        const char *mbr_dst = PLAYGROUND_ROOT "/usr/share/syslinux/gptmbr.bin";
+        const char *mbr_dir = PLAYGROUND_ROOT "/usr/share/syslinux";
+        fail_if(!nc_mkdir_p(mbr_dir, 00755), "Failed to create source syslinux tree");
+        fail_if(!copy_file_atomic(mbr_src, mbr_dst, 00644), "Failed to copy gptmbr.bin");
+}
+
 void confirm_bootloader(void)
 {
         fail_if(!noisy_file_exists(EFI_STUB_MAIN), "Main EFI stub missing");
@@ -407,8 +419,12 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         }
 
         /* Copy the bootloader bits into the tree */
-        if (!push_bootloader_update(0)) {
-                goto fail;
+        if (config->uefi) {
+                if (!push_bootloader_update(0)) {
+                        goto fail;
+                }
+        } else {
+                push_syslinux();
         }
 
         /* Insert all intitial kernels into the root */
