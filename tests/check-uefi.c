@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "bootloader.h"
 #include "bootman.h"
 #include "config.h"
 #include "files.h"
@@ -253,41 +254,22 @@ START_TEST(bootman_uefi_remove_bootloader)
                 "Failed to remove the bootloader");
 
         /* Ensure that it is indeed removed. */
-        if (boot_manager_get_architecture_size(m) == 64) {
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground" BOOT_DIRECTORY
-                                                     "/EFI/Boot/BOOTX64.EFI"),
-                        "Main x64 bootloader present");
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground" BOOT_DIRECTORY
+                                             "/EFI/Boot/" DEFAULT_EFI_BLOB),
+                "Main x64 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                                     "/EFI/systemd"),
-                        "Systemd x64 bootloader present");
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                             "/EFI/systemd"),
+                "Systemd x64 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                                     "/EFI/gummiboot"),
-                        "gummiboot x64 bootloader present");
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                             "/EFI/gummiboot"),
+                "gummiboot x64 bootloader present");
 #else
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                                     "/EFI/goofiboot"),
-                        "goofiboot x64 bootloader present");
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                             "/EFI/goofiboot"),
+                "goofiboot x64 bootloader present");
 #endif
-        } else {
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                                     "/EFI/Boot/BOOTIA32.EFI"),
-                        "Main ia32 bootloader present");
-#if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                                     "/EFI/systemd"),
-                        "systemd-boot ia32 bootloader present");
-#elif defined(HAVE_GUMMIBOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                                     "/EFI/gummiboot"),
-                        "gummiboot ia32 bootloader present");
-#else
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                                     "/EFI/goofiboot"),
-                        "goofiboot ia32 bootloader present");
-#endif
-        }
 
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                              "/loader/loader.conf"),
