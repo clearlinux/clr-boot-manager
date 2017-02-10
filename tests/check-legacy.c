@@ -204,6 +204,80 @@ START_TEST(bootman_legacy_update_from_unknown)
 }
 END_TEST
 
+/**
+ * Verify that we can update and install the bootloader correctly.
+ *
+ * Scenario:
+ *
+ *      - Install bootloader
+ *      - Confirm initial bootloader installation
+ *      - Bump bootloader data to not match
+ *      - Verify bumped bootloader currently does NOT match
+ *      - Request update of bootloader with *check* operation
+ *      - Verify bootloader files are updated and match
+ */
+static void internal_loader_test(bool image_mode)
+{
+        autofree(BootManager) *m = NULL;
+        PlaygroundConfig start_conf = { 0 };
+        const char *syslinux_source = PLAYGROUND_ROOT "/usr/share/syslinux/gptmbr.bin";
+        /* Testing bbbb data */
+        const char *syslinux_v2 = TOP_DIR "/tests/data/gptmbr.bin.v2";
+        /* Original aaaa data */
+        const char *syslinux_v3 = TOP_DIR "/tests/data/gptmbr.bin";
+        const char *syslinux_disk = PLAYGROUND_ROOT "/dev/leRootDevice";
+
+        m = prepare_playground(&start_conf);
+        fail_if(!m, "Fatal: Cannot initialise playground");
+        boot_manager_set_image_mode(m, image_mode);
+        push_syslinux();
+
+        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_INSTALL),
+                "Failed to install bootloader");
+
+        /* Check the source and dest disk now match */
+        fail_if(!cbm_files_match(syslinux_source, syslinux_disk),
+                "Installed bootloader is incorrect");
+
+        /* Simulate an update with a new gptmbr file */
+        fail_if(!copy_file(syslinux_v2, syslinux_source, 00644),
+                "Failed to bump source bootloader");
+        fail_if(cbm_files_match(syslinux_source, syslinux_disk),
+                "Source shouldn't match target bootloader yet");
+
+        fail_if(!boot_manager_modify_bootloader(m,
+                                                BOOTLOADER_OPERATION_UPDATE |
+                                                    BOOTLOADER_OPERATION_NO_CHECK),
+                "Failed to forcibly update bootloader");
+
+        fail_if(!cbm_files_match(syslinux_source, syslinux_disk),
+                "Bootloader didn't actually update");
+
+        /* Push a "v3" */
+        fail_if(!copy_file(syslinux_v3, syslinux_source, 00644),
+                "Failed to bump source bootloader");
+
+        /* Pushed out of sync, should need update */
+        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_UPDATE),
+                "Failed to auto-update bootloader");
+
+        /* Make sure last update now works */
+        fail_if(!cbm_files_match(syslinux_source, syslinux_disk),
+                "Auto-updated bootloader doesn't match source");
+}
+
+START_TEST(bootman_legacy_update_image)
+{
+        internal_loader_test(true);
+}
+END_TEST
+
+START_TEST(bootman_legacy_update_native)
+{
+        internal_loader_test(false);
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -215,6 +289,9 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_legacy_image);
         tcase_add_test(tc, bootman_legacy_native);
         tcase_add_test(tc, bootman_legacy_update_from_unknown);
+        tcase_add_test(tc, bootman_legacy_update_image);
+        tcase_add_test(tc, bootman_legacy_update_image);
+        tcase_add_test(tc, bootman_legacy_update_native);
         suite_add_tcase(s, tc);
 
         return s;
