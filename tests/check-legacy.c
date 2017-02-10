@@ -29,6 +29,20 @@
 #include "harness.h"
 #include "system-harness.h"
 
+#define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
+
+/**
+ * Make a fake gptmbr.bin (440 bytes) available within the rootfs
+ */
+static void push_syslinux(void)
+{
+        const char *mbr_src = TOP_DIR "/tests/data/gptmbr.bin";
+        const char *mbr_dst = PLAYGROUND_ROOT "/usr/share/syslinux/gptmbr.bin";
+        const char *mbr_dir = PLAYGROUND_ROOT "/usr/share/syslinux";
+        fail_if(!nc_mkdir_p(mbr_dir, 00755), "Failed to create source syslinux tree");
+        fail_if(!copy_file_atomic(mbr_src, mbr_dst, 00644), "Failed to copy gptmbr.bin");
+}
+
 /**
  * Coerce legacy lookup
  */
@@ -90,6 +104,21 @@ START_TEST(bootman_legacy_get_boot_device)
 }
 END_TEST
 
+START_TEST(bootman_legacy_image)
+{
+        autofree(BootManager) *m = NULL;
+        m = prepare_playground(&legacy_config);
+        fail_if(!m, "Failed to prepare update playground");
+
+        /* Push bootloader */
+        push_syslinux();
+
+        /* Validate image install */
+        boot_manager_set_image_mode(m, true);
+        fail_if(!boot_manager_update(m), "Failed to update image");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -98,6 +127,7 @@ static Suite *core_suite(void)
         s = suite_create("bootman_legacy");
         tc = tcase_create("bootman_legacy_functions");
         tcase_add_test(tc, bootman_legacy_get_boot_device);
+        tcase_add_test(tc, bootman_legacy_image);
         suite_add_tcase(s, tc);
 
         return s;
