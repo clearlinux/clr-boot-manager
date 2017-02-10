@@ -150,7 +150,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 kname_base = basename(kname_copy);
 
                 /* Get the basename of the initrd blob, if it exists */
-                if (kernel->initrd_file) {
+                if (kernel && kernel->initrd_file) {
                         initrd_copy = strdup(kernel->initrd_file);
                         if (!initrd_copy) {
                                 DECLARE_OOM();
