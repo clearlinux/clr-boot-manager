@@ -220,6 +220,83 @@ START_TEST(bootman_uefi_update_native)
 }
 END_TEST
 
+/**
+ * This test is currently specific only to the UEFI bootloader support,
+ * as this is the only situation whereby it is possible to completely
+ * and cleanly removed a bootloader.
+ *
+ * Scenario:
+ *
+ *      - Perform installation of the bootloader
+ *      - Remove it again
+ *      - Validate it is legitimately gone.
+ */
+START_TEST(bootman_uefi_remove_bootloader)
+{
+        autofree(BootManager) *m = NULL;
+
+        fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                              "/EFI/Boot"),
+                "Main EFI directory missing, botched install");
+
+        m = prepare_playground(&uefi_config);
+
+        /* Install bootloader once */
+        fail_if(!boot_manager_modify_bootloader(m,
+                                                BOOTLOADER_OPERATION_INSTALL |
+                                                    BOOTLOADER_OPERATION_NO_CHECK),
+                "Failed to install bootloader");
+        confirm_bootloader();
+
+        /* Now remove it again */
+        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_REMOVE),
+                "Failed to remove the bootloader");
+
+        /* Ensure that it is indeed removed. */
+        if (boot_manager_get_architecture_size(m) == 64) {
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground" BOOT_DIRECTORY
+                                                     "/EFI/Boot/BOOTX64.EFI"),
+                        "Main x64 bootloader present");
+#if defined(HAVE_SYSTEMD_BOOT)
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                                     "/EFI/systemd"),
+                        "Systemd x64 bootloader present");
+#elif defined(HAVE_GUMMIBOOT)
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                                     "/EFI/gummiboot"),
+                        "gummiboot x64 bootloader present");
+#else
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                                     "/EFI/goofiboot"),
+                        "goofiboot x64 bootloader present");
+#endif
+        } else {
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                                     "/EFI/Boot/BOOTIA32.EFI"),
+                        "Main ia32 bootloader present");
+#if defined(HAVE_SYSTEMD_BOOT)
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                                     "/EFI/systemd"),
+                        "systemd-boot ia32 bootloader present");
+#elif defined(HAVE_GUMMIBOOT)
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                                     "/EFI/gummiboot"),
+                        "gummiboot ia32 bootloader present");
+#else
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                                     "/EFI/goofiboot"),
+                        "goofiboot ia32 bootloader present");
+#endif
+        }
+
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                             "/loader/loader.conf"),
+                "systemd-class loader.conf present");
+        /* DEBUG:
+        __attribute__ ((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/update_playground");*/
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -233,6 +310,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_uefi_update_from_unknown);
         tcase_add_test(tc, bootman_uefi_update_image);
         tcase_add_test(tc, bootman_uefi_update_native);
+        tcase_add_test(tc, bootman_uefi_remove_bootloader);
         suite_add_tcase(s, tc);
 
         return s;
