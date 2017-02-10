@@ -138,15 +138,6 @@ bool boot_manager_set_boot_dir(BootManager *manager, const char *bootdir);
 const char *boot_manager_get_prefix(BootManager *manager);
 
 /**
- * Get the currently detected/provided boot device
- *
- * @note This string is owned by BootManager, do not modify or free
- *
- * @return current boot device
- */
-const char *boot_manager_get_boot_device(BootManager *manager);
-
-/**
  * Return the location used for kernel probing, incorporating the
  * prefix
  *
@@ -233,26 +224,6 @@ const CbmDeviceProbe *boot_manager_get_root_device(BootManager *manager);
  * Attempt installation of the bootloader
  */
 bool boot_manager_modify_bootloader(BootManager *manager, BootLoaderOperation op);
-
-/**
- * Determine the firmware architecture
- *
- * @note If the firmware fails to expose this information, or indeed the
- * /sys/firmware/efi path is unavailable due to an image build, we'll return
- * the architecture size instead.
- *
- * @return Either 32-bit or 64-bit
- */
-uint8_t boot_manager_get_platform_size(BootManager *manager);
-
-/**
- * Determine the architecture of this running process
- *
- * @note The distinction is important for multilib and CONFIG_EFI_MIXED
- * environments, we must know the native architecture vs the firmware
- * architecture
- */
-uint8_t boot_manager_get_architecture_size(BootManager *manager);
 
 /**
  * Determine if the BootManager is operating in image mode, i.e.

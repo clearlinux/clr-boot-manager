@@ -170,13 +170,6 @@ const char *boot_manager_get_prefix(BootManager *self)
         return (const char *)self->sysconfig->prefix;
 }
 
-const char *boot_manager_get_boot_device(BootManager *self)
-{
-        assert(self != NULL);
-
-        return (const char *)self->sysconfig->boot_device;
-}
-
 const char *boot_manager_get_kernel_dir(BootManager *self)
 {
         assert(self != NULL);
@@ -334,51 +327,6 @@ bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
         } else {
                 LOG_FATAL("Unknown bootloader operation");
                 return false;
-        }
-}
-
-static inline uint8_t _detect_platform_size(void)
-{
-/* Only when we can't reliably detect the firmware architecture */
-#if UINTPTR_MAX == 0xffffffffffffffff
-        return 64;
-#else
-        return 32;
-#endif
-}
-
-uint8_t boot_manager_get_architecture_size(__cbm_unused__ BootManager *manager)
-{
-        return _detect_platform_size();
-}
-
-/**
- * We'll add a check here later to allow for differences in subdir usage
- */
-uint8_t boot_manager_get_platform_size(__cbm_unused__ BootManager *manager)
-{
-        int fd;
-        char buffer[3];
-
-        fd = open("/sys/firmware/efi/fw_platform_size", O_RDONLY);
-        if (fd < 0) {
-                return _detect_platform_size();
-        }
-
-        if (read(fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
-                LOG_ERROR("Problematic firmware interface");
-                close(fd);
-                return _detect_platform_size();
-        }
-
-        close(fd);
-
-        if (strncmp(buffer, "32", 2) == 0) {
-                return 32;
-        } else if (strncmp(buffer, "64", 2) == 0) {
-                return 64;
-        } else {
-                return _detect_platform_size();
         }
 }
 
