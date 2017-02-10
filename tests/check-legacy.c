@@ -147,6 +147,63 @@ START_TEST(bootman_legacy_native)
 }
 END_TEST
 
+/**
+ * This test is designed to perform a system update to a new kernel, when the
+ * current kernel cannot be detected. This ensures we can perform a transition
+ * from a non cbm-managed distro to a cbm-managed one.
+ *
+ * Scenario:
+ *
+ *      - Unknown running kernel
+ *      - One initial new kernel from the first update. Has never rebooted.
+ *      - Update: New kernel should be installed
+ *      - "Reboot", then verify running = only kernel on system
+ */
+START_TEST(bootman_legacy_update_from_unknown)
+{
+        autofree(BootManager) *m = NULL;
+        PlaygroundKernel kernels[] = { { "4.2.1", "kvm", 121, true } };
+        PlaygroundConfig config = { "4.2.1-121.kvm", kernels, 1, false };
+        autofree(KernelArray) *pre_kernels = NULL;
+        autofree(KernelArray) *post_kernels = NULL;
+        Kernel *running_kernel = NULL;
+
+        m = prepare_playground(&config);
+        fail_if(!m, "Failed to prepare update playground");
+        boot_manager_set_image_mode(m, false);
+        /* Push bootloader */
+        push_syslinux();
+
+        /* Hax the uname */
+        boot_manager_set_uname(m, "unknown-uname");
+
+        /* Make sure pre kernels are found */
+        pre_kernels = boot_manager_get_kernels(m);
+        fail_if(!pre_kernels, "Failed to find kernels");
+        fail_if(pre_kernels->len != 1, "Available kernels != 1");
+
+        /* Ensure it's not booting */
+        fail_if(boot_manager_get_running_kernel(m, pre_kernels) != NULL,
+                "Should not find a running kernel at this point");
+
+        /* Attempt update in this configuration */
+        fail_if(!boot_manager_update(m), "Failed to update single kernel system");
+
+        /* Now "reboot" */
+        fail_if(!boot_manager_set_uname(m, "4.2.1-121.kvm"), "Failed to simulate reboot");
+
+        /* Grab new kernels */
+        post_kernels = boot_manager_get_kernels(m);
+        fail_if(!post_kernels, "Failed to find kernels after update");
+        fail_if(post_kernels->len != 1, "Available post kernels != 1");
+
+        /* Check running kernel */
+        running_kernel = boot_manager_get_running_kernel(m, post_kernels);
+        fail_if(!running_kernel, "Failed to find kernel post reboot");
+        fail_if(!streq(running_kernel->version, "4.2.1"), "Running kernel is invalid");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -157,6 +214,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_legacy_get_boot_device);
         tcase_add_test(tc, bootman_legacy_image);
         tcase_add_test(tc, bootman_legacy_native);
+        tcase_add_test(tc, bootman_legacy_update_from_unknown);
         suite_add_tcase(s, tc);
 
         return s;
