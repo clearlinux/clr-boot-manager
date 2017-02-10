@@ -22,6 +22,7 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/20_second.conf \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/30_third.conf \
 	     ${top_srcdir}/tests/data/gptmbr.bin \
+	     ${top_srcdir}/tests/data/gptmbr.bin.v2 \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/man/clr-boot-manager.1
