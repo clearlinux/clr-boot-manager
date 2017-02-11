@@ -57,6 +57,14 @@
  */
 char *rstrip(char *a, size_t len, ssize_t *newlen);
 
+/**
+ * Similar to asprintf, but will assert allocation of the string.
+ * Failure to do so will result in an abort, as there is nothing
+ * further than clr-boot-manager can do when it has run out of
+ * memory.
+ */
+char *string_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

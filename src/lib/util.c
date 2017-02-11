@@ -12,6 +12,7 @@
 #define _GNU_SOURCE
 
 #include <ctype.h>
+#include <stdarg.h>
 
 #include "util.h"
 
@@ -34,6 +35,19 @@ char *rstrip(char *a, size_t len, ssize_t *newlen)
 
         *(e + 1) = '\0';
         return a;
+}
+
+char *string_printf(const char *fmt, ...)
+{
+        char *ret = NULL;
+        va_list va;
+        va_start(va, fmt);
+        if (vasprintf(&ret, fmt, va) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+        va_end(va);
+        return ret;
 }
 
 /*
