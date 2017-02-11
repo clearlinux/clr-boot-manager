@@ -103,7 +103,8 @@ libcbm_la_SOURCES =			\
 	src/lib/system_stub.c           \
 	src/lib/writer.h                \
 	src/lib/writer.c                \
-	src/lib/util.h
+	src/lib/util.h			\
+	src/lib/util.c
 
 libcbm_la_CFLAGS =		\
 	-D_BOOTMAN_INTERNAL_	\
