@@ -84,15 +84,8 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         prefix = boot_manager_get_prefix((BootManager *)manager);
 
         /* EFI paths */
-        if (asprintf(&efi_blob_source,
-                     "%s/%s/%s",
-                     prefix,
-                     sd_config->efi_dir,
-                     sd_config->efi_blob) < 0) {
-                sd_class_destroy(manager);
-                DECLARE_OOM();
-                return false;
-        }
+        efi_blob_source =
+            string_printf("%s/%s/%s", prefix, sd_config->efi_dir, sd_config->efi_blob);
         sd_class_config.efi_blob_source = efi_blob_source;
 
         efi_blob_dest = nc_build_case_correct_path(sd_class_config.base_path,
@@ -144,15 +137,11 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
 
         prefix = boot_manager_get_vendor_prefix(manager);
 
-        if (asprintf(&item_name,
-                     "%s-%s-%s-%d.conf",
-                     prefix,
-                     kernel->ktype,
-                     kernel->version,
-                     kernel->release) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+        item_name = string_printf("%s-%s-%s-%d.conf",
+                                  prefix,
+                                  kernel->ktype,
+                                  kernel->version,
+                                  kernel->release);
 
         return nc_build_case_correct_path(sd_class_config.base_path,
                                           "loader",
@@ -344,26 +333,18 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
 
         if (timeout > 0) {
                 /* Set the timeout as configured by the user */
-                if (asprintf(&item_name,
-                             "timeout %d\ndefault %s-%s-%s-%d\n",
-                             timeout,
-                             prefix,
-                             kernel->ktype,
-                             kernel->version,
-                             kernel->release) < 0) {
-                        DECLARE_OOM();
-                        return false;
-                }
+                item_name = string_printf("timeout %d\ndefault %s-%s-%s-%d\n",
+                                          timeout,
+                                          prefix,
+                                          kernel->ktype,
+                                          kernel->version,
+                                          kernel->release);
         } else {
-                if (asprintf(&item_name,
-                             "default %s-%s-%s-%d\n",
-                             prefix,
-                             kernel->ktype,
-                             kernel->version,
-                             kernel->release) < 0) {
-                        DECLARE_OOM();
-                        return false;
-                }
+                item_name = string_printf("default %s-%s-%s-%d\n",
+                                          prefix,
+                                          kernel->ktype,
+                                          kernel->version,
+                                          kernel->release);
         }
 
 write_config:

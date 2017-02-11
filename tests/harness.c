@@ -152,23 +152,15 @@ bool set_kernel_default(PlaygroundKernel *kernel)
         autofree(char) *link_source = NULL;
         autofree(char) *link_target = NULL;
 
-        if (asprintf(&link_source,
-                     "%s.%s.%s-%d",
-                     KERNEL_NAMESPACE,
-                     kernel->ktype,
-                     kernel->version,
-                     kernel->release) < 0) {
-                return false;
-        }
+        link_source = string_printf("%s.%s.%s-%d",
+                                    KERNEL_NAMESPACE,
+                                    kernel->ktype,
+                                    kernel->version,
+                                    kernel->release);
 
         /* i.e. default-kvm */
-        if (asprintf(&link_target,
-                     "%s/%s/default-%s",
-                     PLAYGROUND_ROOT,
-                     KERNEL_DIRECTORY,
-                     kernel->ktype) < 0) {
-                return false;
-        }
+        link_target =
+            string_printf("%s/%s/default-%s", PLAYGROUND_ROOT, KERNEL_DIRECTORY, kernel->ktype);
 
         /* Purge old link */
         if (nc_file_exists(link_target) && unlink(link_target) < 0) {
@@ -192,14 +184,11 @@ bool set_kernel_booted(PlaygroundKernel *kernel, bool did_boot)
         }
         autofree(char) *p = NULL;
 
-        if (asprintf(&p,
-                     "%s/var/lib/kernel/k_booted_%s-%d.%s",
-                     PLAYGROUND_ROOT,
-                     kernel->version,
-                     kernel->release,
-                     kernel->ktype) < 0) {
-                return false;
-        }
+        p = string_printf("%s/var/lib/kernel/k_booted_%s-%d.%s",
+                          PLAYGROUND_ROOT,
+                          kernel->version,
+                          kernel->release,
+                          kernel->ktype);
 
         if (!did_boot) {
                 if (nc_file_exists(p) && unlink(p) < 0) {
@@ -225,49 +214,38 @@ bool push_kernel_update(PlaygroundKernel *kernel)
         autofree(char) *initrd_file = NULL;
 
         /* $root/$kerneldir/$prefix.native.4.2.1-137 */
-        if (asprintf(&kfile,
-                     "%s/%s/%s.%s.%s-%d",
-                     PLAYGROUND_ROOT,
-                     KERNEL_DIRECTORY,
-                     KERNEL_NAMESPACE,
-                     kernel->ktype,
-                     kernel->version,
-                     kernel->release) < 0) {
-                return false;
-        }
+        kfile = string_printf("%s/%s/%s.%s.%s-%d",
+                              PLAYGROUND_ROOT,
+                              KERNEL_DIRECTORY,
+                              KERNEL_NAMESPACE,
+                              kernel->ktype,
+                              kernel->version,
+                              kernel->release);
 
         /* $root/$kerneldir/initrd-$prefix.native.4.2.1-137 */
-        if (asprintf(&initrd_file,
-                     "%s/%s/initrd-%s.%s.%s-%d",
-                     PLAYGROUND_ROOT,
-                     KERNEL_DIRECTORY,
-                     KERNEL_NAMESPACE,
-                     kernel->ktype,
-                     kernel->version,
-                     kernel->release) < 0) {
-                return false;
-        }
+        initrd_file = string_printf("%s/%s/initrd-%s.%s.%s-%d",
+                                    PLAYGROUND_ROOT,
+                                    KERNEL_DIRECTORY,
+                                    KERNEL_NAMESPACE,
+                                    kernel->ktype,
+                                    kernel->version,
+                                    kernel->release);
 
         /* $root/$kerneldir/cmdline-$version-$release.$type */
-        if (asprintf(&cmdfile,
-                     "%s/%s/cmdline-%s-%d.%s",
-                     PLAYGROUND_ROOT,
-                     KERNEL_DIRECTORY,
-                     kernel->version,
-                     kernel->release,
-                     kernel->ktype) < 0) {
-                return false;
-        }
+        cmdfile = string_printf("%s/%s/cmdline-%s-%d.%s",
+                                PLAYGROUND_ROOT,
+                                KERNEL_DIRECTORY,
+                                kernel->version,
+                                kernel->release,
+                                kernel->ktype);
+
         /* $root/$kerneldir/config-$version-$release.$type */
-        if (asprintf(&conffile,
-                     "%s/%s/config-%s-%d.%s",
-                     PLAYGROUND_ROOT,
-                     KERNEL_DIRECTORY,
-                     kernel->version,
-                     kernel->release,
-                     kernel->ktype) < 0) {
-                return false;
-        }
+        conffile = string_printf("%s/%s/config-%s-%d.%s",
+                                 PLAYGROUND_ROOT,
+                                 KERNEL_DIRECTORY,
+                                 kernel->version,
+                                 kernel->release,
+                                 kernel->ktype);
 
         /* Write the "kernel blob" */
         if (!file_set_text((const char *)kfile, (char *)kernel->version)) {
@@ -292,15 +270,12 @@ bool push_kernel_update(PlaygroundKernel *kernel)
                 autofree(char) *t = NULL;
 
                 /* $root/$moduledir/$version-$rel/$p */
-                if (asprintf(&t,
-                             "%s/%s/%s-%d/%s",
-                             PLAYGROUND_ROOT,
-                             KERNEL_MODULES_DIRECTORY,
-                             kernel->version,
-                             kernel->release,
-                             p) < 0) {
-                        return false;
-                }
+                t = string_printf("%s/%s/%s-%d/%s",
+                                  PLAYGROUND_ROOT,
+                                  KERNEL_MODULES_DIRECTORY,
+                                  kernel->version,
+                                  kernel->release,
+                                  p);
                 if (!nc_mkdir_p(t, 00755)) {
                         fprintf(stderr, "Failed to mkdir: %s %s\n", p, strerror(errno));
                         return false;
@@ -312,15 +287,12 @@ bool push_kernel_update(PlaygroundKernel *kernel)
                 autofree(char) *t = NULL;
 
                 /* $root/$moduledir/$version-$rel/$p */
-                if (asprintf(&t,
-                             "%s/%s/%s-%d/%s",
-                             PLAYGROUND_ROOT,
-                             KERNEL_MODULES_DIRECTORY,
-                             kernel->version,
-                             kernel->release,
-                             p) < 0) {
-                        return false;
-                }
+                t = string_printf("%s/%s/%s-%d/%s",
+                                  PLAYGROUND_ROOT,
+                                  KERNEL_MODULES_DIRECTORY,
+                                  kernel->version,
+                                  kernel->release,
+                                  p);
                 if (!file_set_text((const char *)t, (char *)kernel->version)) {
                         fprintf(stderr, "Failed to touch: %s %s\n", t, strerror(errno));
                         return false;
@@ -333,9 +305,7 @@ bool push_bootloader_update(int revision)
 {
         autofree(char) *text = NULL;
 
-        if (asprintf(&text, "faux-bootloader-revision: %d\n", revision) < 0) {
-                return false;
-        }
+        text = string_printf("faux-bootloader-revision: %d\n", revision);
 
         if (!nc_file_exists(BOOT_COPY_DIR)) {
                 if (!nc_mkdir_p(BOOT_COPY_DIR, 00755)) {
@@ -467,33 +437,26 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
 
         vendor = boot_manager_get_vendor_prefix(manager);
 
-        if (asprintf(&kernel_blob,
-                     "%s/%s.%s.%s-%d",
-                     BOOT_FULL,
-                     KERNEL_NAMESPACE,
-                     kernel->ktype,
-                     kernel->version,
-                     kernel->release) < 0) {
-                abort();
-        }
-        if (asprintf(&initrd_file,
-                     "%s/initrd-%s.%s.%s-%d",
-                     BOOT_FULL,
-                     KERNEL_NAMESPACE,
-                     kernel->ktype,
-                     kernel->version,
-                     kernel->release) < 0) {
-                abort();
-        }
-        if (asprintf(&conf_file,
-                     "%s/loader/entries/%s-%s-%s-%d.conf",
-                     BOOT_FULL,
-                     vendor,
-                     kernel->ktype,
-                     kernel->version,
-                     kernel->release) < 0) {
-                abort();
-        }
+        kernel_blob = string_printf("%s/%s.%s.%s-%d",
+                                    BOOT_FULL,
+                                    KERNEL_NAMESPACE,
+                                    kernel->ktype,
+                                    kernel->version,
+                                    kernel->release);
+
+        initrd_file = string_printf("%s/initrd-%s.%s.%s-%d",
+                                    BOOT_FULL,
+                                    KERNEL_NAMESPACE,
+                                    kernel->ktype,
+                                    kernel->version,
+                                    kernel->release);
+
+        conf_file = string_printf("%s/loader/entries/%s-%s-%s-%d.conf",
+                                  BOOT_FULL,
+                                  vendor,
+                                  kernel->ktype,
+                                  kernel->version,
+                                  kernel->release);
 
         if (nc_file_exists(kernel_blob)) {
                 ++file_count;
@@ -521,9 +484,8 @@ bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
 bool create_timeout_conf(void)
 {
         autofree(char) *timeout_conf = NULL;
-        if (asprintf(&timeout_conf, "%s/%s/timeout", PLAYGROUND_ROOT, KERNEL_CONF_DIRECTORY) < 0) {
-                return false;
-        }
+
+        timeout_conf = string_printf("%s/%s/timeout", PLAYGROUND_ROOT, KERNEL_CONF_DIRECTORY);
         if (!file_set_text((const char *)timeout_conf, (char *)"5")) {
                 fprintf(stderr, "Failed to touch: %s %s\n", timeout_conf, strerror(errno));
                 return false;
@@ -539,38 +501,27 @@ void set_test_system_uefi(void)
         autofree(char) *ddir = NULL;
 
         /* Create fake UEFI variables */
-        if (asprintf(&root, "%s/firmware/efi/efivars", cbm_system_get_sysfs_path()) < 0) {
-                goto mem_fail;
-        }
+        root = string_printf("%s/firmware/efi/efivars", cbm_system_get_sysfs_path());
         nc_mkdir_p(root, 00755);
 
         /* Create fake LoaderDevicePartUUID */
-        if (asprintf(&lfile, "%s/LoaderDevicePartUUID-dummyRoot", root) < 0) {
-                goto mem_fail;
-        }
+        lfile = string_printf("%s/LoaderDevicePartUUID-dummyRoot", root);
         if (!file_set_text(lfile, "E90F44B5-BB8A-41AF-B680-B0BF5B0F2A65")) {
-                goto mem_fail;
+                DECLARE_OOM();
+                abort();
         }
 
         /* Create /dev/disk/by-partuuid portions */
-        if (asprintf(&ddir, "%s/disk/by-partuuid", cbm_system_get_devfs_path()) < 0) {
-                goto mem_fail;
-        }
+        ddir = string_printf("%s/disk/by-partuuid", cbm_system_get_devfs_path());
 
-        if (asprintf(&dfile, "%s/e90f44b5-bb8a-41af-b680-b0bf5b0f2a65", ddir) < 0) {
-                goto mem_fail;
-        }
+        dfile = string_printf("%s/e90f44b5-bb8a-41af-b680-b0bf5b0f2a65", ddir);
 
         /* commit them to disk */
         nc_mkdir_p(ddir, 00755);
         if (!file_set_text(dfile, "clr-boot-manager UEFI testing")) {
-                goto mem_fail;
+                DECLARE_OOM();
+                abort();
         }
-        return;
-
-mem_fail:
-        DECLARE_OOM();
-        abort();
 }
 
 void set_test_system_legacy(void)
@@ -583,23 +534,18 @@ void set_test_system_legacy(void)
         const char *devfs_path = cbm_system_get_devfs_path();
 
         /* dev tree */
-        if (asprintf(&ddir, "%s/block", devfs_path) < 0) {
-                goto mem_fail;
-        }
+        ddir = string_printf("%s/block", devfs_path);
 
         /* dev/block link */
-        if (asprintf(&dlink, "%s/block/%u:%u", devfs_path, 8, 8) < 0) {
-                goto mem_fail;
-        }
+        dlink = string_printf("%s/block/%u:%u", devfs_path, 8, 8);
 
         /* "real" dev file for realpath()ing */
-        if (asprintf(&dfile, "%s/leRootDevice", devfs_path) < 0) {
-                goto mem_fail;
-        }
+        dfile = string_printf("%s/leRootDevice", devfs_path);
 
         nc_mkdir_p(ddir, 00755);
         if (!file_set_text(dfile, "le-root-device")) {
-                goto mem_fail;
+                DECLARE_OOM();
+                abort();
         }
 
         if (symlink("../leRootDevice", dlink) != 0) {
@@ -608,21 +554,14 @@ void set_test_system_legacy(void)
         }
 
         /* Create /dev/disk/by-partuuid portions */
-        if (asprintf(&diskdir, "%s/disk/by-partuuid", cbm_system_get_devfs_path()) < 0) {
-                goto mem_fail;
-        }
-        if (asprintf(&diskfile, "%s/%s", diskdir, "Test-PartUUID") < 0) {
-                goto mem_fail;
-        }
+        diskdir = string_printf("%s/disk/by-partuuid", cbm_system_get_devfs_path());
+        diskfile = string_printf("%s/%s", diskdir, "Test-PartUUID");
+
         nc_mkdir_p(diskdir, 00755);
         if (!file_set_text(diskfile, "clr-boot-manager Legacy testing")) {
-                goto mem_fail;
+                DECLARE_OOM();
+                abort();
         }
-        return;
-
-mem_fail:
-        DECLARE_OOM();
-        abort();
 }
 
 /*

@@ -59,11 +59,8 @@ START_TEST(bootman_uefi_get_boot_device)
         boot_device = get_boot_device();
         fail_if(!boot_device, "Failed to determine UEFI boot device");
 
-        if (asprintf(&exp,
-                     "%s/dev/disk/by-partuuid/e90f44b5-bb8a-41af-b680-b0bf5b0f2a65",
-                     PLAYGROUND_ROOT) < 0) {
-                abort();
-        }
+        exp = string_printf("%s/dev/disk/by-partuuid/e90f44b5-bb8a-41af-b680-b0bf5b0f2a65",
+                            PLAYGROUND_ROOT);
         fail_if(!streq(exp, boot_device), "Boot device does not match expected result");
 }
 END_TEST

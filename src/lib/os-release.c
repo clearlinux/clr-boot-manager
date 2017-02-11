@@ -190,10 +190,7 @@ CbmOsRelease *cbm_os_release_new_for_root(const char *root)
         for (size_t i = 0; i < ARRAY_SIZE(files); i++) {
                 autofree(char) *p = NULL;
 
-                if (asprintf(&p, "%s/%s", root, files[i]) < 0) {
-                        DECLARE_OOM();
-                        return NULL;
-                }
+                p = string_printf("%s/%s", root, files[i]);
 
                 if (!nc_file_exists(p)) {
                         continue;

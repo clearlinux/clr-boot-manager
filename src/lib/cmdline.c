@@ -136,16 +136,8 @@ char *cbm_parse_cmdline_files(const char *root)
         size_t arg_start = 0;
 
         /* global cmdline */
-        if (asprintf(&cmdline, "%s/%s/cmdline", root, KERNEL_CONF_DIRECTORY) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
-
-        /* glob match */
-        if (asprintf(&globfile, "%s/%s/cmdline.d/*.conf", root, KERNEL_CONF_DIRECTORY) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+        cmdline = string_printf("%s/%s/cmdline", root, KERNEL_CONF_DIRECTORY);
+        globfile = string_printf("%s/%s/cmdline.d/*.conf", root, KERNEL_CONF_DIRECTORY);
 
         memstr = open_memstream(&buf, &sz);
         if (!memstr) {

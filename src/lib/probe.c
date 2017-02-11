@@ -68,10 +68,7 @@ static char *cbm_get_luks_uuid(const char *part)
         const char *sys = cbm_system_get_sysfs_path();
 
         /* i.e. /sys/block/dm-1/slaves/dm-0/slaves/sdb1/dev */
-        if (asprintf(&npath, "%s/block/%s/slaves/*/slaves/*/dev", sys, part) < 0) {
-                DECLARE_OOM();
-                return NULL;
-        }
+        npath = string_printf("%s/block/%s/slaves/*/slaves/*/dev", sys, part);
 
         glob(npath, GLOB_DOOFFS, NULL, &glo);
 

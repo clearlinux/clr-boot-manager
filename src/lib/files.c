@@ -93,12 +93,8 @@ char *get_boot_device()
         autofree(char) *glob_path = NULL;
         autofree(char) *dev_path = NULL;
 
-        if (asprintf(&glob_path,
-                     "%s/firmware/efi/efivars/LoaderDevicePartUUID*",
-                     cbm_system_get_sysfs_path()) < 0) {
-                DECLARE_OOM();
-                return NULL;
-        }
+        glob_path = string_printf("%s/firmware/efi/efivars/LoaderDevicePartUUID*",
+                                  cbm_system_get_sysfs_path());
 
         glob(glob_path, GLOB_DOOFFS, NULL, &glo);
 
@@ -138,20 +134,15 @@ char *get_boot_device()
         }
         read_buf[j] = '\0';
 
-        if (asprintf(&p, "%s/disk/by-partuuid/%s", cbm_system_get_devfs_path(), uuid) < 0) {
-                DECLARE_OOM();
-                return NULL;
-        }
+        p = string_printf("%s/disk/by-partuuid/%s", cbm_system_get_devfs_path(), uuid);
 
         if (nc_file_exists(p)) {
                 return strdup(p);
         }
 next:
 
-        if (asprintf(&dev_path, "%s/disk/by-partlabel/ESP", cbm_system_get_devfs_path()) < 0) {
-                DECLARE_OOM();
-                return NULL;
-        }
+        dev_path = string_printf("%s/disk/by-partlabel/ESP", cbm_system_get_devfs_path());
+
         if (nc_file_exists(dev_path)) {
                 return strdup(dev_path);
         }
@@ -189,10 +180,7 @@ char *get_parent_disk(char *path)
                 return NULL;
         }
 
-        if (asprintf(&node, "%s/block/%u:%u", devfs, major(devt), minor(devt)) < 0) {
-                DECLARE_OOM();
-                return NULL;
-        }
+        node = string_printf("%s/block/%u:%u", devfs, major(devt), minor(devt));
         return realpath(node, NULL);
 }
 
@@ -247,10 +235,7 @@ char *get_legacy_boot_device(char *path)
                                 LOG_ERROR("Not a valid GPT disk");
                                 goto clean;
                         }
-                        if (asprintf(&pt_path, "%s/disk/by-partuuid/%s", devfs, part_id) < 0) {
-                                DECLARE_OOM();
-                                goto clean;
-                        }
+                        pt_path = string_printf("%s/disk/by-partuuid/%s", devfs, part_id);
                         ret = realpath(pt_path, NULL);
                         break;
                 }
@@ -369,9 +354,7 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
         autofree(char) *new_name = NULL;
         struct stat st = { 0 };
 
-        if (asprintf(&new_name, "%s.TmpWrite", target) < 0) {
-                return false;
-        }
+        new_name = string_printf("%s.TmpWrite", target);
 
         if (!copy_file(src, new_name, mode)) {
                 (void)unlink(new_name);
@@ -455,10 +438,8 @@ char *cbm_get_mountpoint_for_device(const char *device)
 bool cbm_system_has_uefi()
 {
         autofree(char) *p = NULL;
-        if (asprintf(&p, "%s/firmware/efi", cbm_system_get_sysfs_path()) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+
+        p = string_printf("%s/firmware/efi", cbm_system_get_sysfs_path());
         return nc_file_exists(p);
 }
 

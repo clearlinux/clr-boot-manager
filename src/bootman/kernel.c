@@ -33,14 +33,11 @@ __cbm_inline__ static inline char *boot_manager_get_kboot_file(BootManager *self
 {
         char *p = NULL;
         /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
-        if (asprintf(&p,
-                     "%s/var/lib/kernel/k_booted_%s-%d.%s",
-                     self->sysconfig->prefix,
-                     k->version,
-                     k->release,
-                     k->ktype) < 0) {
-                return NULL;
-        }
+        p = string_printf("%s/var/lib/kernel/k_booted_%s-%d.%s",
+                          self->sysconfig->prefix,
+                          k->version,
+                          k->release,
+                          k->ktype);
         return p;
 }
 
@@ -78,39 +75,24 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         parent = cbm_get_file_parent(path);
-        if (asprintf(&cmdline, "%s/cmdline-%s-%d.%s", parent, version, release, type) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
-
-        if (asprintf(&kconfig_file, "%s/config-%s-%d.%s", parent, version, release, type) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+        cmdline = string_printf("%s/cmdline-%s-%d.%s", parent, version, release, type);
+        kconfig_file = string_printf("%s/config-%s-%d.%s", parent, version, release, type);
 
         /* i.e. /usr/lib/kernel/initrd-org.clearlinux.lts.4.9.1-1  */
-        if (asprintf(&initrd_file,
-                     "%s/initrd-%s.%s.%s-%d",
-                     parent,
-                     KERNEL_NAMESPACE,
-                     type,
-                     version,
-                     release) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+        initrd_file = string_printf("%s/initrd-%s.%s.%s-%d",
+                                    parent,
+                                    KERNEL_NAMESPACE,
+                                    type,
+                                    version,
+                                    release);
 
         /* i.e. /etc/kernel/initrd-org.clearlinux.lts.4.9.1-1  */
-        if (asprintf(&user_initrd_file,
-                     "%s/initrd-%s.%s.%s-%d",
-                     KERNEL_CONF_DIRECTORY,
-                     KERNEL_NAMESPACE,
-                     type,
-                     version,
-                     release) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+        user_initrd_file = string_printf("%s/initrd-%s.%s.%s-%d",
+                                         KERNEL_CONF_DIRECTORY,
+                                         KERNEL_NAMESPACE,
+                                         type,
+                                         version,
+                                         release);
 
         /* TODO: We may actually be uninstalling a partially flopped kernel,
          * so validity of existing kernels may be questionable
@@ -121,29 +103,22 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         /* Check local modules */
-        if (asprintf(&module_dir,
-                     "%s/%s/%s-%d.%s",
-                     self->sysconfig->prefix,
-                     KERNEL_MODULES_DIRECTORY,
-                     version,
-                     release,
-                     type) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+        module_dir = string_printf("%s/%s/%s-%d.%s",
+                                   self->sysconfig->prefix,
+                                   KERNEL_MODULES_DIRECTORY,
+                                   version,
+                                   release,
+                                   type);
 
         /* Fallback to an older namespace */
         if (!nc_file_exists(module_dir)) {
                 free(module_dir);
-                if (asprintf(&module_dir,
-                             "%s/%s/%s-%d",
-                             self->sysconfig->prefix,
-                             KERNEL_MODULES_DIRECTORY,
-                             version,
-                             release) < 0) {
-                        DECLARE_OOM();
-                        abort();
-                }
+                module_dir = string_printf("%s/%s/%s-%d",
+                                           self->sysconfig->prefix,
+                                           KERNEL_MODULES_DIRECTORY,
+                                           version,
+                                           release);
+
                 if (!nc_file_exists(module_dir)) {
                         LOG_ERROR("Valid kernel with no modules: %s %s", path, module_dir);
                         return NULL;
@@ -198,11 +173,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 
         /* Merge global cmdline if we have one */
         if (self->cmdline) {
-                char *cm = NULL;
-                if (asprintf(&cm, "%s %s", kern->cmdline, self->cmdline) < 0) {
-                        DECLARE_OOM();
-                        abort();
-                }
+                char *cm = string_printf("%s %s", kern->cmdline, self->cmdline);
                 free(kern->cmdline);
                 kern->cmdline = cm;
         }
@@ -241,10 +212,7 @@ KernelArray *boot_manager_get_kernels(BootManager *self)
                 autofree(char) *path = NULL;
                 Kernel *kern = NULL;
 
-                if (asprintf(&path, "%s/%s", self->kernel_dir, ent->d_name) < 0) {
-                        DECLARE_OOM();
-                        abort();
-                }
+                path = string_printf("%s/%s", self->kernel_dir, ent->d_name);
 
                 /* Some kind of broken link */
                 if (lstat(path, &st) != 0) {
@@ -303,9 +271,7 @@ Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernel
                 return NULL;
         }
 
-        if (asprintf(&default_file, "%s/default-%s", self->kernel_dir, type) < 0) {
-                return NULL;
-        }
+        default_file = string_printf("%s/default-%s", self->kernel_dir, type);
 
         if (readlink(default_file, linkbuf, sizeof(linkbuf)) < 0) {
                 return NULL;
@@ -534,10 +500,7 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         kname_base = basename(kname_copy);
 
         /* Now copy the kernel file to it's new location */
-        if (asprintf(&kfile_target, "%s/%s", base_path, kname_base) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+        kfile_target = string_printf("%s/%s", base_path, kname_base);
 
         if (!cbm_files_match(kernel->path, kfile_target)) {
                 if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
@@ -567,10 +530,7 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         }
 
         initrd_base = basename(initrd_copy);
-        if (asprintf(&initrd_target, "%s/%s", base_path, initrd_base) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+        initrd_target = string_printf("%s/%s", base_path, initrd_base);
 
         if (!cbm_files_match(initrd_source, initrd_target)) {
                 if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
@@ -607,11 +567,7 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         kname_copy = strdup(kernel->path);
         kname_base = basename(kname_copy);
 
-        /* Group potential malloc failures together */
-        if (asprintf(&kfile_target, "%s/%s", base_path, kname_base) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+        kfile_target = string_printf("%s/%s", base_path, kname_base);
 
         if (kernel->initrd_file) {
                 initrd_copy = strdup(kernel->initrd_file);
@@ -620,11 +576,7 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                         return false;
                 }
                 initrd_base = basename(initrd_copy);
-
-                if (asprintf(&initrd_target, "%s/%s", base_path, initrd_base) < 0) {
-                        DECLARE_OOM();
-                        return false;
-                }
+                initrd_target = string_printf("%s/%s", base_path, initrd_base);
         }
 
         /* Remove the kernel from the ESP */

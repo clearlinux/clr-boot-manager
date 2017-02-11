@@ -56,14 +56,8 @@ bool cbm_command_report_booted(__cbm_unused__ int argc, __cbm_unused__ char **ar
         }
 
         /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
-        if (asprintf(&boot_rep_path,
-                     "/var/lib/kernel/k_booted_%s-%d.%s",
-                     sys.version,
-                     sys.release,
-                     sys.ktype) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+        boot_rep_path =
+            string_printf("/var/lib/kernel/k_booted_%s-%d.%s", sys.version, sys.release, sys.ktype);
 
         /* Report ourselves to new path */
         if (!file_set_text(boot_rep_path, "clr-boot-manager file\n")) {

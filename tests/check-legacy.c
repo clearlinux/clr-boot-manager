@@ -85,9 +85,7 @@ START_TEST(bootman_legacy_get_boot_device)
         boot_device = get_legacy_boot_device(PLAYGROUND_ROOT);
         fail_if(!boot_device, "Failed to determine legacy boot device");
 
-        if (asprintf(&exp, "%s/dev/disk/by-partuuid/Test-PartUUID", PLAYGROUND_ROOT) < 0) {
-                abort();
-        }
+        exp = string_printf("%s/dev/disk/by-partuuid/Test-PartUUID", PLAYGROUND_ROOT);
         fail_if(!streq(exp, boot_device), "Boot device does not match expected result");
 }
 END_TEST

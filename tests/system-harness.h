@@ -43,11 +43,7 @@ static inline char *test_get_mountpoint_for_device(__cbm_unused__ const char *de
 
 static inline char *test_devnode_to_devpath(__cbm_unused__ dev_t d)
 {
-        char *a = NULL;
-        if (asprintf(&a, "%s/dev/testRoot", TOP_BUILD_DIR "/tests/update_playground") < 0) {
-                abort();
-        }
-        return a;
+        return string_printf("%s/dev/testRoot", TOP_BUILD_DIR "/tests/update_playground");
 }
 
 static inline const char *test_get_sysfs_path(void)

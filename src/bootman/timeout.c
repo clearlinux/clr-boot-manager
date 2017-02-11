@@ -31,20 +31,14 @@ bool boot_manager_set_timeout_value(BootManager *self, int timeout)
                 return false;
         }
 
-        if (asprintf(&dir, "%s%s", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+        dir = string_printf("%s%s", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY);
 
         if (!nc_mkdir_p(dir, 00755)) {
                 LOG_ERROR("Failed to create directory %s: %s", dir, strerror(errno));
                 return false;
         }
 
-        if (asprintf(&path, "%s%s/timeout", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
+        path = string_printf("%s%s/timeout", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY);
 
         if (timeout <= 0) {
                 /* Nothing to be done here. */
@@ -81,10 +75,7 @@ int boot_manager_get_timeout_value(BootManager *self)
                 return false;
         }
 
-        if (asprintf(&path, "%s%s/timeout", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY) < 0) {
-                DECLARE_OOM();
-                return -1;
-        }
+        path = string_printf("%s%s/timeout", self->sysconfig->prefix, KERNEL_CONF_DIRECTORY);
 
         /* Default timeout being -1, i.e. don't use one */
         if (!nc_file_exists(path)) {

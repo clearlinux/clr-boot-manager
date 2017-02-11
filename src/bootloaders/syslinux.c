@@ -41,7 +41,6 @@ static bool syslinux_init(const BootManager *manager)
 {
         autofree(char) *ldlinux = NULL;
         const char *prefix = NULL;
-        int ret = 0;
 
         if (kernel_queue) {
                 kernel_array_free(kernel_queue);
@@ -62,27 +61,17 @@ static bool syslinux_init(const BootManager *manager)
                 free(extlinux_cmd);
                 extlinux_cmd = NULL;
         }
-        if (asprintf(&ldlinux, "%s/ldlinux.sys", base_path) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+
+        ldlinux = string_printf("%s/ldlinux.sys", base_path);
 
         prefix = boot_manager_get_prefix((BootManager *)manager);
 
         if (nc_file_exists(ldlinux)) {
-                ret = asprintf(&extlinux_cmd,
-                               "%s/usr/bin/extlinux -U %s &> /dev/null",
-                               prefix,
-                               base_path);
+                extlinux_cmd =
+                    string_printf("%s/usr/bin/extlinux -U %s &> /dev/null", prefix, base_path);
         } else {
-                ret = asprintf(&extlinux_cmd,
-                               "%s/usr/bin/extlinux -i %s &> /dev/null",
-                               prefix,
-                               base_path);
-        }
-        if (ret < 0) {
-                DECLARE_OOM();
-                abort();
+                extlinux_cmd =
+                    string_printf("%s/usr/bin/extlinux -i %s &> /dev/null", prefix, base_path);
         }
 
         return true;
@@ -120,10 +109,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 return false;
         }
 
-        if (asprintf(&config_path, "%s/syslinux.cfg", base_path) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+        config_path = string_printf("%s/syslinux.cfg", base_path);
 
         if (!cbm_writer_open(writer)) {
                 DECLARE_OOM();
@@ -240,10 +226,8 @@ static bool syslinux_install(const BootManager *manager)
                 return false;
         }
 
-        if (asprintf(&syslinux_path, "%s/usr/share/syslinux/gptmbr.bin", prefix) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
+        syslinux_path = string_printf("%s/usr/share/syslinux/gptmbr.bin", prefix);
+
         syslinux_mbr = open(syslinux_path, O_RDONLY);
         if (syslinux_mbr < 0) {
                 close(mbr);

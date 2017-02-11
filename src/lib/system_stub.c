@@ -24,15 +24,14 @@
  */
 static char *cbm_devnode_to_devpath(dev_t dev)
 {
+        autofree(char) *c = NULL;
+
         if (major(dev) == 0) {
                 LOG_ERROR("Invalid block device: %u:%u", major(dev), minor(dev));
                 return NULL;
         }
 
-        autofree(char) *c = NULL;
-        if (asprintf(&c, "/dev/block/%u:%u", major(dev), minor(dev)) < 0) {
-                return NULL;
-        }
+        c = string_printf("/dev/block/%u:%u", major(dev), minor(dev));
         return realpath(c, NULL);
 }
 
