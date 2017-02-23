@@ -52,7 +52,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *cmdline = NULL;
         autofree(char) *module_dir = NULL;
         autofree(char) *kconfig_file = NULL;
-        autofree(char) *default_file = NULL;
         autofree(char) *initrd_file = NULL;
         autofree(char) *user_initrd_file = NULL;
         ssize_t r = 0;

@@ -280,8 +280,6 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         }
 
         autofree(char) *conf_path = NULL;
-        autofree(char) *kname_copy = NULL;
-        autofree(char) *kfile_target = NULL;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
         OOM_CHECK_RET(conf_path, false);

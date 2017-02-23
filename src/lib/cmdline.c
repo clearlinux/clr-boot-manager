@@ -42,7 +42,6 @@ static bool cbm_parse_cmdline_file_internal(const char *path, FILE *out)
 
         while ((r = getline(&buf, &sn, f)) > 0) {
                 ssize_t cur = 0;
-                autofree(char) *value = NULL;
 
                 /* Strip newlines */
                 if (r >= 1 && buf[r - 1] == '\n') {
