@@ -332,7 +332,7 @@ bool boot_manager_set_boot_dir(BootManager *self, const char *bootdir)
         return true;
 }
 
-bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
+bool boot_manager_modify_bootloader(BootManager *self, int flags)
 {
         assert(self != NULL);
 
@@ -343,19 +343,20 @@ bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
         if (!cbm_is_sysconfig_sane(self->sysconfig)) {
                 return false;
         }
+        bool nocheck = (flags & BOOTLOADER_OPERATION_NO_CHECK) == BOOTLOADER_OPERATION_NO_CHECK;
 
-        if (op & BOOTLOADER_OPERATION_INSTALL) {
-                if (op & BOOTLOADER_OPERATION_NO_CHECK) {
+        if ((flags & BOOTLOADER_OPERATION_INSTALL) == BOOTLOADER_OPERATION_INSTALL) {
+                if (nocheck) {
                         return self->bootloader->install(self);
                 }
                 if (self->bootloader->needs_install(self)) {
                         return self->bootloader->install(self);
                 }
                 return true;
-        } else if (op & BOOTLOADER_OPERATION_REMOVE) {
+        } else if ((flags & BOOTLOADER_OPERATION_REMOVE) == BOOTLOADER_OPERATION_REMOVE) {
                 return self->bootloader->remove(self);
-        } else if (op & BOOTLOADER_OPERATION_UPDATE) {
-                if (op & BOOTLOADER_OPERATION_NO_CHECK) {
+        } else if ((flags & BOOTLOADER_OPERATION_UPDATE) == BOOTLOADER_OPERATION_UPDATE) {
+                if (nocheck) {
                         return self->bootloader->update(self);
                 }
                 if (self->bootloader->needs_update(self)) {

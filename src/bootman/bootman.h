@@ -223,7 +223,7 @@ const CbmDeviceProbe *boot_manager_get_root_device(BootManager *manager);
 /**
  * Attempt installation of the bootloader
  */
-bool boot_manager_modify_bootloader(BootManager *manager, BootLoaderOperation op);
+bool boot_manager_modify_bootloader(BootManager *manager, int ops);
 
 /**
  * Determine if the BootManager is operating in image mode, i.e.
