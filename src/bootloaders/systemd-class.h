@@ -49,6 +49,8 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config);
 
 void sd_class_destroy(const BootManager *manager);
 
+int sd_class_get_capabilities(const BootManager *manager);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

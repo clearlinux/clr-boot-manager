@@ -523,6 +523,12 @@ bool sd_class_remove(const BootManager *manager)
         return true;
 }
 
+int sd_class_get_capabilities(__cbm_unused__ const BootManager *manager)
+{
+        /* Very trivial bootloader, we support UEFI/GPT only */
+        return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI;
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

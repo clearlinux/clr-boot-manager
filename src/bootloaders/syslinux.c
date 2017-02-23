@@ -278,6 +278,11 @@ static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
         }
 }
 
+static int syslinux_get_capabilities(__cbm_unused__ const BootManager *manager)
+{
+        return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_LEGACY;
+}
+
 __cbm_export__ const BootLoader syslinux_bootloader = {.name = "syslinux",
                                                        .init = syslinux_init,
                                                        .install_kernel = syslinux_install_kernel,
@@ -289,7 +294,9 @@ __cbm_export__ const BootLoader syslinux_bootloader = {.name = "syslinux",
                                                        .install = syslinux_install,
                                                        .update = syslinux_update,
                                                        .remove = syslinux_remove,
-                                                       .destroy = syslinux_destroy };
+                                                       .destroy = syslinux_destroy,
+                                                       .get_capabilities =
+                                                           syslinux_get_capabilities };
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

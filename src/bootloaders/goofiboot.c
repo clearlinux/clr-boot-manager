@@ -34,7 +34,9 @@ __cbm_export__ const BootLoader goofiboot_bootloader = {.name = "goofiboot",
                                                         .install = sd_class_install,
                                                         .update = sd_class_update,
                                                         .remove = sd_class_remove,
-                                                        .destroy = sd_class_destroy };
+                                                        .destroy = sd_class_destroy,
+                                                        .get_capabilities =
+                                                            sd_class_get_capabilities };
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

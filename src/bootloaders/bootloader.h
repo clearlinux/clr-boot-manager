@@ -29,6 +29,15 @@ typedef bool (*boot_loader_install)(const BootManager *);
 typedef bool (*boot_loader_update)(const BootManager *);
 typedef bool (*boot_loader_remove)(const BootManager *);
 typedef void (*boot_loader_destroy)(const BootManager *);
+typedef int (*boot_loader_caps)(const BootManager *);
+
+typedef enum {
+        BOOTLOADER_CAP_MIN = 1 << 0,
+        BOOTLOADER_CAP_UEFI = 1 << 1,   /**<Bootloader supports UEFI */
+        BOOTLOADER_CAP_GPT = 1 << 2,    /**<Bootloader supports GPT boot partition */
+        BOOTLOADER_CAP_LEGACY = 1 << 3, /**<Bootloader supports legacy boot */
+        BOOTLOADER_CAP_MAX = 1 << 4
+} BootLoaderCapability;
 
 /**
  * Virtual BootLoader provider
@@ -43,8 +52,9 @@ typedef struct BootLoader {
         boot_loader_needs_install needs_install;           /**<Check if an install is required */
         boot_loader_install install;                       /**<Install this bootloader */
         boot_loader_update update;                         /**<Update this bootloader */
-        boot_loader_remove remove;   /**<Remove this bootloader from the disk */
-        boot_loader_destroy destroy; /**<Perform necessary cleanups */
+        boot_loader_remove remove;         /**<Remove this bootloader from the disk */
+        boot_loader_destroy destroy;       /**<Perform necessary cleanups */
+        boot_loader_caps get_capabilities; /**<Check capabilities */
 } BootLoader;
 
 #define __cbm_export__ __attribute__((visibility("default")))
