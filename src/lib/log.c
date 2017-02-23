@@ -31,14 +31,14 @@ void cbm_log_init(FILE *log)
 {
         const char *env_level = NULL;
         log_file = log;
-        int nlog_level = CBM_LOG_ERROR;
+        unsigned int nlog_level = CBM_LOG_ERROR;
 
         env_level = getenv("CBM_DEBUG");
         if (env_level) {
                 /* =1 becomes 0 */
-                nlog_level = atoi(env_level) - 1;
+                nlog_level = ((unsigned int)atoi(env_level)) - 1;
         }
-        if (nlog_level < CBM_LOG_DEBUG || nlog_level >= CBM_LOG_MAX) {
+        if (nlog_level >= CBM_LOG_MAX) {
                 nlog_level = CBM_LOG_FATAL;
         }
         min_log_level = nlog_level;
@@ -54,7 +54,7 @@ __attribute__((constructor)) static void cbm_log_first_init(void)
 
 static inline const char *cbm_log_level_str(CbmLogLevel l)
 {
-        if (l >= 0 && l <= CBM_LOG_FATAL) {
+        if (l <= CBM_LOG_FATAL) {
                 return log_str_table[l];
         }
         return "unknown";
