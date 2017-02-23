@@ -35,8 +35,6 @@
 #include "system_stub.h"
 #include "util.h"
 
-DEF_AUTOFREE(DIR, closedir)
-
 /**
  * Legacy boot bit, i.e. partition flag on a GPT disk
  */
