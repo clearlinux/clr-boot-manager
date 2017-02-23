@@ -40,6 +40,7 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -Wformat -Wformat-security -Werror=format-security \
         -Wconversion -Wunused-variable -Wunreachable-code \
         -Wall -W -D_FORTIFY_SOURCE=2 \
+        -Wno-missing-field-initializers \
         -std=c11 \
         -DSYSCONFDIR=\"$(sysconfdir)\"
 
