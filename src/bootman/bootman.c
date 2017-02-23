@@ -28,13 +28,27 @@
 #include "config.h"
 
 /**
- * Currently only support systemd_bootloader
+ * Total "usable" bootloaders
  */
-
 extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
 extern const BootLoader syslinux_bootloader;
+
+/**
+ * Bootloader set that we're allowed to check and use
+ */
+const BootLoader *bootman_known_loaders[] = {
+#if defined(HAVE_SYSTEMD_BOOT)
+        &systemd_bootloader,
+#elif defined(HAVE_GUMMIBOOT)
+        &gummiboot_bootloader,
+#else
+        &goofiboot_bootloader,
+#endif
+        /* non-systemd-class */
+        &syslinux_bootloader
+};
 
 BootManager *boot_manager_new()
 {
@@ -79,6 +93,53 @@ void boot_manager_free(BootManager *self)
         free(self->abs_bootdir);
         free(self->cmdline);
         free(self);
+}
+
+static bool boot_manager_select_bootloader(BootManager *self)
+{
+        int wanted_boot_mask = 0;
+        const BootLoader *selected = NULL;
+        int selected_boot_mask = 0;
+
+        /* Find legacy */
+        if (self->sysconfig->legacy) {
+                wanted_boot_mask |= BOOTLOADER_CAP_LEGACY;
+        } else {
+                wanted_boot_mask |= BOOTLOADER_CAP_UEFI;
+        }
+
+        /* Select a bootloader based on the capabilities */
+        for (size_t i = 0; i < ARRAY_SIZE(bootman_known_loaders); i++) {
+                const BootLoader *l = bootman_known_loaders[i];
+                selected_boot_mask = l->get_capabilities(self);
+                if ((selected_boot_mask & wanted_boot_mask) == wanted_boot_mask) {
+                        selected = l;
+                        break;
+                }
+        }
+
+        if (!selected) {
+                LOG_FATAL("Failed to find an appropriate bootloader for this system");
+                return false;
+        }
+
+        self->bootloader = selected;
+
+        /* Emit debug bits */
+        if ((wanted_boot_mask & BOOTLOADER_CAP_UEFI) == BOOTLOADER_CAP_UEFI) {
+                LOG_DEBUG("UEFI boot now selected (%s)", self->bootloader->name);
+        } else {
+                LOG_DEBUG("Legacy boot now selected (%s)", self->bootloader->name);
+        }
+
+        /* Finally, initialise the bootloader itself now */
+        if (!self->bootloader->init(self)) {
+                self->bootloader->destroy(self);
+                LOG_FATAL("Cannot initialise bootloader %s", self->bootloader->name);
+                return false;
+        }
+
+        return true;
 }
 
 bool boot_manager_set_prefix(BootManager *self, char *prefix)
@@ -136,24 +197,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         }
         self->cmdline = cbm_parse_cmdline_files(config->prefix);
 
-        /* Find legacy */
-        if (config->legacy) {
-                LOG_DEBUG("Legacy boot now selected (syslinux)");
-                self->bootloader = &syslinux_bootloader;
-        } else {
-/* Use the bootloader selected at compile time */
-#if defined(HAVE_SYSTEMD_BOOT)
-                self->bootloader = &systemd_bootloader;
-#elif defined(HAVE_GUMMIBOOT)
-                self->bootloader = &gummiboot_bootloader;
-#else
-                self->bootloader = &goofiboot_bootloader;
-#endif
-                LOG_DEBUG("UEFI boot now selected (%s)", self->bootloader->name);
-        }
-        if (!self->bootloader->init(self)) {
-                self->bootloader->destroy(self);
-                LOG_FATAL("Cannot initialise bootloader %s", self->bootloader->name);
+        if (!boot_manager_select_bootloader(self)) {
                 return false;
         }
 
