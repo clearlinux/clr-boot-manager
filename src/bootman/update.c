@@ -375,7 +375,7 @@ static bool boot_manager_update_native(BootManager *self)
         /* Might return NULL */
         if (!running) {
                 /* Attempt to get it based on the current uname anyway */
-                if (system_kernel && system_kernel->ktype) {
+                if (system_kernel && system_kernel->ktype[0] != '\0') {
                         new_default =
                             boot_manager_get_default_for_type(self, kernels, system_kernel->ktype);
                 }
