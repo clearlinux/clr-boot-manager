@@ -97,16 +97,9 @@ void boot_manager_free(BootManager *self)
 
 static bool boot_manager_select_bootloader(BootManager *self)
 {
-        int wanted_boot_mask = 0;
         const BootLoader *selected = NULL;
         int selected_boot_mask = 0;
-
-        /* Find legacy */
-        if (self->sysconfig->legacy) {
-                wanted_boot_mask |= BOOTLOADER_CAP_LEGACY;
-        } else {
-                wanted_boot_mask |= BOOTLOADER_CAP_UEFI;
-        }
+        int wanted_boot_mask = self->sysconfig->wanted_boot_mask;
 
         /* Select a bootloader based on the capabilities */
         for (size_t i = 0; i < ARRAY_SIZE(bootman_known_loaders); i++) {

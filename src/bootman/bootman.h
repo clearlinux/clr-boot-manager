@@ -84,7 +84,7 @@ typedef struct SystemConfig {
         char *prefix;                /**<Prefix for all operations */
         CbmDeviceProbe *root_device; /**<The physical root device */
         char *boot_device;           /**<The physical boot device */
-        bool legacy;                 /**<Legacy or UEFI */
+        int wanted_boot_mask;        /**<The required bootloader mask */
 } SystemConfig;
 
 /**

@@ -59,7 +59,7 @@ bool boot_manager_update(BootManager *self)
 
         /* TODO: decide how legacy device detection works */
         /* For now legacy means /boot is on the / partition */
-        if (self->sysconfig->legacy) {
+        if ((self->sysconfig->wanted_boot_mask & BOOTLOADER_CAP_LEGACY) == BOOTLOADER_CAP_LEGACY) {
                 LOG_DEBUG("Skipping to legacy-native-install (no mount)");
                 goto perform;
         }
