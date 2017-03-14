@@ -30,6 +30,7 @@
 /**
  * Total "usable" bootloaders
  */
+extern const BootLoader grub2_bootloader;
 extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
@@ -38,17 +39,17 @@ extern const BootLoader syslinux_bootloader;
 /**
  * Bootloader set that we're allowed to check and use
  */
-const BootLoader *bootman_known_loaders[] = {
+const BootLoader *bootman_known_loaders[] =
+    { &grub2_bootloader, /**<Always place first to allow syslinux to override */
 #if defined(HAVE_SYSTEMD_BOOT)
-        &systemd_bootloader,
+      &systemd_bootloader,
 #elif defined(HAVE_GUMMIBOOT)
-        &gummiboot_bootloader,
+      &gummiboot_bootloader,
 #else
-        &goofiboot_bootloader,
+      &goofiboot_bootloader,
 #endif
-        /* non-systemd-class */
-        &syslinux_bootloader
-};
+      /* non-systemd-class */
+      &syslinux_bootloader };
 
 BootManager *boot_manager_new()
 {
@@ -222,6 +223,14 @@ const char *boot_manager_get_os_name(BootManager *self)
         assert(self->os_release != NULL);
 
         return cbm_os_release_get_value(self->os_release, OS_RELEASE_PRETTY_NAME);
+}
+
+const char *boot_manager_get_os_id(BootManager *self)
+{
+        assert(self != NULL);
+        assert(self->os_release != NULL);
+
+        return cbm_os_release_get_value(self->os_release, OS_RELEASE_ID);
 }
 
 const CbmDeviceProbe *boot_manager_get_root_device(BootManager *self)

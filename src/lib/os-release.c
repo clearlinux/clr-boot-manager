@@ -10,6 +10,7 @@
  */
 
 #include "os-release.h"
+#include "config.h"
 #include "log.h"
 #include "nica/files.h"
 
@@ -44,6 +45,8 @@ static const char *cbm_os_release_fallback_value(CbmOsReleaseKey key)
         case OS_RELEASE_PRETTY_NAME:
                 return "generic-linux-os";
         case OS_RELEASE_ID:
+                /* Similar purpose within CBM */
+                return VENDOR_PREFIX;
         case OS_RELEASE_VERSION:
         case OS_RELEASE_VERSION_ID:
                 return "1";

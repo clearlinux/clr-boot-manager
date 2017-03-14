@@ -78,6 +78,7 @@ libcbm_la_SOURCES =			\
 	src/bootloaders/systemd-class.h \
 	src/bootloaders/systemd-class.c \
 	src/bootloaders/systemd-boot.c	\
+	src/bootloaders/grub2.c		\
 	src/bootloaders/gummiboot.c	\
 	src/bootloaders/goofiboot.c	\
 	src/bootloaders/syslinux.c	\
@@ -157,7 +158,8 @@ TESTS = 		\
 	check_files 	\
 	check_legacy    \
 	check_os_release \
-	check_uefi
+	check_uefi 	\
+	check_grub2
 
 check_PROGRAMS = $(TESTS)
 
@@ -254,6 +256,24 @@ check_uefi_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_uefi_LDADD =	\
+	libcbm.la	\
+	src/libnica/libnica.la	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_grub2_SOURCES = \
+	tests/check-grub2.c 	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
+	tests/harness.h		\
+	tests/harness.c
+
+check_grub2_CFLAGS =		\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_grub2_LDADD =	\
 	libcbm.la	\
 	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
