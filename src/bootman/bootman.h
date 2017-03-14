@@ -181,6 +181,13 @@ void boot_manager_set_os_name(BootManager *manager, char *os_name);
 const char *boot_manager_get_os_name(BootManager *manager);
 
 /**
+ * Return the OS ID (used in class values)
+ *
+ * @note This string is owned by BootManager, do not modify or free
+ */
+const char *boot_manager_get_os_id(BootManager *self);
+
+/**
  * Discover a list of known kernels
  *
  * @return a newly allocated NcArray of Kernel's
