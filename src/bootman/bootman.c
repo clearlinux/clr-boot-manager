@@ -30,6 +30,7 @@
 /**
  * Total "usable" bootloaders
  */
+extern const BootLoader grub2_bootloader;
 extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
@@ -38,17 +39,17 @@ extern const BootLoader syslinux_bootloader;
 /**
  * Bootloader set that we're allowed to check and use
  */
-const BootLoader *bootman_known_loaders[] = {
+const BootLoader *bootman_known_loaders[] =
+    { &grub2_bootloader, /**<Always place first to allow syslinux to override */
 #if defined(HAVE_SYSTEMD_BOOT)
-        &systemd_bootloader,
+      &systemd_bootloader,
 #elif defined(HAVE_GUMMIBOOT)
-        &gummiboot_bootloader,
+      &gummiboot_bootloader,
 #else
-        &goofiboot_bootloader,
+      &goofiboot_bootloader,
 #endif
-        /* non-systemd-class */
-        &syslinux_bootloader
-};
+      /* non-systemd-class */
+      &syslinux_bootloader };
 
 BootManager *boot_manager_new()
 {
@@ -97,16 +98,9 @@ void boot_manager_free(BootManager *self)
 
 static bool boot_manager_select_bootloader(BootManager *self)
 {
-        int wanted_boot_mask = 0;
         const BootLoader *selected = NULL;
         int selected_boot_mask = 0;
-
-        /* Find legacy */
-        if (self->sysconfig->legacy) {
-                wanted_boot_mask |= BOOTLOADER_CAP_LEGACY;
-        } else {
-                wanted_boot_mask |= BOOTLOADER_CAP_UEFI;
-        }
+        int wanted_boot_mask = self->sysconfig->wanted_boot_mask;
 
         /* Select a bootloader based on the capabilities */
         for (size_t i = 0; i < ARRAY_SIZE(bootman_known_loaders); i++) {
@@ -229,6 +223,14 @@ const char *boot_manager_get_os_name(BootManager *self)
         assert(self->os_release != NULL);
 
         return cbm_os_release_get_value(self->os_release, OS_RELEASE_PRETTY_NAME);
+}
+
+const char *boot_manager_get_os_id(BootManager *self)
+{
+        assert(self != NULL);
+        assert(self->os_release != NULL);
+
+        return cbm_os_release_get_value(self->os_release, OS_RELEASE_ID);
 }
 
 const CbmDeviceProbe *boot_manager_get_root_device(BootManager *self)

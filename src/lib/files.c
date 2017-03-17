@@ -84,7 +84,7 @@ char *get_boot_device()
         char read_buf[4096];
         glo.gl_offs = 1;
         int fd = -1;
-        ;
+
         ssize_t size = 0;
         autofree(char) *uuid = NULL;
         autofree(char) *p = NULL;

@@ -84,7 +84,7 @@ typedef struct SystemConfig {
         char *prefix;                /**<Prefix for all operations */
         CbmDeviceProbe *root_device; /**<The physical root device */
         char *boot_device;           /**<The physical boot device */
-        bool legacy;                 /**<Legacy or UEFI */
+        int wanted_boot_mask;        /**<The required bootloader mask */
 } SystemConfig;
 
 /**
@@ -179,6 +179,13 @@ void boot_manager_set_os_name(BootManager *manager, char *os_name);
  * @note This string is owned by BootManager, do not modify or free
  */
 const char *boot_manager_get_os_name(BootManager *manager);
+
+/**
+ * Return the OS ID (used in class values)
+ *
+ * @note This string is owned by BootManager, do not modify or free
+ */
+const char *boot_manager_get_os_id(BootManager *self);
 
 /**
  * Discover a list of known kernels

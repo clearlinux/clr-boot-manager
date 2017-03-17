@@ -56,17 +56,21 @@ SystemConfig *cbm_inspect_root(const char *path)
                 return NULL;
         }
         c->prefix = realp;
+        c->wanted_boot_mask = 0;
 
-        /* Find legacy relative to root */
+        /* Find legacy relative to root, on GPT */
         boot = get_legacy_boot_device(realp);
         if (boot) {
                 c->boot_device = boot;
-                c->legacy = true;
+                c->wanted_boot_mask |= BOOTLOADER_CAP_LEGACY;
                 LOG_INFO("Discovered legacy boot device: %s", boot);
         } else {
+                /* Discover UEFI boot */
                 c->boot_device = get_boot_device();
+                c->wanted_boot_mask |= BOOTLOADER_CAP_UEFI;
         }
 
+        /* Our probe methods are GPT only. If we found one, it's definitely GPT */
         if (c->boot_device) {
                 rel = realpath(c->boot_device, NULL);
                 if (!rel) {
@@ -78,7 +82,12 @@ SystemConfig *cbm_inspect_root(const char *path)
                         c->boot_device = rel;
                         LOG_INFO("Discovered boot device: %s", rel);
                 }
+                c->wanted_boot_mask |= BOOTLOADER_CAP_GPT;
+        } else {
+                /* Legacy boot, non-GPT */
+                c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY;
         }
+
         c->root_device = cbm_probe_path(realp);
 
         return c;
