@@ -55,6 +55,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *initrd_file = NULL;
         autofree(char) *user_initrd_file = NULL;
         autofree(char) *sysmap_file = NULL;
+        autofree(char) *headers_dir = NULL;
         ssize_t r = 0;
         char *bcp = NULL;
 
@@ -126,6 +127,13 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 }
         }
 
+        /* Check headers directory, standardised path on all distros */
+        headers_dir = string_printf("%s/usr/src/linux-headers-%s-%d.%s",
+                                    self->sysconfig->prefix,
+                                    version,
+                                    release,
+                                    type);
+
         /* Got this far, we have a valid clear kernel */
         kern = calloc(1, sizeof(struct Kernel));
         if (!kern) {
@@ -155,6 +163,14 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         if (nc_file_exists(sysmap_file)) {
                 kern->source.sysmap_file = strdup(sysmap_file);
                 if (!kern->source.sysmap_file) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+
+        if (nc_file_exists(headers_dir)) {
+                kern->source.headers_dir = strdup(headers_dir);
+                if (!kern->source.headers_dir) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -277,6 +293,7 @@ void free_kernel(Kernel *t)
         free(t->source.path);
         free(t->source.module_dir);
         free(t->source.cmdline_file);
+        free(t->source.headers_dir);
         free(t->source.kconfig_file);
         free(t->source.sysmap_file);
         free(t->source.kboot_file);
@@ -688,6 +705,17 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         if (kernel->source.module_dir && nc_file_exists(kernel->source.module_dir)) {
                 if (!nc_rm_rf(kernel->source.module_dir)) {
                         LOG_ERROR("Failed to remove module dir (-rf) %s: %s",
+                                  kernel->source.module_dir,
+                                  strerror(errno));
+                } else {
+                        cbm_sync();
+                }
+        }
+
+        /* Purge the kernel headers from disk */
+        if (kernel->source.headers_dir && nc_file_exists(kernel->source.headers_dir)) {
+                if (!nc_rm_rf(kernel->source.headers_dir)) {
+                        LOG_ERROR("Failed to remove headers dir (-rf) %s: %s",
                                   kernel->source.module_dir,
                                   strerror(errno));
                 } else {
