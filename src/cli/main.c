@@ -77,8 +77,8 @@ static bool print_version(__cbm_unused__ int argc, __cbm_unused__ char **argv)
 \n\
 Copyright \u00A9 2016-2017 Intel Corporation\n\n\
 " PACKAGE_NAME " is free software; you can redistribute it and/or modify\n\
-it under the terms of the GNU General Public License as published by\n\
-the Free Software Foundation; either version 2 of the License, or\n\
+it under the terms of the GNU Lesser General Public License as published by\n\
+the Free Software Foundation; either version 2.1 of the License, or\n\
 (at your option) any later version.\n");
         return true;
 }
