@@ -64,6 +64,7 @@ typedef struct Kernel {
                 char *user_initrd_file; /**<User's initrd file */
                 char *kboot_file;       /**<Path to the k_booted_$(uname -r) file */
                 char *module_dir;       /**<Path to the modules directory */
+                char *sysmap_file;      /**<Path to the System.map file */
         } source;
 
         /* Target (basename) paths */

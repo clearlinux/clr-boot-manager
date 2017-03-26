@@ -54,6 +54,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *kconfig_file = NULL;
         autofree(char) *initrd_file = NULL;
         autofree(char) *user_initrd_file = NULL;
+        autofree(char) *sysmap_file = NULL;
         ssize_t r = 0;
         char *bcp = NULL;
 
@@ -76,6 +77,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         parent = cbm_get_file_parent(path);
         cmdline = string_printf("%s/cmdline-%s-%d.%s", parent, version, release, type);
         kconfig_file = string_printf("%s/config-%s-%d.%s", parent, version, release, type);
+        sysmap_file = string_printf("%s/System.map-%s-%d.%s", parent, version, release, type);
 
         /* i.e. /usr/lib/kernel/initrd-org.clearlinux.lts.4.9.1-1  */
         initrd_file = string_printf("%s/initrd-%s.%s.%s-%d",
@@ -145,6 +147,14 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         if (nc_file_exists(kconfig_file)) {
                 kern->source.kconfig_file = strdup(kconfig_file);
                 if (!kern->source.kconfig_file) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+
+        if (nc_file_exists(sysmap_file)) {
+                kern->source.sysmap_file = strdup(sysmap_file);
+                if (!kern->source.sysmap_file) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -268,6 +278,7 @@ void free_kernel(Kernel *t)
         free(t->source.module_dir);
         free(t->source.cmdline_file);
         free(t->source.kconfig_file);
+        free(t->source.sysmap_file);
         free(t->source.kboot_file);
         free(t->source.initrd_file);
         free(t->source.user_initrd_file);
@@ -695,6 +706,13 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                 if (unlink(kernel->source.kconfig_file) < 0) {
                         LOG_ERROR("Failed to remove kconfig file %s: %s",
                                   kernel->source.kconfig_file,
+                                  strerror(errno));
+                }
+        }
+        if (kernel->source.sysmap_file && nc_file_exists(kernel->source.sysmap_file)) {
+                if (unlink(kernel->source.sysmap_file) < 0) {
+                        LOG_ERROR("Failed to remove System.map file %s: %s",
+                                  kernel->source.sysmap_file,
                                   strerror(errno));
                 }
         }
