@@ -332,7 +332,7 @@ void cbm_free_sysconfig(SystemConfig *config);
 /**
  * Inspect a given root path and return a new SystemConfig for it
  */
-SystemConfig *cbm_inspect_root(const char *path);
+SystemConfig *cbm_inspect_root(const char *path, bool image_mode);
 
 /**
  * Determine if the given SystemConfig is sane for use

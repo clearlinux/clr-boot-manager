@@ -21,6 +21,8 @@
 #include "bootman_private.h"
 #include "files.h"
 #include "log.h"
+#include "nica/files.h"
+#include "system_stub.h"
 
 void cbm_free_sysconfig(SystemConfig *config)
 {
@@ -33,7 +35,7 @@ void cbm_free_sysconfig(SystemConfig *config)
         free(config);
 }
 
-SystemConfig *cbm_inspect_root(const char *path)
+SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
 {
         if (!path) {
                 return NULL;
@@ -62,14 +64,38 @@ SystemConfig *cbm_inspect_root(const char *path)
         boot = get_legacy_boot_device(realp);
         if (boot) {
                 c->boot_device = boot;
-                c->wanted_boot_mask |= BOOTLOADER_CAP_LEGACY;
+                c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_GPT;
                 LOG_INFO("Discovered legacy boot device: %s", boot);
-        } else {
-                /* Discover UEFI boot */
-                c->boot_device = get_boot_device();
-                c->wanted_boot_mask |= BOOTLOADER_CAP_UEFI;
+                goto refine_device;
         }
 
+        /* Now try to find the system ESP */
+        boot = get_boot_device();
+        if (boot) {
+                c->boot_device = boot;
+                c->wanted_boot_mask = BOOTLOADER_CAP_UEFI | BOOTLOADER_CAP_GPT;
+                LOG_INFO("Discovered UEFI ESP: %s", boot);
+                goto refine_device;
+        }
+
+        /* At this point, we have no boot device available, try to inspect
+         * the root system if we're in image mode.
+         */
+        if (!image_mode) {
+                /* typically /sys, but we forcibly fail this with our tests */
+                autofree(char) *fw_path =
+                    string_printf("%s/firmware/efi", cbm_system_get_sysfs_path());
+                if (nc_file_exists(fw_path)) {
+                        c->wanted_boot_mask = BOOTLOADER_CAP_UEFI;
+                } else {
+                        c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY;
+                }
+        } else {
+                /* At this point, just assume we have a plain UEFI system */
+                c->wanted_boot_mask = BOOTLOADER_CAP_UEFI;
+        }
+
+refine_device:
         /* Our probe methods are GPT only. If we found one, it's definitely GPT */
         if (c->boot_device) {
                 rel = realpath(c->boot_device, NULL);
@@ -80,12 +106,9 @@ SystemConfig *cbm_inspect_root(const char *path)
                 } else {
                         free(c->boot_device);
                         c->boot_device = rel;
-                        LOG_INFO("Discovered boot device: %s", rel);
+                        LOG_INFO("Fully resolved boot device: %s", rel);
                 }
                 c->wanted_boot_mask |= BOOTLOADER_CAP_GPT;
-        } else {
-                /* Legacy boot, non-GPT */
-                c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY;
         }
 
         c->root_device = cbm_probe_path(realp);

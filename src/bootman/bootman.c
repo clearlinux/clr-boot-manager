@@ -150,7 +150,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         cbm_free_sysconfig(self->sysconfig);
         self->sysconfig = NULL;
 
-        config = cbm_inspect_root(prefix);
+        config = cbm_inspect_root(prefix, self->image_mode);
         if (!config) {
                 return false;
         }
