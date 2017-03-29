@@ -297,12 +297,21 @@ char *boot_manager_get_boot_dir(BootManager *self)
         assert(self->sysconfig != NULL);
 
         char *ret = NULL;
+        char *realp = NULL;
 
         if (self->abs_bootdir) {
                 return strdup(self->abs_bootdir);
         }
 
         ret = string_printf("%s%s", self->sysconfig->prefix, BOOT_DIRECTORY);
+
+        /* Attempt to resolve it first, removing double slashes */
+        realp = realpath(ret, NULL);
+        if (realp) {
+                free(ret);
+                return realp;
+        }
+
         return ret;
 }
 
