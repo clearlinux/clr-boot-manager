@@ -26,6 +26,7 @@ check_os_release
 check_uefi
 check_grub2
 check_select_bootloader
+check_probe
 
 *.log
 *.trs

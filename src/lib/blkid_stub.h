@@ -36,6 +36,10 @@ typedef struct CbmBlkidOps {
         unsigned long long (*partition_get_flags)(blkid_partition par);
         const char *(*partition_get_uuid)(blkid_partition par);
 
+        /* Partition table functions */
+        blkid_parttable (*partlist_get_table)(blkid_partlist ls);
+        const char *(*parttable_get_type)(blkid_parttable tab);
+
         /* Misc functions */
         int (*devno_to_wholedisk)(dev_t dev, char *diskname, size_t len, dev_t *diskdevno);
 } CbmBlkidOps;
@@ -71,6 +75,16 @@ typedef struct CbmBlkidOps {
 #define CBM_BLKID_PARTITION_SET ((blkid_partition)1)
 
 /**
+ * Define a "set" blkid_parttable for testing
+ */
+#define CBM_BLKID_PARTTABLE_SET ((blkid_parttable)1)
+
+/**
+ * Define an empty blkid_parttable for testing
+ */
+#define CBM_BLKID_PARTTABLE_NULL ((blkid_parttable)0)
+
+/**
  * Reset the blkid vtable
  */
 void cbm_blkid_reset_vtable(void);
@@ -104,6 +118,12 @@ int cbm_blkid_partlist_numof_partitions(blkid_partlist ls);
 blkid_partition cbm_blkid_partlist_get_partition(blkid_partlist ls, int n);
 unsigned long long cbm_blkid_partition_get_flags(blkid_partition par);
 const char *cbm_blkid_partition_get_uuid(blkid_partition par);
+
+/**
+ * Partition table related wrappers
+ */
+blkid_parttable cbm_blkid_partlist_get_table(blkid_partlist ls);
+const char *cbm_blkid_parttable_get_type(blkid_parttable tab);
 
 /**
  * Misc related wrappers

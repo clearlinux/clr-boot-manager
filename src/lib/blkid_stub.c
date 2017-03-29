@@ -47,6 +47,10 @@ static CbmBlkidOps default_blkid_ops = {
         .partition_get_flags = blkid_partition_get_flags,
         .partition_get_uuid = blkid_partition_get_uuid,
 
+        /* Partition table functions */
+        .partlist_get_table = blkid_partlist_get_table,
+        .parttable_get_type = blkid_parttable_get_type,
+
         /* Misc */
         .devno_to_wholedisk = cbm_blkid_devno_to_wholedisk_wrapped,
 };
@@ -84,6 +88,10 @@ void cbm_blkid_set_vtable(CbmBlkidOps *ops)
         assert(blkid_ops->partlist_get_partition != NULL);
         assert(blkid_ops->partition_get_flags != NULL);
         assert(blkid_ops->partition_get_uuid != NULL);
+
+        /* partition table functions */
+        assert(blkid_ops->partlist_get_table != NULL);
+        assert(blkid_ops->parttable_get_type != NULL);
 
         /* misc */
         assert(blkid_ops->devno_to_wholedisk != NULL);
@@ -158,6 +166,19 @@ unsigned long long cbm_blkid_partition_get_flags(blkid_partition par)
 const char *cbm_blkid_partition_get_uuid(blkid_partition par)
 {
         return blkid_ops->partition_get_uuid(par);
+}
+
+/**
+ * Partition table related wrappers
+ */
+blkid_parttable cbm_blkid_partlist_get_table(blkid_partlist ls)
+{
+        return blkid_ops->partlist_get_table(ls);
+}
+
+const char *cbm_blkid_parttable_get_type(blkid_parttable tab)
+{
+        return blkid_ops->parttable_get_type(tab);
 }
 
 /**

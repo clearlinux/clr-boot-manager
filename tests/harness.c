@@ -566,6 +566,8 @@ void set_test_system_legacy(void)
         autofree(char) *ddir = NULL;
         autofree(char) *diskdir = NULL;
         autofree(char) *diskfile = NULL;
+        autofree(char) *diskdir_uuid = NULL;
+        autofree(char) *diskfile_uuid = NULL;
         autofree(char) *dfile = NULL;
         autofree(char) *dlink = NULL;
         const char *devfs_path = cbm_system_get_devfs_path();
@@ -594,8 +596,18 @@ void set_test_system_legacy(void)
         diskdir = string_printf("%s/disk/by-partuuid", cbm_system_get_devfs_path());
         diskfile = string_printf("%s/%s", diskdir, "Test-PartUUID");
 
+        /* Create /dev/disk/by-uuid portions */
+        diskdir_uuid = string_printf("%s/disk/by-uuid", cbm_system_get_devfs_path());
+        diskfile_uuid = string_printf("%s/%s", diskdir, "Test-UUID");
+
         nc_mkdir_p(diskdir, 00755);
         if (!file_set_text(diskfile, "clr-boot-manager Legacy testing")) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        nc_mkdir_p(diskdir_uuid, 00755);
+        if (!file_set_text(diskfile_uuid, "clr-boot-manager Legacy testing")) {
                 DECLARE_OOM();
                 abort();
         }

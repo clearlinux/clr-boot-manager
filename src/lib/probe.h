@@ -13,7 +13,10 @@
 
 #define _GNU_SOURCE
 
+#include <stdbool.h>
 #include <sys/types.h>
+
+#include "util.h"
 
 /**
  * A CbmCbmDeviceProbe is the result of a cbm_probe_path operation, caching
@@ -24,6 +27,7 @@ typedef struct CbmDeviceProbe {
         char *part_uuid; /**< PartUUID for GPT partitions */
         char *luks_uuid; /**< Parent LUKS UUID for the partition */
         dev_t dev;       /**< The device itself */
+        bool gpt;        /**<Whether this device belongs to a GPT disk */
 } CbmDeviceProbe;
 
 /**
@@ -35,6 +39,8 @@ CbmDeviceProbe *cbm_probe_path(const char *path);
  * Free an existing probe
  */
 void cbm_probe_free(CbmDeviceProbe *probe);
+
+DEF_AUTOFREE(CbmDeviceProbe, cbm_probe_free)
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

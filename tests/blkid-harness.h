@@ -118,6 +118,18 @@ static inline int test_blkid_devno_to_wholedisk(__cbm_unused__ dev_t dev,
         return -1;
 }
 
+static inline blkid_parttable test_blkid_partlist_get_table(__cbm_unused__ blkid_partlist ls)
+{
+        /* Return a "valid" partition table */
+        return CBM_BLKID_PARTTABLE_SET;
+}
+
+static inline const char *test_blkid_parttable_get_type(__cbm_unused__ blkid_parttable tab)
+{
+        /* Return correct gpt identifier */
+        return "gpt";
+}
+
 /**
  * Default vtable for testing. Copy into a local struct and override specific
  * fields.
@@ -138,6 +150,10 @@ CbmBlkidOps BlkidTestOps = {
         .partlist_get_partition = test_blkid_partlist_get_partition,
         .partition_get_flags = test_blkid_partition_get_flags,
         .partition_get_uuid = test_blkid_partition_get_uuid,
+
+        /* Partition table functions */
+        .partlist_get_table = test_blkid_partlist_get_table,
+        .parttable_get_type = test_blkid_parttable_get_type,
 
         /* Misc */
         .devno_to_wholedisk = test_blkid_devno_to_wholedisk,

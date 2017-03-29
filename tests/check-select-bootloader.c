@@ -211,6 +211,8 @@ static CbmBlkidOps legacy_blkid_ops = {
         .partlist_get_partition = test_blkid_partlist_get_partition,
         .partition_get_flags = legacy_partition_get_flags,
         .partition_get_uuid = legacy_partition_get_uuid,
+        .partlist_get_table = test_blkid_partlist_get_table,
+        .parttable_get_type = test_blkid_parttable_get_type,
         .devno_to_wholedisk = legacy_devno_to_wholedisk,
 };
 
@@ -304,6 +306,8 @@ static CbmBlkidOps grub2_blkid_ops = {
         .partlist_get_partition = test_blkid_partlist_get_partition,
         .partition_get_flags = test_blkid_partition_get_flags,
         .partition_get_uuid = test_blkid_partition_get_uuid,
+        .partlist_get_table = test_blkid_partlist_get_table,
+        .parttable_get_type = test_blkid_parttable_get_type,
         .devno_to_wholedisk = test_blkid_devno_to_wholedisk,
 };
 

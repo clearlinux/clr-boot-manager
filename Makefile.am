@@ -160,7 +160,8 @@ TESTS = 		\
 	check_os_release \
 	check_uefi 	\
 	check_grub2 \
-	check_select_bootloader
+	check_select_bootloader \
+	check_probe
 
 check_PROGRAMS = $(TESTS)
 
@@ -293,6 +294,24 @@ check_select_bootloader_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_select_bootloader_LDADD =	\
+	libcbm.la	\
+	src/libnica/libnica.la	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_probe_SOURCES = \
+	tests/check-probe.c 	\
+	tests/blkid-harness.h   \
+	tests/system-harness.h  \
+	tests/harness.h		\
+	tests/harness.c
+
+check_probe_CFLAGS =		\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_probe_LDADD =	\
 	libcbm.la	\
 	src/libnica/libnica.la	\
 	$(BLKID_LIBS)	\
