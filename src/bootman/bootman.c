@@ -350,6 +350,7 @@ bool boot_manager_set_boot_dir(BootManager *self, const char *bootdir)
 bool boot_manager_modify_bootloader(BootManager *self, int flags)
 {
         assert(self != NULL);
+        autofree(char) *boot_dir = NULL;
 
         if (!self->bootloader) {
                 return false;
@@ -360,7 +361,8 @@ bool boot_manager_modify_bootloader(BootManager *self, int flags)
         }
 
         /* Ensure we're up to date here on the bootloader */
-        if (!boot_manager_set_boot_dir(self, self->abs_bootdir)) {
+        boot_dir = boot_manager_get_boot_dir(self);
+        if (!boot_manager_set_boot_dir(self, boot_dir)) {
                 return false;
         }
 
