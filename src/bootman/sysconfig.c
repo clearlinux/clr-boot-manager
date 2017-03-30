@@ -44,6 +44,7 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
         char *realp = NULL;
         char *boot = NULL;
         char *rel = NULL;
+        bool native_uefi = false;
 
         realp = realpath(path, NULL);
         if (!realp) {
@@ -60,8 +61,25 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
         c->prefix = realp;
         c->wanted_boot_mask = 0;
 
-        /* Find legacy relative to root, on GPT */
-        boot = get_legacy_boot_device(realp);
+        /* Determine if this is a native UEFI system. This means we're in a full
+         * native mode and have /sys/firmware/efi available. This does not throw
+         * the image generation, and subsequent updates to the legacy image
+         * wouldn't have a UEFI vfs available.
+         */
+        if (!image_mode) {
+                /* typically /sys, but we forcibly fail this with our tests */
+                autofree(char) *fw_path =
+                    string_printf("%s/firmware/efi", cbm_system_get_sysfs_path());
+                native_uefi = nc_file_exists(fw_path);
+        }
+
+        /* Find legacy relative to root, on GPT, assuming we're not booted using
+         * UEFI. This is due to GPT being able to contain a legacy boot device
+         * *and* an ESP at the same time. Native UEFI takes precedence.
+         */
+        if (!native_uefi) {
+                boot = get_legacy_boot_device(realp);
+        }
         if (boot) {
                 c->boot_device = boot;
                 c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_GPT;
@@ -82,14 +100,7 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
          * the root system if we're in image mode.
          */
         if (!image_mode) {
-                /* typically /sys, but we forcibly fail this with our tests */
-                autofree(char) *fw_path =
-                    string_printf("%s/firmware/efi", cbm_system_get_sysfs_path());
-                if (nc_file_exists(fw_path)) {
-                        c->wanted_boot_mask = BOOTLOADER_CAP_UEFI;
-                } else {
-                        c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY;
-                }
+                c->wanted_boot_mask = native_uefi ? BOOTLOADER_CAP_UEFI : BOOTLOADER_CAP_LEGACY;
         } else {
                 /* At this point, just assume we have a plain UEFI system */
                 c->wanted_boot_mask = BOOTLOADER_CAP_UEFI;
