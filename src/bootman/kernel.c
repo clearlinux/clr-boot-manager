@@ -688,7 +688,12 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                 is_uefi = true;
         }
 
-        kfile_target = string_printf("%s/%s", base_path, kernel->target.path);
+        /* Remove old blobs */
+        if (is_uefi) {
+                kfile_target = string_printf("%s/%s", base_path, kernel->target.path);
+        } else {
+                kfile_target = string_printf("%s/%s", base_path, kernel->target.legacy_path);
+        }
 
         if (kernel->source.initrd_file) {
                 initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
