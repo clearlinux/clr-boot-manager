@@ -80,6 +80,16 @@ static bool syslinux_init(const BootManager *manager)
 /* Queue kernel to be added to conf */
 static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager, const Kernel *kernel)
 {
+        /* We may end up adding the same kernel again, when in repair situations
+         * for existing kernels (and current == tip cases)
+         */
+        for (uint16_t i = 0; i < kernel_queue->len; i++) {
+                const Kernel *k = nc_array_get(kernel_queue, i);
+                if (streq(k->source.path, kernel->source.path)) {
+                        return true;
+                }
+        }
+
         if (!nc_array_add(kernel_queue, (void *)kernel)) {
                 DECLARE_OOM();
                 abort();
