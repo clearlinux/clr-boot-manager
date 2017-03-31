@@ -30,6 +30,7 @@
 #include "system-harness.h"
 
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
+#define BOOT_FULL PLAYGROUND_ROOT "/" BOOT_DIRECTORY
 
 /**
  * We only permit UUID in our tests.
@@ -173,6 +174,60 @@ START_TEST(bootman_grub2_update_from_unknown)
 }
 END_TEST
 
+START_TEST(bootman_grub2_namespace_migration)
+{
+        autofree(BootManager) *m = NULL;
+        PlaygroundKernel kernels[] = { { "4.2.1", "kvm", 121, false, false },
+                                       { "4.2.3", "kvm", 124, true, false },
+                                       { "4.2.1", "native", 137, false, false },
+                                       { "4.2.3", "native", 138, true, false } };
+        PlaygroundConfig config = { "4.2.1-121.kvm", kernels, ARRAY_SIZE(kernels), .uefi = false };
+
+        m = prepare_playground(&config);
+
+        fail_if(!nc_mkdir_p(PLAYGROUND_ROOT "/etc/grub.d", 00755), "Failed to create GRUB dir");
+        fail_if(!nc_mkdir_p(BOOT_FULL, 00755), "Failed to create boot dir");
+
+        /* Manually install a bunch of kernels using their legacy paths */
+        for (size_t i = 0; i < config.n_kernels; i++) {
+                PlaygroundKernel *k = &(kernels[i]);
+                autofree(char) *tgt_path_config = NULL;
+
+                tgt_path_config = string_printf("%s/etc/grub.d/10_%s_%s-%d.%s",
+                                                PLAYGROUND_ROOT,
+                                                boot_manager_get_os_id(m),
+                                                k->version,
+                                                k->release,
+                                                k->ktype);
+
+                fail_if(!file_set_text(tgt_path_config, "Placeholder config"),
+                        "Failed to write legacy GRUB2 config file");
+        }
+        /* Upgrade will put new kernels in place, and wipe old ones */
+        fail_if(!boot_manager_update(m), "Failed to migrate namespace on update");
+
+        /* Iterate again, make sure new ones are valid, and old ones are gone
+         * Not all kernels are retained during upgrade */
+        for (size_t i = 0; i < config.n_kernels; i++) {
+                PlaygroundKernel *k = &(kernels[i]);
+                autofree(char) *tgt_path_config = NULL;
+
+                tgt_path_config = string_printf("%s/etc/grub.d/10_%s_%s-%d.%s",
+                                                PLAYGROUND_ROOT,
+                                                boot_manager_get_os_id(m),
+                                                k->version,
+                                                k->release,
+                                                k->ktype);
+
+                fail_if(nc_file_exists(tgt_path_config),
+                        "Old GRUB2 path not removed: %s",
+                        tgt_path_config);
+        }
+        fail_if(!nc_file_exists(PLAYGROUND_ROOT "/etc/grub.d/10_" KERNEL_NAMESPACE),
+                "GRUB2 configuration not written");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -184,6 +239,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_grub2_image);
         tcase_add_test(tc, bootman_grub2_native);
         tcase_add_test(tc, bootman_grub2_update_from_unknown);
+        tcase_add_test(tc, bootman_grub2_namespace_migration);
         suite_add_tcase(s, tc);
 
         return s;
