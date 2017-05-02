@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/sysmacros.h>
 
 #include "blkid_stub.h"
 #include "bootloader.h"

@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <sys/sysmacros.h>
 
 /**
  * Ensure we check here for the blkid device being correct.

@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/mount.h>
+#include <sys/sysmacros.h>
 
 #include "files.h"
 #include "log.h"

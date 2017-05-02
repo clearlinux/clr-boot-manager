@@ -26,6 +26,7 @@
 #include <sys/mman.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <unistd.h>
 
 #include "blkid_stub.h"
