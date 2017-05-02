@@ -674,6 +674,7 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         autofree(char) *base_path = NULL;
         autofree(char) *initrd_target = NULL;
         bool is_uefi = false;
+        autofree(char) *efi_boot_dir = NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -686,17 +687,20 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         if ((manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI) ==
             BOOTLOADER_CAP_UEFI) {
                 is_uefi = true;
+                efi_boot_dir = nc_build_case_correct_path(base_path, "EFI", KERNEL_NAMESPACE, NULL);
         }
 
         /* Remove old blobs */
         if (is_uefi) {
-                kfile_target = string_printf("%s/%s", base_path, kernel->target.path);
+                kfile_target = string_printf("%s/%s", efi_boot_dir, kernel->target.path);
         } else {
                 kfile_target = string_printf("%s/%s", base_path, kernel->target.legacy_path);
         }
 
         if (kernel->source.initrd_file) {
-                initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
+                initrd_target = string_printf("%s/%s",
+                                              is_uefi ? efi_boot_dir : base_path,
+                                              kernel->target.initrd_path);
         }
 
         /* Remove the kernel from the ESP */

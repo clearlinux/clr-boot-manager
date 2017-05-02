@@ -351,6 +351,40 @@ START_TEST(bootman_uefi_namespace_migration)
 }
 END_TEST
 
+/**
+ * Ensure all blobs are removed for garbage collected kernels
+ */
+START_TEST(bootman_uefi_ensure_removed)
+{
+        autofree(BootManager) *m = NULL;
+
+        m = prepare_playground(&uefi_config);
+        fail_if(!m, "Failed to prepare update playground");
+        boot_manager_set_image_mode(m, false);
+
+        /* Start on the 4.2.1-121.kvm */
+        fail_if(!boot_manager_set_uname(m, "4.2.1-121.kvm"), "Failed to set initial kernel");
+
+        /* Set the default kernel to the next kernel */
+        fail_if(!set_kernel_default(&uefi_kernels[1]), "Failed to set kernel as default");
+
+        /* Put 2 of the KVM kernels in */
+        fail_if(!boot_manager_update(m), "Failed to apply initial updates");
+
+        /* Reboot to new kernel */
+        fail_if(!boot_manager_set_uname(m, "4.2.3-124.kvm"), "Failed to simulate reboot");
+        /* Fully bootred */
+        fail_if(!set_kernel_booted(&uefi_kernels[1], true), "Failed to set kernel booted");
+
+        /* Apply the update so that the old kernel is now gone */
+        fail_if(!boot_manager_update(m), "Failed to apply post-reboot updates");
+
+        fail_if(!confirm_kernel_installed(m, &uefi_config, &uefi_kernels[1]),
+                "New kernel is not installed");
+        fail_if(!confirm_kernel_uninstalled(m, &uefi_kernels[0]), "Old kernel not fully removed");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -366,6 +400,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_uefi_update_native);
         tcase_add_test(tc, bootman_uefi_remove_bootloader);
         tcase_add_test(tc, bootman_uefi_namespace_migration);
+        tcase_add_test(tc, bootman_uefi_ensure_removed);
         suite_add_tcase(s, tc);
 
         return s;
