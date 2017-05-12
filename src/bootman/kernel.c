@@ -122,8 +122,9 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                                            release);
 
                 if (!nc_file_exists(module_dir)) {
-                        LOG_ERROR("Valid kernel with no modules: %s %s", path, module_dir);
-                        return NULL;
+                        LOG_WARNING("Found kernel with no modules: %s %s", path, module_dir);
+                        free(module_dir);
+                        module_dir = NULL;
                 }
         }
 
@@ -143,7 +144,9 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         kern->source.path = strdup(path);
         kern->meta.bpath = strdup(bcp);
         kern->meta.version = strdup(version);
-        kern->source.module_dir = strdup(module_dir);
+        if (module_dir) {
+                kern->source.module_dir = strdup(module_dir);
+        }
         kern->meta.ktype = strdup(type);
         /* Legacy path should be used by non-UEFI bootloaders */
         kern->target.legacy_path = kern->meta.bpath;
