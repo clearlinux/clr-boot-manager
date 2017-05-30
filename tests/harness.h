@@ -35,6 +35,7 @@ typedef struct PlaygroundConfig {
         PlaygroundKernel *initial_kernels;
         size_t n_kernels;
         bool uefi;
+        bool disable_modules; /* Whether we want modules or not */
 } PlaygroundConfig;
 
 /**
@@ -46,7 +47,7 @@ BootManager *prepare_playground(PlaygroundConfig *config);
 /**
  * Push a new kernel into the root
  */
-bool push_kernel_update(PlaygroundKernel *kernel);
+bool push_kernel_update(PlaygroundConfig *config, PlaygroundKernel *kernel);
 
 /**
  * Set the current kernel as the default for it's type, overriding any

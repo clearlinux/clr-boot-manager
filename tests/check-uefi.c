@@ -43,6 +43,12 @@ static PlaygroundConfig uefi_config = { "4.2.1-121.kvm",
                                         ARRAY_SIZE(uefi_kernels),
                                         .uefi = true };
 
+static PlaygroundConfig uefi_config_no_modules = { "4.2.1-121.kvm",
+                                                   uefi_kernels,
+                                                   ARRAY_SIZE(uefi_kernels),
+                                                   .uefi = true,
+                                                   .disable_modules = true };
+
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
 
 START_TEST(bootman_uefi_get_boot_device)
@@ -66,23 +72,34 @@ START_TEST(bootman_uefi_get_boot_device)
 }
 END_TEST
 
-START_TEST(bootman_uefi_image)
+static void bootman_uefi_image_shared(PlaygroundConfig *config)
 {
         autofree(BootManager) *m = NULL;
-        m = prepare_playground(&uefi_config);
+        m = prepare_playground(config);
         fail_if(!m, "Failed to prepare update playground");
 
         /* Validate image install */
         boot_manager_set_image_mode(m, true);
         fail_if(!boot_manager_update(m), "Failed to update image");
 }
+
+START_TEST(bootman_uefi_image_modules)
+{
+        bootman_uefi_image_shared(&uefi_config);
+}
 END_TEST
 
-START_TEST(bootman_uefi_native)
+START_TEST(bootman_uefi_image_no_modules)
+{
+        bootman_uefi_image_shared(&uefi_config_no_modules);
+}
+END_TEST
+
+static void bootman_uefi_native_shared(PlaygroundConfig *config)
 {
         autofree(BootManager) *m = NULL;
 
-        m = prepare_playground(&uefi_config);
+        m = prepare_playground(config);
         fail_if(!m, "Failed to prepare update playground");
         boot_manager_set_image_mode(m, false);
 
@@ -101,6 +118,17 @@ START_TEST(bootman_uefi_native)
         /* This guy isn't supposed to be kept around now */
         fail_if(!confirm_kernel_uninstalled(m, &(uefi_kernels[2])),
                 "Uninteresting kernel shouldn't be kept around.");
+}
+
+START_TEST(bootman_uefi_native_modules)
+{
+        bootman_uefi_native_shared(&uefi_config);
+}
+END_TEST
+
+START_TEST(bootman_uefi_native_no_modules)
+{
+        bootman_uefi_native_shared(&uefi_config_no_modules);
 }
 END_TEST
 
@@ -391,16 +419,22 @@ static Suite *core_suite(void)
         TCase *tc = NULL;
 
         s = suite_create("bootman_uefi");
-        tc = tcase_create("bootman_uefi_functions");
+        tc = tcase_create("bootman_uefi_modules");
         tcase_add_test(tc, bootman_uefi_get_boot_device);
-        tcase_add_test(tc, bootman_uefi_image);
-        tcase_add_test(tc, bootman_uefi_native);
+        tcase_add_test(tc, bootman_uefi_image_modules);
+        tcase_add_test(tc, bootman_uefi_native_modules);
         tcase_add_test(tc, bootman_uefi_update_from_unknown);
         tcase_add_test(tc, bootman_uefi_update_image);
         tcase_add_test(tc, bootman_uefi_update_native);
         tcase_add_test(tc, bootman_uefi_remove_bootloader);
         tcase_add_test(tc, bootman_uefi_namespace_migration);
         tcase_add_test(tc, bootman_uefi_ensure_removed);
+        suite_add_tcase(s, tc);
+
+        /* Tests without kernel modules */
+        tc = tcase_create("bootman_uefi_no_modules");
+        tcase_add_test(tc, bootman_uefi_native_no_modules);
+        tcase_add_test(tc, bootman_uefi_image_no_modules);
         suite_add_tcase(s, tc);
 
         return s;

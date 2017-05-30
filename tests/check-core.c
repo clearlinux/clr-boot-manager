@@ -39,6 +39,11 @@ static PlaygroundConfig core_config = { "4.2.1-121.kvm",
                                         core_kernels,
                                         ARRAY_SIZE(core_kernels),
                                         .uefi = true };
+static PlaygroundConfig core_config_no_modules = { "4.2.1-121.kvm",
+                                                   core_kernels,
+                                                   ARRAY_SIZE(core_kernels),
+                                                   .uefi = true,
+                                                   .disable_modules = true };
 
 /**
  * Ensure scope based management is functional
@@ -159,7 +164,7 @@ int kernel_compare_reverse(const void *a, const void *b)
         return 1;
 }
 
-START_TEST(bootman_list_kernels_test)
+START_TEST(bootman_list_kernels_modules_test)
 {
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
@@ -198,6 +203,60 @@ START_TEST(bootman_list_kernels_test)
         fail_if(kernel->meta.release != 124, "Invalid third reversed element");
         kernel = nc_array_get(list, 3);
         fail_if(kernel->meta.release != 121, "Invalid fourth reversed element");
+
+        for (uint16_t i = 0; i < list->len; i++) {
+                const Kernel *k = nc_array_get(list, i);
+                fail_if(k->source.module_dir == NULL,
+                        "Kernel has no module directory when it should");
+        }
+}
+END_TEST
+
+START_TEST(bootman_list_kernels_no_modules_test)
+{
+        autofree(BootManager) *m = NULL;
+        autofree(KernelArray) *list = NULL;
+        const Kernel *kernel = NULL;
+
+        m = boot_manager_new();
+        fail_if(boot_manager_set_prefix(m, "/ro347u59jaowlq'#1'1'1'1aaaaa,*"),
+                "set_prefix should fail for non existent directory");
+        boot_manager_free(m);
+
+        m = prepare_playground(&core_config_no_modules);
+
+        list = boot_manager_get_kernels(m);
+        fail_if(!list, "Failed to list kernels");
+
+        fail_if(list->len != 4, "Invalid number of discovered kernels");
+
+        /* Normal sort test */
+        nc_array_qsort(list, kernel_compare);
+        kernel = nc_array_get(list, 0);
+        fail_if(kernel->meta.release != 121, "Invalid first element");
+        kernel = nc_array_get(list, 1);
+        fail_if(kernel->meta.release != 124, "Invalid second element");
+        kernel = nc_array_get(list, 2);
+        fail_if(kernel->meta.release != 137, "Invalid third element");
+        kernel = nc_array_get(list, 3);
+        fail_if(kernel->meta.release != 138, "Invalid fourth element");
+
+        /* Reverse sort test */
+        nc_array_qsort(list, kernel_compare_reverse);
+        kernel = nc_array_get(list, 0);
+        fail_if(kernel->meta.release != 138, "Invalid first reversed element");
+        kernel = nc_array_get(list, 1);
+        fail_if(kernel->meta.release != 137, "Invalid second reversed element");
+        kernel = nc_array_get(list, 2);
+        fail_if(kernel->meta.release != 124, "Invalid third reversed element");
+        kernel = nc_array_get(list, 3);
+        fail_if(kernel->meta.release != 121, "Invalid fourth reversed element");
+
+        for (uint16_t i = 0; i < list->len; i++) {
+                const Kernel *k = nc_array_get(list, i);
+                fail_if(k->source.module_dir != NULL,
+                        "Kernel has a module directory when it shouldn't");
+        }
 }
 END_TEST
 
@@ -344,7 +403,8 @@ static Suite *core_suite(void)
 
         tc = tcase_create("bootman_kernel_functions");
         tcase_add_test(tc, bootman_uname_test);
-        tcase_add_test(tc, bootman_list_kernels_test);
+        tcase_add_test(tc, bootman_list_kernels_modules_test);
+        tcase_add_test(tc, bootman_list_kernels_no_modules_test);
         tcase_add_test(tc, bootman_map_kernels_test);
         tcase_add_test(tc, bootman_timeout_test);
         suite_add_tcase(s, tc);

@@ -204,7 +204,7 @@ bool set_kernel_booted(PlaygroundKernel *kernel, bool did_boot)
         return true;
 }
 
-bool push_kernel_update(PlaygroundKernel *kernel)
+bool push_kernel_update(PlaygroundConfig *config, PlaygroundKernel *kernel)
 {
         autofree(char) *kfile = NULL;
         autofree(char) *cmdfile = NULL;
@@ -262,6 +262,11 @@ bool push_kernel_update(PlaygroundKernel *kernel)
         /* Write the initrd file */
         if (!file_set_text((const char *)initrd_file, (char *)kernel->version)) {
                 return false;
+        }
+
+        /* Nothing more to do */
+        if (config->disable_modules) {
+                return true;
         }
 
         /* Create all the dirs .. */
@@ -379,9 +384,12 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_DIRECTORY, 00755)) {
                 goto fail;
         }
-        /* Construct the root kernel modules directory */
-        if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_MODULES_DIRECTORY, 00755)) {
-                goto fail;
+
+        if (!config->disable_modules) {
+                /* Construct the root kernel modules directory */
+                if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_MODULES_DIRECTORY, 00755)) {
+                        goto fail;
+                }
         }
 
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" BOOT_DIRECTORY, 00755)) {
@@ -407,7 +415,7 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         /* Insert all intitial kernels into the root */
         for (size_t i = 0; i < config->n_kernels; i++) {
                 PlaygroundKernel *k = &(config->initial_kernels[i]);
-                if (!push_kernel_update(k)) {
+                if (!push_kernel_update(config, k)) {
                         goto fail;
                 }
                 /* Not default so skip */
