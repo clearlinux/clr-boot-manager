@@ -498,7 +498,7 @@ Kernel *boot_manager_get_running_kernel_fallback(BootManager *self, KernelArray 
         return NULL;
 }
 
-Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
+Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels, Kernel *running)
 {
         if (!self || !kernels) {
                 return NULL;
@@ -508,6 +508,13 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
 
         for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *k = nc_array_get(kernels, i);
+                /* Last booted should NEVER match currently running,
+                 * otherwise a subsequent call will erase the last truly
+                 * booted kernel prior to the one we're on now.
+                 */
+                if (running && k == running) {
+                        continue;
+                }
                 if (k->meta.release < high_rel) {
                         continue;
                 }

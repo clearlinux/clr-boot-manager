@@ -326,7 +326,7 @@ static bool boot_manager_update_native(BootManager *self)
                             tip->source.path);
 
                 /* Last known booting kernel, might be null. */
-                last_good = boot_manager_get_last_booted(self, typed_kernels);
+                last_good = boot_manager_get_last_booted(self, typed_kernels, running);
 
                 /* Ensure this guy is still installed/repaired */
                 if (last_good) {

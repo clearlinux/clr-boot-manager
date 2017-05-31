@@ -316,8 +316,11 @@ Kernel *boot_manager_get_running_kernel_fallback(BootManager *manager, KernelArr
 /**
  * Attempt to find the newest (highest release number) last known booting
  * kernel.
+ * This will never match against the running kernel, as we'll always attempt to
+ * repair our running kernel, and we care about the kernel that booted *before*
+ * this one.
  */
-Kernel *boot_manager_get_last_booted(BootManager *manager, KernelArray *kernels);
+Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels, Kernel *running);
 
 /**
  * Parse the running kernel and try to figure out the type, etc.
