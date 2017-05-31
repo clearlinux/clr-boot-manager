@@ -12,6 +12,7 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -35,9 +36,9 @@ typedef struct SdClassConfig {
         char *entries_dir;
         char *base_path;
         char *efi_blob_source;
-        char *efi_blob_dest;
-        char *default_path_efi_blob;
         char *loader_config;
+        NcHashmap *copy_pairs; /**< Store key/value (source->dest) mappings for copyig */
+        bool secure_boot;
 } SdClassConfig;
 
 static SdClassConfig sd_class_config = { 0 };
@@ -51,6 +52,44 @@ static BootLoaderConfig *sd_config = NULL;
                 }                                                                                  \
         }
 
+/**
+ * Insert a copy mapping into the copy_pairs map
+ *
+ * This function takes nc_build_case_correct_path style arguments to allow
+ * wrapping the duplication up in one place.
+ * Additionally it will take care of whether the source exists, and build the
+ * full source/target paths up in memory.
+ *
+ * This function will only fail on memory failure, not if the source doesn't
+ * exist.
+ */
+bool sd_class_config_put_copy(const char *prefix, const char *source, ...)
+{
+        va_list va;
+
+        /* Empty prefix means just use as is */
+        char *source_path = NULL;
+        if (prefix) {
+                source_path = string_printf("%s/%s", prefix, source);
+        } else {
+                source_path = strdup(source);
+        }
+
+        if (!nc_file_exists(source_path)) {
+                free(source_path);
+                return true;
+        }
+        va_start(va, source);
+        char *dest_path = nc_build_case_correct_path_va(sd_class_config.base_path, va);
+        va_end(va);
+        if (!dest_path) {
+                free(source_path);
+                return false;
+        }
+        /* Store them swapped as target is unique, source might not be */
+        return nc_hashmap_put(sd_class_config.copy_pairs, dest_path, source_path);
+}
+
 bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
 {
         char *base_path = NULL;
@@ -58,53 +97,104 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         char *vendor_dir = NULL;
         char *entries_dir = NULL;
         char *efi_blob_source = NULL;
-        char *efi_blob_dest = NULL;
-        char *default_path_efi_blob = NULL;
         char *loader_config = NULL;
         const char *prefix = NULL;
+        NcHashmap *copy_pairs = NULL;
+        autofree(char) *shim_path = NULL;
+        bool did_put = false;
 
         sd_config = config;
+
+        /* Init copy pairs table */
+        copy_pairs = nc_hashmap_new_full(nc_string_hash, nc_string_compare, free, free);
+        if (!copy_pairs) {
+                DECLARE_OOM();
+                return false;
+        }
+        sd_class_config.copy_pairs = copy_pairs;
 
         /* Cache all of these to save useless allocs of the same paths later */
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
         sd_class_config.base_path = base_path;
 
+        /* EFI Boot directory base */
         efi_dir = nc_build_case_correct_path(base_path, "EFI", "Boot", NULL);
         OOM_CHECK_RET(efi_dir, false);
         sd_class_config.efi_dir = efi_dir;
 
+        /* Our vendor directory base */
         vendor_dir = nc_build_case_correct_path(base_path, "EFI", sd_config->vendor_dir, NULL);
         OOM_CHECK_RET(vendor_dir, false);
         sd_class_config.vendor_dir = vendor_dir;
 
+        /* loader/entries */
         entries_dir = nc_build_case_correct_path(base_path, "loader", "entries", NULL);
         OOM_CHECK_RET(entries_dir, false);
         sd_class_config.entries_dir = entries_dir;
 
         prefix = boot_manager_get_prefix((BootManager *)manager);
 
-        /* EFI paths */
+        /* Determine if we have secure-boot support */
+        shim_path = string_printf("%s/usr/share/shim/shim.efi", prefix);
+        sd_class_config.secure_boot = nc_file_exists(shim_path);
+
+        /* Our main "blob" */
         efi_blob_source =
             string_printf("%s/%s/%s", prefix, sd_config->efi_dir, sd_config->efi_blob);
         sd_class_config.efi_blob_source = efi_blob_source;
 
-        efi_blob_dest = nc_build_case_correct_path(sd_class_config.base_path,
-                                                   "EFI",
-                                                   sd_config->vendor_dir,
-                                                   sd_config->efi_blob,
-                                                   NULL);
-        OOM_CHECK_RET(efi_blob_dest, false);
-        sd_class_config.efi_blob_dest = efi_blob_dest;
+        /* Main vendor blob - always installed */
+        did_put = sd_class_config_put_copy(NULL,
+                                           efi_blob_source,
+                                           "EFI",
+                                           sd_config->vendor_dir,
+                                           sd_config->efi_blob,
+                                           NULL);
 
-        /* default EFI loader path */
-        default_path_efi_blob = nc_build_case_correct_path(sd_class_config.base_path,
-                                                           "EFI",
-                                                           "Boot",
-                                                           DEFAULT_EFI_BLOB,
-                                                           NULL);
-        OOM_CHECK_RET(default_path_efi_blob, false);
-        sd_class_config.default_path_efi_blob = default_path_efi_blob;
+        /* Install secure-boot as primary, ourselves as stage2 */
+        if (sd_class_config.secure_boot) {
+                /* TODO: Add *another* blob to be used by EFI variables by path, not just default */
+                did_put = sd_class_config_put_copy(prefix,
+                                                   "/usr/share/shim/shim.efi",
+                                                   "EFI",
+                                                   "Boot",
+                                                   DEFAULT_EFI_BLOB,
+                                                   NULL);
+                did_put = sd_class_config_put_copy(prefix,
+                                                   "/usr/share/shim/MokManager.efi",
+                                                   "EFI",
+                                                   "Boot",
+                                                   "MokManager.efi",
+                                                   NULL);
+                did_put = sd_class_config_put_copy(prefix,
+                                                   "/usr/share/shim/fallback.efi",
+                                                   "EFI",
+                                                   "Boot",
+                                                   "fallback.efi",
+                                                   NULL);
+                /* Install ourselves, additionally, as a stage2 */
+                did_put = sd_class_config_put_copy(NULL,
+                                                   efi_blob_source,
+                                                   "EFI",
+                                                   "Boot",
+                                                   /* i.e. loaderx64.efi */
+                                                   SHIM_STAGE2_PREFIX SYSTEMD_EFI_SUFFIX,
+                                                   NULL);
+        } else {
+                /* No stage2, we take on default BOOTX64.EFI */
+                did_put = sd_class_config_put_copy(NULL,
+                                                   efi_blob_source,
+                                                   "EFI",
+                                                   "Boot",
+                                                   DEFAULT_EFI_BLOB,
+                                                   NULL);
+        }
+
+        if (!did_put) {
+                DECLARE_OOM();
+                return false;
+        }
 
         /* Loader entry */
         loader_config =
@@ -122,9 +212,12 @@ void sd_class_destroy(__cbm_unused__ const BootManager *manager)
         FREE_IF_SET(sd_class_config.entries_dir);
         FREE_IF_SET(sd_class_config.base_path);
         FREE_IF_SET(sd_class_config.efi_blob_source);
-        FREE_IF_SET(sd_class_config.efi_blob_dest);
-        FREE_IF_SET(sd_class_config.default_path_efi_blob);
         FREE_IF_SET(sd_class_config.loader_config);
+        if (sd_class_config.copy_pairs) {
+                nc_hashmap_free(sd_class_config.copy_pairs);
+                sd_class_config.copy_pairs = NULL;
+        }
+        sd_class_config.secure_boot = false;
 }
 
 /* i.e. $prefix/$boot/loader/entries/Clear-linux-native-4.1.6-113.conf */
@@ -355,21 +448,18 @@ bool sd_class_needs_install(const BootManager *manager)
         if (!manager) {
                 return false;
         }
-
-        const char *paths[] = { sd_class_config.efi_blob_dest,
-                                sd_class_config.default_path_efi_blob };
-        const char *source_path = sd_class_config.efi_blob_source;
+        NcHashmapIter iter = { 0 };
+        nc_hashmap_iter_init(sd_class_config.copy_pairs, &iter);
+        __cbm_unused__ const char *source = NULL;
+        const char *target = NULL;
 
         /* Catch this in the install */
-        if (!nc_file_exists(source_path)) {
+        if (!nc_file_exists(sd_class_config.efi_blob_source)) {
                 return true;
         }
 
-        /* Try to see if targets are missing */
-        for (size_t i = 0; i < ARRAY_SIZE(paths); i++) {
-                const char *check_p = paths[i];
-
-                if (!nc_file_exists(check_p)) {
+        while (nc_hashmap_iter_next(&iter, (void **)&target, (void **)&source)) {
+                if (!nc_file_exists(target)) {
                         return true;
                 }
         }
@@ -383,14 +473,18 @@ bool sd_class_needs_update(const BootManager *manager)
                 return false;
         }
 
-        const char *paths[] = { sd_class_config.efi_blob_dest,
-                                sd_class_config.default_path_efi_blob };
-        const char *source_path = sd_class_config.efi_blob_source;
+        NcHashmapIter iter = { 0 };
+        nc_hashmap_iter_init(sd_class_config.copy_pairs, &iter);
+        const char *source = NULL;
+        const char *target = NULL;
 
-        for (size_t i = 0; i < ARRAY_SIZE(paths); i++) {
-                const char *check_p = paths[i];
+        /* Catch this in the install */
+        if (!nc_file_exists(sd_class_config.efi_blob_source)) {
+                return true;
+        }
 
-                if (nc_file_exists(check_p) && !cbm_files_match(source_path, check_p)) {
+        while (nc_hashmap_iter_next(&iter, (void **)&target, (void **)&source)) {
+                if (nc_file_exists(target) && !cbm_files_match(source, target)) {
                         return true;
                 }
         }
@@ -409,26 +503,19 @@ bool sd_class_install(const BootManager *manager)
                 return false;
         }
 
-        /* Install vendor EFI blob */
-        if (!copy_file_atomic(sd_class_config.efi_blob_source,
-                              sd_class_config.efi_blob_dest,
-                              00644)) {
-                LOG_FATAL("Failed to install %s: %s",
-                          sd_class_config.efi_blob_dest,
-                          strerror(errno));
-                return false;
-        }
-        cbm_sync();
+        NcHashmapIter iter = { 0 };
+        nc_hashmap_iter_init(sd_class_config.copy_pairs, &iter);
+        const char *source = NULL;
+        const char *target = NULL;
 
-        /* Install default EFI blob */
-        if (!copy_file_atomic(sd_class_config.efi_blob_source,
-                              sd_class_config.default_path_efi_blob,
-                              00644)) {
-                LOG_FATAL("Failed to install %s: %s",
-                          sd_class_config.default_path_efi_blob,
-                          strerror(errno));
-                return false;
+        /* Iterate all sources and blit them to disk atomically */
+        while (nc_hashmap_iter_next(&iter, (void **)&target, (void **)&source)) {
+                if (!copy_file_atomic(source, target, 00644)) {
+                        LOG_FATAL("Failed to install %s: %s", target, strerror(errno));
+                        return false;
+                }
         }
+
         cbm_sync();
 
         return true;
@@ -444,29 +531,22 @@ bool sd_class_update(const BootManager *manager)
                 return false;
         }
 
-        if (!cbm_files_match(sd_class_config.efi_blob_source, sd_class_config.efi_blob_dest)) {
-                if (!copy_file_atomic(sd_class_config.efi_blob_source,
-                                      sd_class_config.efi_blob_dest,
-                                      00644)) {
-                        LOG_FATAL("Failed to update %s: %s",
-                                  sd_class_config.efi_blob_dest,
-                                  strerror(errno));
-                        return false;
-                }
-        }
-        cbm_sync();
+        NcHashmapIter iter = { 0 };
+        nc_hashmap_iter_init(sd_class_config.copy_pairs, &iter);
+        const char *source = NULL;
+        const char *target = NULL;
 
-        if (!cbm_files_match(sd_class_config.efi_blob_source,
-                             sd_class_config.default_path_efi_blob)) {
-                if (!copy_file_atomic(sd_class_config.efi_blob_source,
-                                      sd_class_config.default_path_efi_blob,
-                                      00644)) {
-                        LOG_FATAL("Failed to update %s: %s",
-                                  sd_class_config.default_path_efi_blob,
-                                  strerror(errno));
+        /* Iterate all sources and write only if they changed */
+        while (nc_hashmap_iter_next(&iter, (void **)&target, (void **)&source)) {
+                if (cbm_files_match(source, target)) {
+                        continue;
+                }
+                if (!copy_file_atomic(source, target, 00644)) {
+                        LOG_FATAL("Failed to install %s: %s", target, strerror(errno));
                         return false;
                 }
         }
+
         cbm_sync();
 
         return true;
@@ -478,6 +558,19 @@ bool sd_class_remove(const BootManager *manager)
                 return false;
         }
 
+        NcHashmapIter iter = { 0 };
+        nc_hashmap_iter_init(sd_class_config.copy_pairs, &iter);
+        __cbm_unused__ const char *source = NULL;
+        const char *target = NULL;
+
+        /* Iterate all targets and remove them*/
+        while (nc_hashmap_iter_next(&iter, (void **)&target, (void **)&source)) {
+                if (nc_file_exists(target) && unlink(target) < 0) {
+                        LOG_FATAL("Failed to remove %s: %s", target, strerror(errno));
+                }
+        }
+        cbm_sync();
+
         /* We call multiple syncs in case something goes wrong in removal, where we could be seeing
          * an ESP umount after */
         if (nc_file_exists(sd_class_config.vendor_dir) && !nc_rm_rf(sd_class_config.vendor_dir)) {
@@ -486,15 +579,7 @@ bool sd_class_remove(const BootManager *manager)
         }
         cbm_sync();
 
-        if (nc_file_exists(sd_class_config.default_path_efi_blob) &&
-            unlink(sd_class_config.default_path_efi_blob) < 0) {
-                LOG_FATAL("Failed to remove %s: %s",
-                          sd_class_config.default_path_efi_blob,
-                          strerror(errno));
-                return false;
-        }
-        cbm_sync();
-
+        /* Delete our loader config file */
         if (nc_file_exists(sd_class_config.loader_config) &&
             unlink(sd_class_config.loader_config) < 0) {
                 LOG_FATAL("Failed to remove %s: %s",

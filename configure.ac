@@ -112,6 +112,15 @@ AC_SUBST(vendorprefix)
 AC_DEFINE_UNQUOTED(VENDOR_PREFIX, "$vendorprefix",
                    [The vendor prefix])
 
+# The shim stage 2 name to use (i.e. "loader" or "grub")
+AC_ARG_WITH([shim-stage2-prefix], AS_HELP_STRING([--shim-stage2-prefix],
+        [the prefix that SHIM expects]), [shimprefix=${withval}],
+        [shimprefix="loader"])
+
+AC_SUBST(shimprefix)
+AC_DEFINE_UNQUOTED(SHIM_STAGE2_PREFIX, "$shimprefix",
+                   [shim stage2 prefix for the bootloader])
+
 # The kernel configuration directory
 AC_ARG_WITH([kernel-conf-dir], AS_HELP_STRING([--with-kernel-conf-dir],
         [the kernel configuration directory]), [kernelconfdir=${withval}],
@@ -160,4 +169,5 @@ AC_MSG_RESULT([
         kernel-conf-dir:        ${kernelconfdir}
         boot-dir:               ${bootdir}
         vendor-prefix:          ${vendorprefix}
+        shim stage2 prefix:     ${shimprefix}
 ])
