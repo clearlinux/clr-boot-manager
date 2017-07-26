@@ -396,7 +396,7 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
         if (c - inp >= CBM_KELEM_LEN) {
                 return false;
         }
-        if (c + 1 == '\0') {
+        if (*(c + 1) == '\0') {
                 return false;
         }
         c2 = strchr(c + 1, '.');
