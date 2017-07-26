@@ -8,6 +8,9 @@ AM_SILENT_RULES([yes])
 AC_CONFIG_MACRO_DIR([m4])
 AX_VALGRIND_CHECK
 LT_INIT
+# Avoid long-hanging warning of using 'u' (in the automake's default 'cru') with
+# ar's default 'D'. Specify complete set of modifiers explicitly.
+AC_SUBST(AR_FLAGS, [crD])
 
 # Unit tests
 PKG_CHECK_MODULES([CHECK], [check >= 0.9])
