@@ -14,6 +14,8 @@
 #include "bootman.h"
 #include "bootloader.h"
 #include "config.h"
+#include "nica/files.h"
+#include "files.h"
 
 /*
  * This file implements 2-stage bootloader configuration in which shim is used as
@@ -46,31 +48,31 @@
  * EFI variable.
  */
 
-static bool _shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel);
-static bool _shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel);
-static bool _shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel);
-static bool _shim_systemd_needs_install(const BootManager *manager);
-static bool _shim_systemd_needs_update(const BootManager *manager);
-static bool _shim_systemd_install(const BootManager *manager);
-static bool _shim_systemd_update(const BootManager *manager);
-static bool _shim_systemd_remove(const BootManager *manager);
-static bool _shim_systemd_init(const BootManager *manager);
-static void _shim_systemd_destroy(const BootManager *manager);
-static int  _shim_systemd_get_capabilities(const BootManager *manager);
+static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel);
+static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel);
+static bool shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel);
+static bool shim_systemd_needs_install(const BootManager *manager);
+static bool shim_systemd_needs_update(const BootManager *manager);
+static bool shim_systemd_install(const BootManager *manager);
+static bool shim_systemd_update(const BootManager *manager);
+static bool shim_systemd_remove(const BootManager *manager);
+static bool shim_systemd_init(const BootManager *manager);
+static void shim_systemd_destroy(const BootManager *manager);
+static int  shim_systemd_get_capabilities(const BootManager *manager);
 
 __cbm_export__ const BootLoader shim_systemd_bootloader = {
         .name = "systemd",
-        .init = _shim_systemd_init,
-        .install_kernel = _shim_systemd_install_kernel,
-        .remove_kernel = _shim_systemd_remove_kernel,
-        .set_default_kernel = _shim_systemd_set_default_kernel,
-        .needs_install = _shim_systemd_needs_install,
-        .needs_update = _shim_systemd_needs_update,
-        .install = _shim_systemd_install,
-        .update = _shim_systemd_update,
-        .remove = _shim_systemd_remove,
-        .destroy = _shim_systemd_destroy,
-        .get_capabilities = _shim_systemd_get_capabilities
+        .init = shim_systemd_init,
+        .install_kernel = shim_systemd_install_kernel,
+        .remove_kernel = shim_systemd_remove_kernel,
+        .set_default_kernel = shim_systemd_set_default_kernel,
+        .needs_install = shim_systemd_needs_install,
+        .needs_update = shim_systemd_needs_update,
+        .install = shim_systemd_install,
+        .update = shim_systemd_update,
+        .remove = shim_systemd_remove,
+        .destroy = shim_systemd_destroy,
+        .get_capabilities = shim_systemd_get_capabilities
 };
 
 #if UINTPTR_MAX == 0xffffffffffffffff
@@ -80,12 +82,12 @@ __cbm_export__ const BootLoader shim_systemd_bootloader = {
 #endif
 
 /* Layout entries, see the layout description at the top of the file. */
-#define SHIM_SRC_DIR            "/usr/lib/shim"
+#define SHIM_SRC_DIR            "usr/lib/shim"
 #define SHIM_SRC                SHIM_SRC_DIR "/" "shim" EFI_SUFFIX
 #define MM_SRC                  SHIM_SRC_DIR "/" "mm" EFI_SUFFIX
 #define FB_SRC                  SHIM_SRC_DIR "/" "fb" EFI_SUFFIX
-#define SYSTEMD_SRC_DIR         "/usr/lib/systemd/boot/efi"
-#define SYSTEMD_SRC             SYSTEMD "/" "systemd-boot" EFI_SUFFIX
+#define SYSTEMD_SRC_DIR         "usr/lib/systemd/boot/efi"
+#define SYSTEMD_SRC             SYSTEMD_SRC_DIR "/" "systemd-boot" EFI_SUFFIX
 #define DST_DIR                 BOOT_DIRECTORY "/" KERNEL_NAMESPACE
 #define SHIM_DST                DST_DIR "/" "bootloader" EFI_SUFFIX
 #define SYSTEMD_DST             DST_DIR "/" "loader" EFI_SUFFIX
@@ -94,48 +96,105 @@ __cbm_export__ const BootLoader shim_systemd_bootloader = {
 #define SYSTEMD_CONFIG          SYSTEMD_CONFIG_DIR "/loader.conf"
 #define SYSTEMD_ENTRIES         SYSTEMD_CONFIG_DIR "/entries"
 
-static bool _shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel) {
+static char *shim_src;
+static char *shim_dst;
+static char *systemd_src;
+static char *systemd_dst;
+
+static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel) {
+        fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
 
-static bool _shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel) {
+static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel) {
+        fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
 
-static bool _shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel) {
+static bool shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel) {
+        fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
 
-static bool _shim_systemd_needs_install(const BootManager *manager) {
+static bool exists_identical(const char *path, const char *spath) {
+        if (!nc_file_exists(path)) return false;
+        if (spath && !cbm_files_match(path, spath)) return false;
         return true;
 }
 
-static bool _shim_systemd_needs_update(const BootManager *manager) {
+static bool shim_systemd_needs_install(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
+        if (!exists_identical(shim_dst, NULL)) return true;
+        if (!exists_identical(systemd_dst, NULL)) return true;
+        return false;
+}
+
+static bool shim_systemd_needs_update(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
+        if (!exists_identical(shim_dst, shim_src)) return true;
+        if (!exists_identical(systemd_dst, systemd_src)) return true;
+        return false;
+}
+
+static bool make_layout() {
+        if (!nc_mkdir_p(DST_DIR, 00755)) return false;
+        if (!nc_mkdir_p(KERNEL_DST_DIR, 00755)) return false;
+        if (!nc_mkdir_p(SYSTEMD_ENTRIES, 00755)) return false;
         return true;
 }
 
-static bool _shim_systemd_install(const BootManager *manager) {
+static bool shim_systemd_install(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
+
+        if (!make_layout()) return false;
+
+        if (!copy_file_atomic(shim_src, shim_dst, 00644)) return false;
+        if (!copy_file_atomic(systemd_src, systemd_dst, 00644)) return false;
+
         return true;
 }
 
-static bool _shim_systemd_update(const BootManager *manager) {
+static bool shim_systemd_update(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
 
-static bool _shim_systemd_remove(const BootManager *manager) {
+static bool shim_systemd_remove(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
 
-static bool _shim_systemd_init(const BootManager *manager) {
+static bool shim_systemd_init(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
+        int len;
+        char *prefix;
+
+        prefix = strdup(boot_manager_get_prefix((BootManager *)manager));
+        len = strlen(prefix);
+        if (prefix[len-1] == '/') prefix[len-1] = '\0';
+        shim_src = string_printf("%s/%s", prefix, SHIM_SRC);
+        systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
+
+        shim_dst = SHIM_DST;
+        systemd_dst = SYSTEMD_DST;
+
+        free(prefix);
+
         return true;
 }
 
-static void _shim_systemd_destroy(const BootManager *manager) {
+static void shim_systemd_destroy(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
+
+        free(shim_src);
+        free(systemd_src);
+
         return true;
 }
 
-static int _shim_systemd_get_capabilities(const BootManager *manager) {
-        return 0;
+static int shim_systemd_get_capabilities(const BootManager *manager) {
+        fprintf(stderr, "Call %s\n", __func__);
+        return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI;
 }
 
 /*
