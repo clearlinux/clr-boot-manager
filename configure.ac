@@ -42,7 +42,11 @@ AC_ARG_WITH([bootloader], AS_HELP_STRING([--with-bootloader=BOOTLOADER],
 if test x$bootloader = "xauto"; then
         AC_MSG_CHECKING([whether an EFI bootloader is available])
         if test -e "/usr/lib/systemd/boot/efi"; then
-                bootloader="systemd-boot"
+                if test -e "/usr/lib/shim"; then
+                    bootloader="shim-systemd-boot"
+                else
+                    bootloader="systemd-boot"
+                fi
         elif test -e "/usr/lib/goofiboot"; then
                 bootloader="goofiboot"
         # use newer goofiboot, may be dual installed
@@ -50,13 +54,16 @@ if test x$bootloader = "xauto"; then
                 bootloader="gummiboot"
         else
                 AC_MSG_WARN([Cannot find a valid EFI bootloader, defaulting to systemd-boot])
-                bootloader="systemd-boot"
+                bootloader="shim-systemd-boot"
         fi
         AC_MSG_RESULT([$bootloader])
 fi
 
 # Now test the option
-if test x$bootloader = "xsystemd-boot"; then
+if test x$bootloader = "xshim-systemd-boot"; then
+        have_shim_systemdboot="yes"
+        AC_DEFINE([HAVE_SHIM_SYSTEMD_BOOT], [1], [Using shim-systemd-boot])
+elif test x$bootloader = "xsystemd-boot"; then
         have_systemdboot="yes"
         AC_DEFINE([HAVE_SYSTEMD_BOOT], [1], [Using systemd-boot])
 elif test x$bootloader = "xgummiboot"; then
@@ -66,9 +73,10 @@ elif test x$bootloader = "xgoofiboot"; then
         have_goofiboot="yes"
         AC_DEFINE([HAVE_GOOFIBOOT], [1], [Using goofiboot])
 else
-        AC_MSG_ERROR([Unknown bootloader, use: systemd-boot, gummiboot, or goofiboot])
+        AC_MSG_ERROR([Unknown bootloader, use: shim-systemd-boot, systemd-boot, gummiboot, or goofiboot])
 fi
 
+AM_CONDITIONAL([HAVE_SHIM_SYSTEMD_BOOT], [test x$have_shim_systemdboot = "xyes"])
 AM_CONDITIONAL([HAVE_SYSTEMD_BOOT], [test x$have_systemdboot = "xyes"])
 AM_CONDITIONAL([HAVE_GUMMIBOOT], [test x$have_gummiboot = "xyes"])
 AM_CONDITIONAL([HAVE_GOOFIBOOT], [test x$have_goofiboot = "xyes"])

@@ -93,6 +93,7 @@ libcbm_la_SOURCES =			\
 	src/bootloaders/bootloader.h	\
 	src/bootloaders/systemd-class.h \
 	src/bootloaders/systemd-class.c \
+	src/bootloaders/shim-systemd.c	\
 	src/bootloaders/systemd-boot.c	\
 	src/bootloaders/grub2.c		\
 	src/bootloaders/gummiboot.c	\

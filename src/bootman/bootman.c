@@ -31,6 +31,7 @@
  * Total "usable" bootloaders
  */
 extern const BootLoader grub2_bootloader;
+extern const BootLoader shim_systemd_bootloader;
 extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
@@ -41,7 +42,9 @@ extern const BootLoader syslinux_bootloader;
  */
 const BootLoader *bootman_known_loaders[] =
     { &grub2_bootloader, /**<Always place first to allow syslinux to override */
-#if defined(HAVE_SYSTEMD_BOOT)
+#if defined(HAVE_SHIM_SYSTEMD_BOOT)
+      &shim_systemd_bootloader,
+#elif defined(HAVE_SYSTEMD_BOOT)
       &systemd_bootloader,
 #elif defined(HAVE_GUMMIBOOT)
       &gummiboot_bootloader,
