@@ -29,6 +29,8 @@ typedef struct BootLoaderConfig {
         const char *name;
 } BootLoaderConfig;
 
+char *sd_class_get_kernel_dst(const BootManager *manager);
+
 bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel);
 
 bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel);

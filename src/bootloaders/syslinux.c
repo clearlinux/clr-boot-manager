@@ -272,20 +272,23 @@ static int syslinux_get_capabilities(__cbm_unused__ const BootManager *manager)
         return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_LEGACY;
 }
 
-__cbm_export__ const BootLoader syslinux_bootloader = {.name = "syslinux",
-                                                       .init = syslinux_init,
-                                                       .install_kernel = syslinux_install_kernel,
-                                                       .remove_kernel = syslinux_remove_kernel,
-                                                       .set_default_kernel =
-                                                           syslinux_set_default_kernel,
-                                                       .needs_install = syslinux_needs_install,
-                                                       .needs_update = syslinux_needs_update,
-                                                       .install = syslinux_install,
-                                                       .update = syslinux_update,
-                                                       .remove = syslinux_remove,
-                                                       .destroy = syslinux_destroy,
-                                                       .get_capabilities =
-                                                           syslinux_get_capabilities };
+__cbm_export__ const BootLoader syslinux_bootloader = {
+        .name = "syslinux",
+        .init = syslinux_init,
+        .get_kernel_dst = NULL, /* kernel dir only needed for EFI-enable
+                                   bootloaders */
+        .install_kernel = syslinux_install_kernel,
+        .remove_kernel = syslinux_remove_kernel,
+        .set_default_kernel = syslinux_set_default_kernel,
+        .needs_install = syslinux_needs_install,
+        .needs_update = syslinux_needs_update,
+        .install = syslinux_install,
+        .update = syslinux_update,
+        .remove = syslinux_remove,
+        .destroy = syslinux_destroy,
+        .get_capabilities =
+        syslinux_get_capabilities
+};
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

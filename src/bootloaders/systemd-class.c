@@ -38,6 +38,7 @@ typedef struct SdClassConfig {
         char *efi_blob_dest;
         char *default_path_efi_blob;
         char *loader_config;
+        char *kernel_dir;
 } SdClassConfig;
 
 static SdClassConfig sd_class_config = { 0 };
@@ -112,6 +113,8 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         OOM_CHECK_RET(loader_config, false);
         sd_class_config.loader_config = loader_config;
 
+        sd_class_config.kernel_dir = "/EFI/" KERNEL_NAMESPACE;
+
         return true;
 }
 
@@ -172,6 +175,11 @@ static bool sd_class_ensure_dirs(__cbm_unused__ const BootManager *manager)
         cbm_sync();
 
         return true;
+}
+
+char *sd_class_get_kernel_dst(const BootManager *manager) {
+        (void)manager;
+        return strdup(sd_class_config.kernel_dir);
 }
 
 bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)

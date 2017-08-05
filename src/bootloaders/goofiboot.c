@@ -25,6 +25,7 @@ static bool goofiboot_init(const BootManager *manager)
 
 __cbm_export__ const BootLoader goofiboot_bootloader = {.name = "goofiboot",
                                                         .init = goofiboot_init,
+                                                        .get_kernel_dst = sd_class_get_kernel_dst,
                                                         .install_kernel = sd_class_install_kernel,
                                                         .remove_kernel = sd_class_remove_kernel,
                                                         .set_default_kernel =

@@ -25,6 +25,7 @@ static bool gummiboot_init(const BootManager *manager)
 
 __cbm_export__ const BootLoader gummiboot_bootloader = {.name = "gummiboot",
                                                         .init = gummiboot_init,
+                                                        .get_kernel_dst = sd_class_get_kernel_dst,
                                                         .install_kernel = sd_class_install_kernel,
                                                         .remove_kernel = sd_class_remove_kernel,
                                                         .set_default_kernel =

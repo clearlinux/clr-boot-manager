@@ -536,18 +536,22 @@ int grub2_get_capabilities(__cbm_unused__ const BootManager *manager)
         return BOOTLOADER_CAP_LEGACY;
 }
 
-__cbm_export__ const BootLoader grub2_bootloader = {.name = "grub2",
-                                                    .init = grub2_init,
-                                                    .install_kernel = grub2_install_kernel,
-                                                    .remove_kernel = grub2_remove_kernel,
-                                                    .set_default_kernel = grub2_set_default_kernel,
-                                                    .needs_install = grub2_needs_install,
-                                                    .needs_update = grub2_needs_update,
-                                                    .install = grub2_install,
-                                                    .update = grub2_update,
-                                                    .remove = grub2_remove,
-                                                    .destroy = grub2_destroy,
-                                                    .get_capabilities = grub2_get_capabilities };
+__cbm_export__ const BootLoader grub2_bootloader = {
+        .name = "grub2",
+        .init = grub2_init,
+        .get_kernel_dst = NULL, /* kernel directory only needed for EFI
+                                   booloaders */
+        .install_kernel = grub2_install_kernel,
+        .remove_kernel = grub2_remove_kernel,
+        .set_default_kernel = grub2_set_default_kernel,
+        .needs_install = grub2_needs_install,
+        .needs_update = grub2_needs_update,
+        .install = grub2_install,
+        .update = grub2_update,
+        .remove = grub2_remove,
+        .destroy = grub2_destroy,
+        .get_capabilities = grub2_get_capabilities
+};
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
