@@ -177,12 +177,15 @@ static bool sd_class_ensure_dirs(__cbm_unused__ const BootManager *manager)
         return true;
 }
 
-char *sd_class_get_kernel_dst(const BootManager *manager) {
+char *sd_class_get_kernel_dst(const BootManager *manager)
+{
         (void)manager;
         return strdup(sd_class_config.kernel_dir);
 }
 
-bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
+bool sd_class_install_kernel_impl(const BootManager *manager, const Kernel *kernel,
+                char *(*get_kernel_dst)(const BootManager *),
+                bool (*ensure_layout)(const BootManager *))
 {
         if (!manager || !kernel) {
                 return false;
@@ -196,7 +199,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
         /* Ensure all the relevant directories exist */
-        if (!sd_class_ensure_dirs(manager)) {
+        if (ensure_layout && !ensure_layout(manager)) {
                 LOG_FATAL("Failed to create required directories");
                 return false;
         }
@@ -219,13 +222,13 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         cbm_writer_append_printf(writer, "title %s\n", os_name);
         cbm_writer_append_printf(writer,
                                  "linux %s/%s\n",
-                                 sd_class_get_kernel_dst(manager),
+                                 get_kernel_dst(manager),
                                  kernel->target.path);
         /* Optional initrd */
         if (kernel->target.initrd_path) {
                 cbm_writer_append_printf(writer,
-                                         "initrd /EFI/%s/%s\n",
-                                         KERNEL_NAMESPACE,
+                                         "initrd %s/%s\n",
+                                         get_kernel_dst(manager),
                                          kernel->target.initrd_path);
         }
         /* Add the root= section */
@@ -265,6 +268,11 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         cbm_sync();
 
         return true;
+}
+
+bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel) {
+        return sd_class_install_kernel_impl(manager, kernel,
+                        sd_class_get_kernel_dst, sd_class_ensure_dirs);
 }
 
 bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)

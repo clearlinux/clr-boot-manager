@@ -33,6 +33,10 @@ char *sd_class_get_kernel_dst(const BootManager *manager);
 
 bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel);
 
+bool sd_class_install_kernel_impl(const BootManager *manager, const Kernel *kernel,
+                char *(*get_kernel_dst)(const BootManager *),
+                bool (*ensure_layout)(const BootManager *));
+
 bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel);
 
 bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel);

@@ -16,6 +16,7 @@
 #include "config.h"
 #include "nica/files.h"
 #include "files.h"
+#include "systemd-class.h"
 
 /*
  * This file implements 2-stage bootloader configuration in which shim is used as
@@ -110,7 +111,7 @@ static char *shim_systemd_get_kernel_dst(const BootManager *manager) {
 
 static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel) {
         fprintf(stderr, "Call %s\n", __func__);
-        return true;
+        return sd_class_install_kernel_impl(manager, kernel, shim_systemd_get_kernel_dst, NULL);
 }
 
 static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel) {
@@ -175,6 +176,17 @@ static bool shim_systemd_init(const BootManager *manager) {
         fprintf(stderr, "Call %s\n", __func__);
         int len;
         char *prefix;
+
+        /* init systemd-class since we're reusing it for kernel install.
+         * specific values do not matter as long as sd_class is not used to
+         * install the bootloaders themselves. */
+        static BootLoaderConfig systemd_config = {
+                .vendor_dir = "systemd",
+                .efi_dir = "/usr/lib/systemd/boot/efi",
+                .efi_blob = "systemd-boot" EFI_SUFFIX,
+                .name = "systemd-boot"
+        };
+        sd_class_init(manager, &systemd_config);
 
         prefix = strdup(boot_manager_get_prefix((BootManager *)manager));
         len = strlen(prefix);
