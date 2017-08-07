@@ -218,8 +218,8 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         /* Standard title + linux lines */
         cbm_writer_append_printf(writer, "title %s\n", os_name);
         cbm_writer_append_printf(writer,
-                                 "linux /EFI/%s/%s\n",
-                                 KERNEL_NAMESPACE,
+                                 "linux %s/%s\n",
+                                 sd_class_get_kernel_dst(manager),
                                  kernel->target.path);
         /* Optional initrd */
         if (kernel->target.initrd_path) {
