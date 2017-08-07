@@ -25,7 +25,8 @@
  *
  *     /EFI/
  *          Boot/
- *              BOOTX64.EFI         <-- whatever was there before
+ *              BOOTX64.EFI         <-- this implementation never modifies the
+ *                                      default fallback loader
  *
  *      /org.clearlinux/
  *          bootloaderx64.efi       <-- shim
@@ -162,7 +163,7 @@ static bool shim_systemd_install(const BootManager *manager) {
 
 static bool shim_systemd_update(const BootManager *manager) {
         fprintf(stderr, "Call %s\n", __func__);
-        return true;
+        return shim_systemd_install(manager);
 }
 
 static bool shim_systemd_remove(const BootManager *manager) {
@@ -177,7 +178,7 @@ static bool shim_systemd_init(const BootManager *manager) {
 
         prefix = strdup(boot_manager_get_prefix((BootManager *)manager));
         len = strlen(prefix);
-        if (prefix[len-1] == '/') prefix[len-1] = '\0';
+        if (len > 0 && prefix[len-1] == '/') prefix[len-1] = '\0';
         shim_src = string_printf("%s/%s", prefix, SHIM_SRC);
         systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
