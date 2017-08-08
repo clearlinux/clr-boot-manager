@@ -58,7 +58,8 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -Wall -W -D_FORTIFY_SOURCE=2 \
         -Wno-missing-field-initializers \
         -std=c11 \
-        -DSYSCONFDIR=\"$(sysconfdir)\"
+        -DSYSCONFDIR=\"$(sysconfdir)\" \
+	    -D_POSIX_C_SOURCE=201112L
 
 AM_CPPFLAGS = 					 \
 	-I $(top_srcdir)/src			 \
@@ -123,7 +124,9 @@ libcbm_la_SOURCES =			\
 	src/lib/writer.h                \
 	src/lib/writer.c                \
 	src/lib/util.h			\
-	src/lib/util.c
+	src/lib/util.c					\
+	src/efi/efisupport.c			\
+	src/efi/efisupport.h
 
 libcbm_la_CFLAGS =		\
 	-D_BOOTMAN_INTERNAL_	\
