@@ -46,7 +46,8 @@ static int read_boot_recs(void) {
     int res;
     efi_guid_t *guid = NULL;
     char *name = NULL;
-    boot_rec_t *p, *c;
+    boot_rec_t *p = NULL,
+               *c;
     int i = 0;
 
     while ((res = efi_get_next_variable_name(&guid, &name)) > 0) {
