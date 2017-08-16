@@ -11,13 +11,13 @@
 
 #define _GNU_SOURCE
 
-#include "bootman.h"
 #include "bootloader.h"
+#include "bootman.h"
+#include "cbm_efi.h"
 #include "config.h"
-#include "nica/files.h"
 #include "files.h"
+#include "nica/files.h"
 #include "systemd-class.h"
-#include "efisupport.h"
 
 /*
  * This file implements 2-stage bootloader configuration in which shim is used as

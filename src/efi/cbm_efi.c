@@ -5,17 +5,16 @@
 #define BYTE_ORDER      __BYTE_ORDER
 #define LITTLE_ENDIAN   __LITTLE_ENDIAN
 #define BIG_ENDIAN      __BIG_ENDIAN
+#include <alloca.h>
+#include <blkid.h>
 #include <ctype.h>
+#include <efiboot.h>
 #include <efi.h>
 #include <efivar.h>
-#include <efiboot.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <alloca.h>
 #include <sys/sysmacros.h>
-
-#include <blkid.h>
 
 typedef struct boot_rec boot_rec_t;
 
