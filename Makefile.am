@@ -67,6 +67,7 @@ AM_CPPFLAGS = 					 \
 	-I $(top_srcdir)/src/cli		 \
 	-I $(top_srcdir)/src/bootloaders	 \
 	-I $(top_srcdir)/src/lib		 \
+	-I $(top_srcdir)/src/efi		\
 	-I $(top_srcdir)/src/libnica/src/include \
 	-DTOP_DIR=\"$(abs_top_srcdir)\"		 \
 	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <endian.h>
 /* Workaround for using --std=c11 in CBM. Provide "relaxed" defines which efivar
  * expects. */
@@ -5,11 +6,16 @@
 #define LITTLE_ENDIAN   __LITTLE_ENDIAN
 #define BIG_ENDIAN      __BIG_ENDIAN
 #include <ctype.h>
+#include <efi.h>
 #include <efivar.h>
+#include <efiboot.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <alloca.h>
+#include <sys/sysmacros.h>
+
+#include <blkid.h>
 
 typedef struct boot_rec boot_rec_t;
 
@@ -32,6 +38,7 @@ static void free_boot_recs(void) {
         c = c->next;
         free(p);
     } while (c);
+    boot_recs = NULL;
 }
 
 static void print_boot_recs(void) {
@@ -49,6 +56,8 @@ static int read_boot_recs(void) {
     boot_rec_t *p = NULL,
                *c;
     int i = 0;
+
+    free_boot_recs();
 
     while ((res = efi_get_next_variable_name(&guid, &name)) > 0) {
         char *num_end;
@@ -110,11 +119,75 @@ static int find_free_boot_rec(void) {
     return res;
 }
 
-int efi_create_boot_rec(void) {
+typedef struct part_info {
+    char *disk_path;
+    int part_no;
+    char *part_type;
+} part_info_t;
+
+/* Given the location of the booloader, returns the partition information needed
+ * to create boot variable which points to that bootloader. */
+int get_part_info(const char *path, part_info_t *pi) {
+    blkid_probe probe;
+    blkid_partition part;
+    blkid_partlist parts;
+    struct stat st;
+    dev_t disk_dev;
+    char disk_path[PATH_MAX];
+
+    if (stat(path, &st)) return -1;
+
+    strcpy(disk_path, "/dev/");
+    if (blkid_devno_to_wholedisk(st.st_dev, disk_path + 5, PATH_MAX - 5, &disk_dev)) return -1;
+
+    if (!(probe = blkid_new_probe_from_filename(disk_path))) return -1;
+
+    if (blkid_probe_enable_partitions(probe, 1)) return -1;
+
+    if (!(parts = blkid_probe_get_partitions(probe))) return -1;
+    part = blkid_partlist_devno_to_partition(parts, st.st_dev);
+
+    pi->disk_path = strdup(disk_path);
+    pi->part_no = blkid_partition_get_partno(part);
+    pi->part_type = strdup(blkid_partition_get_type_string(part));
+
+    blkid_free_probe(probe);
+
+    return 0;
+}
+
+int efi_create_boot_rec(const char *boot_loader_path) {
+    part_info_t pi;
+    uint8_t fdev_path[PATH_MAX];
+    char *boot_var_name;
+    uint8_t boot_var_data[PATH_MAX];
+    uint32_t boot_var_attr = EFI_VARIABLE_NON_VOLATILE
+                            | EFI_VARIABLE_BOOTSERVICE_ACCESS
+                            | EFI_VARIABLE_RUNTIME_ACCESS;
+    char rel_path[PATH_MAX];
     int slot = find_free_boot_rec();
+    ssize_t len;
 
     if (slot < 0) return -1;
 
+    if (get_part_info(boot_loader_path, &pi)) return -1;
+
+    /* FIXME: pass the booloader in two parts. The below cuts off /boot where
+     * it's normally mounted. */
+    strcpy(rel_path, boot_loader_path + 5);
+
+    len = efi_generate_file_device_path_from_esp(fdev_path, PATH_MAX, pi.disk_path, pi.part_no, rel_path, EFIBOOT_ABBREV_HD);
+    if (len < 0) return -1;
+
+    /* FIXME: figure out why LOAD_OPTION_ACTIVE is not defined (should be
+     * defined via efi.h) */
+    len = efi_loadopt_create(boot_var_data, PATH_MAX, 0x00000001 /* LOAD_OPTION_ACTIVE */,
+            (void *)fdev_path, len, (unsigned char *)"Linux bootloader", NULL, 0);
+
+    if (len < 0) return -1;
+
+    if (asprintf(&boot_var_name, "%s%04x", "Boot", slot) < 0) return -1;
+    if (efi_set_variable(EFI_GLOBAL_GUID, boot_var_name, boot_var_data, (size_t)len, boot_var_attr, 0644) < 0) return -1;
     return 0;
 }
 

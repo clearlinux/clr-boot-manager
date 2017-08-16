@@ -17,6 +17,7 @@
 #include "nica/files.h"
 #include "files.h"
 #include "systemd-class.h"
+#include "efisupport.h"
 
 /*
  * This file implements 2-stage bootloader configuration in which shim is used as
@@ -159,6 +160,8 @@ static bool shim_systemd_install(const BootManager *manager) {
         if (!copy_file_atomic(shim_src, shim_dst, 00644)) return false;
         if (!copy_file_atomic(systemd_src, systemd_dst, 00644)) return false;
 
+        if (efi_create_boot_rec(shim_dst)) return false;
+
         return true;
 }
 
@@ -176,6 +179,8 @@ static bool shim_systemd_init(const BootManager *manager) {
         fprintf(stderr, "Call %s\n", __func__);
         int len;
         char *prefix;
+
+        if (efi_init()) return false;
 
         /* init systemd-class since we're reusing it for kernel install.
          * specific values do not matter as long as sd_class is not used to
