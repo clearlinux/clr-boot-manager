@@ -107,6 +107,7 @@ static char *systemd_src;
 static char *systemd_dst;
 
 static char *shim_systemd_get_kernel_dst(const BootManager *manager) {
+        (void)manager;
         return strdup(KERNEL_DST_DIR);
 }
 
@@ -116,11 +117,15 @@ static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel
 }
 
 static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel) {
+        (void)manager;
+        (void)kernel;
         fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
 
 static bool shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel) {
+        (void)manager;
+        (void)kernel;
         fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
@@ -132,6 +137,7 @@ static bool exists_identical(const char *path, const char *spath) {
 }
 
 static bool shim_systemd_needs_install(const BootManager *manager) {
+        (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
         if (!exists_identical(shim_dst, NULL)) return true;
         if (!exists_identical(systemd_dst, NULL)) return true;
@@ -139,13 +145,14 @@ static bool shim_systemd_needs_install(const BootManager *manager) {
 }
 
 static bool shim_systemd_needs_update(const BootManager *manager) {
+        (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
         if (!exists_identical(shim_dst, shim_src)) return true;
         if (!exists_identical(systemd_dst, systemd_src)) return true;
         return false;
 }
 
-static bool make_layout() {
+static bool make_layout(void) {
         if (!nc_mkdir_p(DST_DIR, 00755)) return false;
         if (!nc_mkdir_p(KERNEL_DST_DIR, 00755)) return false;
         if (!nc_mkdir_p(SYSTEMD_ENTRIES, 00755)) return false;
@@ -153,6 +160,7 @@ static bool make_layout() {
 }
 
 static bool shim_systemd_install(const BootManager *manager) {
+        (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
 
         if (!make_layout()) return false;
@@ -171,13 +179,14 @@ static bool shim_systemd_update(const BootManager *manager) {
 }
 
 static bool shim_systemd_remove(const BootManager *manager) {
+        (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
         return true;
 }
 
 static bool shim_systemd_init(const BootManager *manager) {
         fprintf(stderr, "Call %s\n", __func__);
-        int len;
+        size_t len;
         char *prefix;
 
         if (efi_init()) return false;
@@ -208,6 +217,7 @@ static bool shim_systemd_init(const BootManager *manager) {
 }
 
 static void shim_systemd_destroy(const BootManager *manager) {
+        (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
 
         free(shim_src);
@@ -217,6 +227,7 @@ static void shim_systemd_destroy(const BootManager *manager) {
 }
 
 static int shim_systemd_get_capabilities(const BootManager *manager) {
+        (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
         return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI;
 }

@@ -9,7 +9,7 @@
  * of the License, or (at your option) any later version.
  */
 
-int efi_init();
-int efi_create_boot_rec();
+int efi_init(void);
+int efi_create_boot_rec(const char *);
 
 /* vim: set nosi noai cin ts=4 sw=4 et tw=80: */
