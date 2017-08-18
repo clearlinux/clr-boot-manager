@@ -131,6 +131,29 @@ static int find_free_boot_rec(void) {
     return res;
 }
 
+static boot_rec_t *find_boot_rec(uint8_t *data, size_t size) {
+    boot_rec_t *c = boot_recs;
+    boot_rec_t *res = NULL;
+
+    uint8_t *cdata;
+    size_t csize;
+    uint32_t cattr;
+
+    if (!boot_recs) return NULL;
+    if (boot_recs_cnt < 1) return NULL;
+
+    do {
+        if (efi_get_variable(EFI_GLOBAL_GUID, c->name, &cdata, &csize, &cattr) < 0) continue;
+        if (csize == size && !memcmp(cdata, data, csize)) {
+            res = c;
+            break;
+        }
+    } while ((c = c->next));
+
+    return res;
+
+}
+
 typedef struct part_info {
     char *disk_path;
     int part_no;
@@ -176,10 +199,8 @@ int efi_create_boot_rec(const char *bootloader_host_path, const char *bootloader
     uint32_t boot_var_attr = EFI_VARIABLE_NON_VOLATILE
                             | EFI_VARIABLE_BOOTSERVICE_ACCESS
                             | EFI_VARIABLE_RUNTIME_ACCESS;
-    int slot = find_free_boot_rec();
+    boot_rec_t *rec;
     ssize_t len;
-
-    if (slot < 0) return -1;
 
     if (get_part_info(bootloader_host_path, &pi)) return -1;
 
@@ -193,8 +214,26 @@ int efi_create_boot_rec(const char *bootloader_host_path, const char *bootloader
 
     if (len < 0) return -1;
 
-    if (asprintf(&boot_var_name, "%s%04x", "Boot", slot) < 0) return -1;
-    if (efi_set_variable(EFI_GLOBAL_GUID, boot_var_name, boot_var_data, (size_t)len, boot_var_attr, 0644) < 0) return -1;
+    if (!(rec = find_boot_rec(boot_var_data, (size_t)len))) {
+        int slot = find_free_boot_rec();
+        boot_rec_t *c;
+        if (slot < 0) return -1;
+        if (asprintf(&boot_var_name, "%s%04x", "Boot", slot) < 0) return -1;
+        if (efi_set_variable(EFI_GLOBAL_GUID, boot_var_name, boot_var_data, (size_t)len, boot_var_attr, 0644) < 0) return -1;
+        /* re-read the records and find the variable that was just created. */
+        if (read_boot_recs() < 0) return -1;
+        if (!boot_recs) return -1; /* something went terribly wrong */
+        c = boot_recs;
+        do {
+            if (!strcmp(c->name, boot_var_name)) {
+                rec = c;
+                break;
+            }
+        } while ((c = c->next));
+        if (!rec) return -1;
+    }
+    /* TODO: put the var first in the boot order */
+
     return 0;
 }
 
