@@ -613,7 +613,7 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
                                   strerror(errno));
                         return false;
                 }
-                kfile_target = string_printf("%s/%s", efi_boot_dir, kernel->target.path);
+                kfile_target = string_printf(BOOT_DIRECTORY "%s/%s", efi_boot_dir, kernel->target.path);
         } else {
                 kfile_target = string_printf("%s/%s", base_path, kernel->target.legacy_path);
         }
@@ -637,7 +637,7 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         }
 
         if (is_uefi) {
-                initrd_target = string_printf("%s/%s", efi_boot_dir, kernel->target.initrd_path);
+                initrd_target = string_printf(BOOT_DIRECTORY "%s/%s", efi_boot_dir, kernel->target.initrd_path);
         } else {
                 initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
         }

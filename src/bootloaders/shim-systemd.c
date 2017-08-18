@@ -11,6 +11,8 @@
 
 #define _GNU_SOURCE
 
+#include <linux/limits.h>
+
 #include "bootloader.h"
 #include "bootman.h"
 #include "cbm_efi.h"
@@ -93,18 +95,19 @@ __cbm_export__ const BootLoader shim_systemd_bootloader = {
 #define FB_SRC                  SHIM_SRC_DIR "/" "fb" EFI_SUFFIX
 #define SYSTEMD_SRC_DIR         "usr/lib/systemd/boot/efi"
 #define SYSTEMD_SRC             SYSTEMD_SRC_DIR "/" "systemd-boot" EFI_SUFFIX
-#define DST_DIR                 BOOT_DIRECTORY "/" KERNEL_NAMESPACE
+#define DST_DIR                 "/" KERNEL_NAMESPACE
 #define SHIM_DST                DST_DIR "/" "bootloader" EFI_SUFFIX
 #define SYSTEMD_DST             DST_DIR "/" "loader" EFI_SUFFIX
 #define KERNEL_DST_DIR          DST_DIR "/kernel"
-#define SYSTEMD_CONFIG_DIR      BOOT_DIRECTORY "/loader"
+#define SYSTEMD_CONFIG_DIR      "/loader"
 #define SYSTEMD_CONFIG          SYSTEMD_CONFIG_DIR "/loader.conf"
 #define SYSTEMD_ENTRIES         SYSTEMD_CONFIG_DIR "/entries"
 
 static char *shim_src;
-static char *shim_dst;
+static char *shim_dst_host; /* as accessible by the CMB for file ops. */
+static char *shim_dst_esp; /* absolute location of shim on the ESP. */
 static char *systemd_src;
-static char *systemd_dst;
+static char *systemd_dst_host;
 
 static char *shim_systemd_get_kernel_dst(const BootManager *manager) {
         (void)manager;
@@ -139,23 +142,23 @@ static bool exists_identical(const char *path, const char *spath) {
 static bool shim_systemd_needs_install(const BootManager *manager) {
         (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
-        if (!exists_identical(shim_dst, NULL)) return true;
-        if (!exists_identical(systemd_dst, NULL)) return true;
+        if (!exists_identical(shim_dst_host, NULL)) return true;
+        if (!exists_identical(systemd_dst_host, NULL)) return true;
         return false;
 }
 
 static bool shim_systemd_needs_update(const BootManager *manager) {
         (void)manager;
         fprintf(stderr, "Call %s\n", __func__);
-        if (!exists_identical(shim_dst, shim_src)) return true;
-        if (!exists_identical(systemd_dst, systemd_src)) return true;
+        if (!exists_identical(shim_dst_host, shim_src)) return true;
+        if (!exists_identical(systemd_dst_host, systemd_src)) return true;
         return false;
 }
 
 static bool make_layout(void) {
-        if (!nc_mkdir_p(DST_DIR, 00755)) return false;
-        if (!nc_mkdir_p(KERNEL_DST_DIR, 00755)) return false;
-        if (!nc_mkdir_p(SYSTEMD_ENTRIES, 00755)) return false;
+        if (!nc_mkdir_p(BOOT_DIRECTORY DST_DIR, 00755)) return false;
+        if (!nc_mkdir_p(BOOT_DIRECTORY KERNEL_DST_DIR, 00755)) return false;
+        if (!nc_mkdir_p(BOOT_DIRECTORY SYSTEMD_ENTRIES, 00755)) return false;
         return true;
 }
 
@@ -165,10 +168,10 @@ static bool shim_systemd_install(const BootManager *manager) {
 
         if (!make_layout()) return false;
 
-        if (!copy_file_atomic(shim_src, shim_dst, 00644)) return false;
-        if (!copy_file_atomic(systemd_src, systemd_dst, 00644)) return false;
+        if (!copy_file_atomic(shim_src, shim_dst_host, 00644)) return false;
+        if (!copy_file_atomic(systemd_src, systemd_dst_host, 00644)) return false;
 
-        if (efi_create_boot_rec(shim_dst)) return false;
+        if (efi_create_boot_rec(shim_dst_host, shim_dst_esp)) return false;
 
         return true;
 }
@@ -208,8 +211,11 @@ static bool shim_systemd_init(const BootManager *manager) {
         shim_src = string_printf("%s/%s", prefix, SHIM_SRC);
         systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
-        shim_dst = SHIM_DST;
-        systemd_dst = SYSTEMD_DST;
+        /* SHIM_DST and SYSTEMD_DST are defined with leading '/' */
+        shim_dst_host = BOOT_DIRECTORY SHIM_DST;
+        systemd_dst_host = BOOT_DIRECTORY SYSTEMD_DST;
+
+        shim_dst_esp = SHIM_DST;
 
         free(prefix);
 

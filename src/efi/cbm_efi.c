@@ -168,7 +168,7 @@ int get_part_info(const char *path, part_info_t *pi) {
     return 0;
 }
 
-int efi_create_boot_rec(const char *boot_loader_path) {
+int efi_create_boot_rec(const char *bootloader_host_path, const char *bootloader_esp_path) {
     part_info_t pi;
     uint8_t fdev_path[PATH_MAX];
     char *boot_var_name;
@@ -176,19 +176,14 @@ int efi_create_boot_rec(const char *boot_loader_path) {
     uint32_t boot_var_attr = EFI_VARIABLE_NON_VOLATILE
                             | EFI_VARIABLE_BOOTSERVICE_ACCESS
                             | EFI_VARIABLE_RUNTIME_ACCESS;
-    char rel_path[PATH_MAX];
     int slot = find_free_boot_rec();
     ssize_t len;
 
     if (slot < 0) return -1;
 
-    if (get_part_info(boot_loader_path, &pi)) return -1;
+    if (get_part_info(bootloader_host_path, &pi)) return -1;
 
-    /* FIXME: pass the booloader in two parts. The below cuts off /boot where
-     * it's normally mounted. */
-    strcpy(rel_path, boot_loader_path + 5);
-
-    len = efi_generate_file_device_path_from_esp(fdev_path, PATH_MAX, pi.disk_path, pi.part_no, rel_path, EFIBOOT_ABBREV_HD);
+    len = efi_generate_file_device_path_from_esp(fdev_path, PATH_MAX, pi.disk_path, pi.part_no, bootloader_esp_path, EFIBOOT_ABBREV_HD);
     if (len < 0) return -1;
 
     /* FIXME: figure out why LOAD_OPTION_ACTIVE is not defined (should be
