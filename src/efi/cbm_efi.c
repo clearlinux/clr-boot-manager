@@ -139,7 +139,7 @@ typedef struct part_info {
 
 /* Given the location of the booloader, returns the partition information needed
  * to create boot variable which points to that bootloader. */
-int get_part_info(const char *path, part_info_t *pi) {
+static int get_part_info(const char *path, part_info_t *pi) {
     blkid_probe probe;
     blkid_partition part;
     blkid_partlist parts;
