@@ -23,11 +23,16 @@
 #include <ctype.h>
 #include <efiboot.h>
 #include <efi.h>
+#include <efilib.h>
 #include <efivar.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/sysmacros.h>
+
+/* 1K is the limit for boot var storage that efivar defines. it should be
+ * enough. actual space occupied is normally >2 times less. */
+#define BOOT_VAR_MAX    1024
 
 typedef struct boot_rec boot_rec_t;
 
@@ -45,14 +50,15 @@ static void free_boot_recs(void) {
     boot_rec_t *p, *c;
     c = boot_recs;
     if (!c) return;
+    boot_recs = NULL;
     do {
         p = c;
         c = c->next;
         free(p);
     } while (c);
-    boot_recs = NULL;
 }
 
+static void print_boot_recs(void) __attribute__((unused));
 static void print_boot_recs(void) {
     boot_rec_t *c = boot_recs;
     if (!c) return;
@@ -61,6 +67,7 @@ static void print_boot_recs(void) {
     } while ((c = c->next));
 }
 
+/* enumerates boot recs and initializes boot_recs and boot_recs_cnt. */
 static int read_boot_recs(void) {
     int res;
     efi_guid_t *guid = NULL;
@@ -93,7 +100,6 @@ static int read_boot_recs(void) {
         i++;
     }
     boot_recs_cnt = i;
-    print_boot_recs();
     return 0;
 }
 
@@ -101,6 +107,7 @@ static int cmp(const void *a, const void *b) {
     return *((int *)a) - *((int *)b);
 }
 
+/* finds the first available free number for a boot var. */
 static int find_free_boot_rec(void) {
     int *nums;
     int res;
@@ -109,7 +116,7 @@ static int find_free_boot_rec(void) {
     size_t cnt;
 
     if (!boot_recs) return -1;
-    if (boot_recs_cnt < 1) return 0;
+    if (!boot_recs_cnt) return 0; /* no records. */
 
     cnt = (size_t)boot_recs_cnt;
 
@@ -126,11 +133,11 @@ static int find_free_boot_rec(void) {
     for (i = 0, res = 0; i < boot_recs_cnt; i++, res++) {
         if (res < nums[i]) break;
     }
-    if (res == nums[boot_recs_cnt - 1]) res++;
-    fprintf(stderr, "Found: %d\n", res);
+    if (res == nums[boot_recs_cnt - 1]) res++; /* no gap. */
     return res;
 }
 
+/* finds and returns boot rec whose value is data of size. NULL if not found. */
 static boot_rec_t *find_boot_rec(uint8_t *data, size_t size) {
     boot_rec_t *c = boot_recs;
     boot_rec_t *res = NULL;
@@ -139,8 +146,7 @@ static boot_rec_t *find_boot_rec(uint8_t *data, size_t size) {
     size_t csize;
     uint32_t cattr;
 
-    if (!boot_recs) return NULL;
-    if (boot_recs_cnt < 1) return NULL;
+    if (!boot_recs || !boot_recs_cnt) return NULL;
 
     do {
         if (efi_get_variable(EFI_GLOBAL_GUID, c->name, &cdata, &csize, &cattr) < 0) continue;
@@ -151,7 +157,6 @@ static boot_rec_t *find_boot_rec(uint8_t *data, size_t size) {
     } while ((c = c->next));
 
     return res;
-
 }
 
 typedef struct part_info {
@@ -160,8 +165,9 @@ typedef struct part_info {
     char *part_type;
 } part_info_t;
 
-/* Given the location of the booloader, returns the partition information needed
- * to create boot variable which points to that bootloader. */
+/* given the location of the booloader (as accessible by the host), returns the
+ * partition information needed to create boot variable which points to that
+ * bootloader. */
 static int get_part_info(const char *path, part_info_t *pi) {
     blkid_probe probe;
     blkid_partition part;
@@ -191,48 +197,58 @@ static int get_part_info(const char *path, part_info_t *pi) {
     return 0;
 }
 
+/* attempts to look up existing record, otherwise creates a new one. */
+static boot_rec_t *efi_add_boot_rec(uint8_t *data, size_t len) {
+    char name[9]; /* variable name, e.g. "BootXXXX". */
+    int slot;
+    uint32_t attr = EFI_VARIABLE_NON_VOLATILE
+                    | EFI_VARIABLE_BOOTSERVICE_ACCESS
+                    | EFI_VARIABLE_RUNTIME_ACCESS;
+    boot_rec_t *c,
+               *res = find_boot_rec(data, len);
+
+    if (res) return res;
+    /* no such record, create one. */
+    slot = find_free_boot_rec();
+    if (slot < 0) return NULL;
+    if (snprintf(name, 9, "Boot%04x", slot) > 8) return NULL;
+    if (efi_set_variable(EFI_GLOBAL_GUID, name, data, len, attr, 0644) < 0) return NULL;
+    /* re-read the records and find the variable that was just created. */
+    if (read_boot_recs() < 0) return NULL;
+    if (!boot_recs) return NULL; /* something went terribly wrong. */
+    c = boot_recs;
+    do {
+        if (!strcmp(c->name, name)) {
+            res = c;
+            break;
+        }
+    } while ((c = c->next));
+
+    return res;
+}
+
 int efi_create_boot_rec(const char *bootloader_host_path, const char *bootloader_esp_path) {
     part_info_t pi;
     uint8_t fdev_path[PATH_MAX];
-    char *boot_var_name;
-    uint8_t boot_var_data[PATH_MAX];
-    uint32_t boot_var_attr = EFI_VARIABLE_NON_VOLATILE
-                            | EFI_VARIABLE_BOOTSERVICE_ACCESS
-                            | EFI_VARIABLE_RUNTIME_ACCESS;
+    uint8_t data[BOOT_VAR_MAX]; /* this is what efivar supports and it should be
+                                   enough. */
+    long int len;
     boot_rec_t *rec;
-    ssize_t len;
 
     if (get_part_info(bootloader_host_path, &pi)) return -1;
 
-    len = efi_generate_file_device_path_from_esp(fdev_path, PATH_MAX, pi.disk_path, pi.part_no, bootloader_esp_path, EFIBOOT_ABBREV_HD);
+    len = efi_generate_file_device_path_from_esp(fdev_path, PATH_MAX,
+            pi.disk_path, pi.part_no, bootloader_esp_path, EFIBOOT_ABBREV_HD);
     if (len < 0) return -1;
 
-    /* FIXME: figure out why LOAD_OPTION_ACTIVE is not defined (should be
-     * defined via efi.h) */
-    len = efi_loadopt_create(boot_var_data, PATH_MAX, 0x00000001 /* LOAD_OPTION_ACTIVE */,
+    len = efi_loadopt_create(data, 1024, LOAD_OPTION_ACTIVE,
             (void *)fdev_path, len, (unsigned char *)"Linux bootloader", NULL, 0);
-
     if (len < 0) return -1;
 
-    if (!(rec = find_boot_rec(boot_var_data, (size_t)len))) {
-        int slot = find_free_boot_rec();
-        boot_rec_t *c;
-        if (slot < 0) return -1;
-        if (asprintf(&boot_var_name, "%s%04x", "Boot", slot) < 0) return -1;
-        if (efi_set_variable(EFI_GLOBAL_GUID, boot_var_name, boot_var_data, (size_t)len, boot_var_attr, 0644) < 0) return -1;
-        /* re-read the records and find the variable that was just created. */
-        if (read_boot_recs() < 0) return -1;
-        if (!boot_recs) return -1; /* something went terribly wrong */
-        c = boot_recs;
-        do {
-            if (!strcmp(c->name, boot_var_name)) {
-                rec = c;
-                break;
-            }
-        } while ((c = c->next));
-        if (!rec) return -1;
-    }
+    rec = efi_add_boot_rec(data, (size_t)len);
+
     /* TODO: put the var first in the boot order */
+    (void)rec;
 
     return 0;
 }
@@ -241,6 +257,10 @@ int efi_init(void) {
     if (efi_variables_supported() < 0) return -1;
     if (read_boot_recs() < 0) return -1;
     return 0;
+}
+
+void efi_destroy(void) {
+    free_boot_recs();
 }
 
 /* vim: set nosi noai cin ts=4 sw=4 et tw=80: */

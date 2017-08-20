@@ -10,6 +10,7 @@
  */
 
 int efi_init(void);
+void efi_destroy(void);
 int efi_create_boot_rec(const char *, const char *);
 
 /* vim: set nosi noai cin ts=4 sw=4 et tw=80: */
