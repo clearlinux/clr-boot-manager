@@ -210,7 +210,7 @@ static boot_rec_t *bootvar_add_boot_rec(uint8_t *data, size_t len) {
     /* no such record, create one. */
     slot = bootvar_find_free_no();
     if (slot < 0) return NULL;
-    if (snprintf(name, 9, "Boot%04x", slot) > 8) return NULL;
+    if (snprintf(name, 9, "Boot%04X", slot) > 8) return NULL;
     if (efi_set_variable(EFI_GLOBAL_GUID, name, data, len, attr, 0644) < 0) return NULL;
     /* re-read the records and find the variable that was just created. */
     if (bootvar_read_boot_recs() < 0) return NULL;
