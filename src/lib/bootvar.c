@@ -160,9 +160,9 @@ static boot_rec_t *bootvar_find_boot_rec(uint8_t *data, size_t size) {
 }
 
 typedef struct part_info {
-    char *disk_path;
+    char disk_path[PATH_MAX];
     int part_no;
-    char *part_type;
+    char part_type[36+1]; /* GUID string, hyphen notation */
 } part_info_t;
 
 /* given the location of the ESP mount point, returns the partition information
@@ -187,9 +187,9 @@ static int bootvar_get_part_info(const char *path, part_info_t *pi) {
     if (!(parts = blkid_probe_get_partitions(probe))) return -1;
     part = blkid_partlist_devno_to_partition(parts, st.st_dev);
 
-    pi->disk_path = strdup(disk_path);
+    snprintf(pi->disk_path, strlen(disk_path) + 1, "%s", disk_path);
     pi->part_no = blkid_partition_get_partno(part);
-    pi->part_type = strdup(blkid_partition_get_type_string(part));
+    snprintf(pi->part_type, 36 + 1, "%s", blkid_partition_get_type_string(part));
 
     blkid_free_probe(probe);
 
