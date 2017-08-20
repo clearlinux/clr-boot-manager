@@ -300,13 +300,14 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         return true;
 }
 
-bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel)
+bool sd_class_set_default_kernel_impl(const BootManager *manager, const Kernel *kernel,
+                bool (*ensure_layout)(const BootManager *))
 {
         if (!manager) {
                 return false;
         }
 
-        if (!sd_class_ensure_dirs(manager)) {
+        if (ensure_layout && !ensure_layout(manager)) {
                 LOG_FATAL("Failed to create required directories for %s", sd_config->name);
                 return false;
         }
@@ -364,6 +365,10 @@ write_config:
         cbm_sync();
 
         return true;
+}
+
+bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel) {
+    return sd_class_set_default_kernel_impl(manager, kernel, sd_class_ensure_dirs);
 }
 
 bool sd_class_needs_install(const BootManager *manager)

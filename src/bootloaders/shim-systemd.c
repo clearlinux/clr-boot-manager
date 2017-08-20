@@ -126,10 +126,9 @@ static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel 
 }
 
 static bool shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel) {
-        (void)manager;
-        (void)kernel;
-        fprintf(stderr, "%s is not implemented\n", __func__);
-        return true;
+        /* this writes systemd config. systemd has the configuration paths
+         * hardcoded, hence whatever sd_class is doing is OK. */
+        return sd_class_set_default_kernel_impl(manager, kernel, NULL);
 }
 
 static bool exists_identical(const char *path, const char *spath) {
