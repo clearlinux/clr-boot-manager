@@ -165,9 +165,8 @@ typedef struct part_info {
     char *part_type;
 } part_info_t;
 
-/* given the location of the booloader (as accessible by the host), returns the
- * partition information needed to create boot variable which points to that
- * bootloader. */
+/* given the location of the ESP mount point, returns the partition information
+ * needed to create boot variable which points to that bootloader. */
 static int bootvar_get_part_info(const char *path, part_info_t *pi) {
     blkid_probe probe;
     blkid_partition part;
@@ -227,7 +226,8 @@ static boot_rec_t *bootvar_add_boot_rec(uint8_t *data, size_t len) {
     return res;
 }
 
-int bootvar_create(const char *bootloader_host_path, const char *bootloader_esp_path) {
+int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path,
+        char *varname, size_t size) {
     part_info_t pi;
     uint8_t fdev_path[PATH_MAX];
     uint8_t data[BOOT_VAR_MAX]; /* this is what efivar supports and it should be
@@ -235,17 +235,25 @@ int bootvar_create(const char *bootloader_host_path, const char *bootloader_esp_
     long int len;
     boot_rec_t *rec;
 
-    if (bootvar_get_part_info(bootloader_host_path, &pi)) return -1;
+    if (bootvar_get_part_info(esp_mount_path, &pi)) return -1;
 
     len = efi_generate_file_device_path_from_esp(fdev_path, PATH_MAX,
             pi.disk_path, pi.part_no, bootloader_esp_path, EFIBOOT_ABBREV_HD);
     if (len < 0) return -1;
 
-    len = efi_loadopt_create(data, 1024, LOAD_OPTION_ACTIVE,
+    len = efi_loadopt_create(data, BOOT_VAR_MAX, LOAD_OPTION_ACTIVE,
             (void *)fdev_path, len, (unsigned char *)"Linux bootloader", NULL, 0);
     if (len < 0) return -1;
 
     rec = bootvar_add_boot_rec(data, (size_t)len);
+    if (!rec) return -1;
+
+    if (varname && size) {
+        size_t len = strlen(rec->name);
+        if (len < size) {
+            snprintf(varname, len + 1, "%s", rec->name);
+        }
+    }
 
     /* TODO: put the var first in the boot order */
     (void)rec;

@@ -159,6 +159,7 @@ static bool make_layout(void) {
 }
 
 static bool shim_systemd_install(const BootManager *manager) {
+        char varname[9];
         (void)manager;
 
         if (!make_layout()) return false;
@@ -166,7 +167,7 @@ static bool shim_systemd_install(const BootManager *manager) {
         if (!copy_file_atomic(shim_src, shim_dst_host, 00644)) return false;
         if (!copy_file_atomic(systemd_src, systemd_dst_host, 00644)) return false;
 
-        if (bootvar_create(shim_dst_host, shim_dst_esp)) return false;
+        if (bootvar_create(BOOT_DIRECTORY, shim_dst_esp, varname, 9)) return false;
 
         return true;
 }
@@ -220,7 +221,6 @@ static void shim_systemd_destroy(const BootManager *manager) {
 
         free(shim_src);
         free(systemd_src);
-
         bootvar_destroy();
 
         return;
