@@ -9,8 +9,8 @@
  * of the License, or (at your option) any later version.
  */
 
-int efi_init(void);
-void efi_destroy(void);
-int efi_create_boot_rec(const char *, const char *);
+int bootvar_init(void);
+void bootvar_destroy(void);
+int bootvar_create(const char *, const char *);
 
 /* vim: set nosi noai cin ts=4 sw=4 et tw=80: */

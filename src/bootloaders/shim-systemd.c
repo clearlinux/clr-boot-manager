@@ -15,7 +15,7 @@
 
 #include "bootloader.h"
 #include "bootman.h"
-#include "cbm_efi.h"
+#include "bootvar.h"
 #include "config.h"
 #include "files.h"
 #include "nica/files.h"
@@ -171,7 +171,7 @@ static bool shim_systemd_install(const BootManager *manager) {
         if (!copy_file_atomic(shim_src, shim_dst_host, 00644)) return false;
         if (!copy_file_atomic(systemd_src, systemd_dst_host, 00644)) return false;
 
-        if (efi_create_boot_rec(shim_dst_host, shim_dst_esp)) return false;
+        if (bootvar_create(shim_dst_host, shim_dst_esp)) return false;
 
         return true;
 }
@@ -192,7 +192,7 @@ static bool shim_systemd_init(const BootManager *manager) {
         size_t len;
         char *prefix;
 
-        if (efi_init()) return false;
+        if (bootvar_init()) return false;
 
         /* init systemd-class since we're reusing it for kernel install.
          * specific values do not matter as long as sd_class is not used to
@@ -228,6 +228,8 @@ static void shim_systemd_destroy(const BootManager *manager) {
 
         free(shim_src);
         free(systemd_src);
+
+        bootvar_destroy();
 
         return;
 }

@@ -126,8 +126,8 @@ libcbm_la_SOURCES =			\
 	src/lib/writer.c                \
 	src/lib/util.h			\
 	src/lib/util.c					\
-	src/efi/cbm_efi.c			\
-	src/efi/cbm_efi.h
+	src/lib/bootvar.c			\
+	src/lib/bootvar.h
 
 libcbm_la_CFLAGS =		\
 	-D_BOOTMAN_INTERNAL_	\
