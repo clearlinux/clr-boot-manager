@@ -103,6 +103,59 @@ static int bootvar_read_boot_recs(void) {
     return 0;
 }
 
+/* given the record, puts it first in the boot order (via BootOrder EFI
+ * variable). */
+static int bootvar_push_to_boot_order(boot_rec_t *rec) {
+    uint16_t number;
+    uint16_t *boot_order;
+    uint16_t *new_boot_order;
+    size_t boot_order_size;
+    size_t new_boot_order_size;
+    uint32_t boot_order_attrs;
+    unsigned int i;
+    int found = 0;
+
+    if (!rec || !rec->name) return -1;
+
+    if (efi_get_variable(EFI_GLOBAL_GUID, "BootOrder", (uint8_t **)&boot_order, &boot_order_size, &boot_order_attrs)) return -1;
+
+    sscanf(rec->name, "Boot%04hX", &number);
+
+    /* read as uint16_t, hence twice less the returned size */
+    boot_order_size >>= 1;
+
+    for (i = 0; i < boot_order_size; i++) {
+        if (boot_order[i] == number) {
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        new_boot_order_size = boot_order_size + 1;
+        new_boot_order = (uint16_t *)malloc(new_boot_order_size * sizeof(uint16_t));
+        new_boot_order[0] = number;
+        memcpy(new_boot_order + 1, boot_order, boot_order_size * sizeof(uint16_t));
+    } else {
+        uint16_t *c;
+        new_boot_order = (uint16_t *)malloc(boot_order_size * sizeof(uint16_t));
+        new_boot_order[0] = number;
+        c = new_boot_order + 1;
+        for (i = 0; i < boot_order_size; i++) {
+            if (boot_order[i] != number) {
+                *c = boot_order[i];
+                c++;
+            }
+        }
+        new_boot_order_size = (size_t)(c - new_boot_order);
+    }
+
+    new_boot_order_size <<= 1;
+    if (efi_set_variable(EFI_GLOBAL_GUID, "BootOrder", (uint8_t *)new_boot_order, new_boot_order_size, boot_order_attrs, 0644)) return -1;
+
+    return 0;
+}
+
 static int cmp(const void *a, const void *b) {
     return *((int *)a) - *((int *)b);
 }
@@ -248,15 +301,14 @@ int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path,
     rec = bootvar_add_boot_rec(data, (size_t)len);
     if (!rec) return -1;
 
+    if (bootvar_push_to_boot_order(rec)) return -1;
+
     if (varname && size) {
         size_t len = strlen(rec->name);
         if (len < size) {
             snprintf(varname, len + 1, "%s", rec->name);
         }
     }
-
-    /* TODO: put the var first in the boot order */
-    (void)rec;
 
     return 0;
 }
