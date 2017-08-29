@@ -2,6 +2,7 @@ AC_INIT([clr-boot-manager], 1.5.5, [william.douglas@intel.com], [clr-boot-manage
 AM_INIT_AUTOMAKE([-Wno-portability no-dist-gzip dist-xz foreign subdir-objects])
 AC_PROG_CC
 AC_PROG_CC_STDC
+AC_CANONICAL_HOST
 AC_CONFIG_HEADERS([config.h])
 AC_PREFIX_DEFAULT(/usr/local)
 AM_SILENT_RULES([yes])
@@ -63,6 +64,7 @@ fi
 if test x$bootloader = "xshim-systemd-boot"; then
         have_shim_systemdboot="yes"
         AC_DEFINE([HAVE_SHIM_SYSTEMD_BOOT], [1], [Using shim-systemd-boot])
+        AC_DEFINE([HAVE_SYSTEMD_BOOT], [1], [Adding systemd-boot])
 elif test x$bootloader = "xsystemd-boot"; then
         have_systemdboot="yes"
         AC_DEFINE([HAVE_SYSTEMD_BOOT], [1], [Using systemd-boot])
@@ -96,6 +98,19 @@ AC_ARG_WITH([kernel-modules-dir], AS_HELP_STRING([--with-kernel-modules-dir],
 AC_SUBST(kernelmodulesdir)
 AC_DEFINE_UNQUOTED(KERNEL_MODULES_DIRECTORY, "$kernelmodulesdir",
                    [The location of kernel modules in this OS configuration])
+
+AC_ARG_WITH([gnu-efi], AS_HELP_STRING([--with-gnu-efi],
+        [the location of gnu-efi headers]), [gnuefi=${withval}],
+        [gnuefi="/usr/include/efi"])
+AC_SUBST(gnuefi)
+
+dnl DO NOT use PKG_CHECK_MODULES for efivar: it's headers do not compile with
+dnl -pendantic --std=c11 with standard -I. Instead capture the directory and use
+dnl -isystem (to avoid enforcement of the standards).
+AC_ARG_WITH([efivar], AS_HELP_STRING([--with-efivar],
+        [the location of efivar headers]), [efivar=${withval}],
+        [efivar="/usr/include/efivar"])
+AC_SUBST(efivar)
 
 AC_ARG_WITH([kernel-namespace], AS_HELP_STRING([--with-kernel-namespace],
         [the kernel path namespace to use]), [kernelnamespace=${withval}],
@@ -176,6 +191,8 @@ AC_MSG_RESULT([
         bootloader:             ${bootloader}
         kernel-dir:             ${kerneldir}
         kernel-modules-dir:     ${kernelmodulesdir}
+        gnu-efi:                ${gnuefi}
+        efivar:                 ${efivar}
         kernel-namespace:       ${kernelnamespace}
         kernel-conf-dir:        ${kernelconfdir}
         vendor-kernel-conf-dir: ${vendorkernelconfdir}
