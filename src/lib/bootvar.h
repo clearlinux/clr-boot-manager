@@ -13,4 +13,4 @@ int bootvar_init(void);
 void bootvar_destroy(void);
 int bootvar_create(const char *, const char *, char *, size_t);
 
-/* vim: set nosi noai cin ts=4 sw=4 et tw=80: */
+/* vim: set nosi noai cin ts=8 sw=8 et tw=80: */
