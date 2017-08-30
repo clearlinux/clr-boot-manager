@@ -184,7 +184,8 @@ static bool shim_systemd_remove(const BootManager *manager) {
 
 static bool shim_systemd_init(const BootManager *manager) {
         size_t len;
-        char *prefix;
+        char *prefix,
+             *boot_root;
 
         if (bootvar_init()) return false;
 
@@ -206,12 +207,16 @@ static bool shim_systemd_init(const BootManager *manager) {
         systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
         /* SHIM_DST and SYSTEMD_DST are defined with leading '/' */
-        shim_dst_host = BOOT_DIRECTORY SHIM_DST;
-        systemd_dst_host = BOOT_DIRECTORY SYSTEMD_DST;
+        boot_root = strdup(boot_manager_get_boot_dir((BootManager *)manager));
+        len = strlen(boot_root);
+        if (len > 0 && boot_root[len-1] == '/') boot_root[len-1] = '\0';
+        shim_dst_host = string_printf("%s%s", boot_root, SHIM_DST);
+        systemd_dst_host = string_printf("%s%s", boot_root, SYSTEMD_DST);
 
         shim_dst_esp = SHIM_DST;
 
         free(prefix);
+        free(boot_root);
 
         return true;
 }
@@ -221,6 +226,8 @@ static void shim_systemd_destroy(const BootManager *manager) {
 
         free(shim_src);
         free(systemd_src);
+        free(shim_dst_host);
+        free(systemd_dst_host);
         bootvar_destroy();
 
         return;
