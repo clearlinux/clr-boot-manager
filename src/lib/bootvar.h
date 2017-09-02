@@ -9,6 +9,8 @@
  * of the License, or (at your option) any later version.
  */
 
+#include <stdlib.h>
+
 int bootvar_init(void);
 void bootvar_destroy(void);
 int bootvar_create(const char *, const char *, char *, size_t);

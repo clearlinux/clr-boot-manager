@@ -119,10 +119,7 @@ static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel
 }
 
 static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel) {
-        (void)manager;
-        (void)kernel;
-        fprintf(stderr, "%s is not implemented\n", __func__);
-        return true;
+        return sd_class_remove_kernel(manager, kernel);
 }
 
 static bool shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel) {
@@ -151,10 +148,15 @@ static bool shim_systemd_needs_update(const BootManager *manager) {
         return false;
 }
 
-static bool make_layout(void) {
-        if (!nc_mkdir_p(BOOT_DIRECTORY DST_DIR, 00755)) return false;
-        if (!nc_mkdir_p(BOOT_DIRECTORY KERNEL_DST_DIR, 00755)) return false;
-        if (!nc_mkdir_p(BOOT_DIRECTORY SYSTEMD_ENTRIES, 00755)) return false;
+static bool make_layout(const BootManager *manager) {
+        char *boot_root = boot_manager_get_boot_dir((BootManager *)manager);
+        char path[PATH_MAX];
+        snprintf(path, PATH_MAX, "%s%s", boot_root, DST_DIR);
+        if (!nc_mkdir_p(path, 00755)) return false;
+        snprintf(path, PATH_MAX, "%s%s", boot_root, KERNEL_DST_DIR);
+        if (!nc_mkdir_p(path, 00755)) return false;
+        snprintf(path, PATH_MAX, "%s%s", boot_root, SYSTEMD_ENTRIES);
+        if (!nc_mkdir_p(path, 00755)) return false;
         return true;
 }
 
@@ -162,7 +164,7 @@ static bool shim_systemd_install(const BootManager *manager) {
         char varname[9];
         (void)manager;
 
-        if (!make_layout()) return false;
+        if (!make_layout(manager)) return false;
 
         if (!copy_file_atomic(shim_src, shim_dst_host, 00644)) return false;
         if (!copy_file_atomic(systemd_src, systemd_dst_host, 00644)) return false;

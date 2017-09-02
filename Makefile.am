@@ -59,10 +59,7 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -Wno-missing-field-initializers \
         -std=c11 \
         -DSYSCONFDIR=\"$(sysconfdir)\" \
-	    -D_POSIX_C_SOURCE=201112L \
-		-isystem @efivar@ \
-		-isystem @gnuefi@ \
-		-isystem @gnuefi@/@host_cpu@
+	    -D_POSIX_C_SOURCE=201112L
 
 AM_CPPFLAGS = 					 \
 	-I $(top_srcdir)/src			 \
@@ -70,8 +67,10 @@ AM_CPPFLAGS = 					 \
 	-I $(top_srcdir)/src/cli		 \
 	-I $(top_srcdir)/src/bootloaders	 \
 	-I $(top_srcdir)/src/lib		 \
-	-I $(top_srcdir)/src/efi		\
 	-I $(top_srcdir)/src/libnica/src/include \
+	-isystem @efivar@ \
+	-isystem @gnuefi@ \
+	-isystem @gnuefi@/@host_cpu@ \
 	-DTOP_DIR=\"$(abs_top_srcdir)\"		 \
 	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
 
@@ -94,7 +93,7 @@ noinst_LTLIBRARIES = \
 
 bin_PROGRAMS = clr-boot-manager
 
-libcbm_la_SOURCES =			\
+SOURCE_FILES =			\
 	src/bootloaders/bootloader.h	\
 	src/bootloaders/systemd-class.h \
 	src/bootloaders/systemd-class.c \
@@ -129,8 +128,17 @@ libcbm_la_SOURCES =			\
 	src/lib/writer.c                \
 	src/lib/util.h			\
 	src/lib/util.c					\
-	src/lib/bootvar.c			\
 	src/lib/bootvar.h
+
+PROD_SOURCE_FILES = \
+	src/lib/bootvar.c
+
+STUB_SOURCE_FILES = \
+	tests/stub/bootvar.c
+
+libcbm_la_SOURCES = \
+	$(SOURCE_FILES) \
+	$(PROD_SOURCE_FILES)
 
 libcbm_la_CFLAGS =		\
 	-D_BOOTMAN_INTERNAL_	\
@@ -191,6 +199,19 @@ TESTS = 		\
 
 check_PROGRAMS = $(TESTS)
 
+check_LTLIBRARIES =  libcbm-check.la
+
+libcbm_check_la_SOURCES =	\
+	$(SOURCE_FILES)			\
+	$(STUB_SOURCE_FILES)
+
+libcbm_check_la_CFLAGS =	\
+	$(libcbm_la_CFLAGS)		\
+	-DTEST_STUB=1
+
+libcbm_check_la_LIBADD = $(libcbm_la_LIBADD)
+
+
 check_core_SOURCES =		\
 	tests/check-core.c	\
 	tests/blkid-harness.h   \
@@ -204,7 +225,7 @@ check_core_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_core_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -220,7 +241,7 @@ check_cmdline_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_cmdline_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -238,7 +259,7 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -258,7 +279,7 @@ check_legacy_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_legacy_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -274,7 +295,7 @@ check_os_release_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_os_release_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -294,7 +315,7 @@ check_uefi_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_uefi_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -314,7 +335,7 @@ check_grub2_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_grub2_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -334,7 +355,7 @@ check_select_bootloader_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_select_bootloader_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -354,7 +375,7 @@ check_probe_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_probe_LDADD =	\
-	libcbm.la	\
+	libcbm-check.la	\
 	src/libnica/libnica.la	\
 	-lefiboot		\
 	-lefivar		\
@@ -363,7 +384,6 @@ check_probe_LDADD =	\
 
 
 @VALGRIND_CHECK_RULES@
-
 
 VALGRIND_SUPPRESSIONS_FILES = \
 	${abs_top_srcdir}/sgcheck.suppressions
