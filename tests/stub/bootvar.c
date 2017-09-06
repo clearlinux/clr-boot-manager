@@ -12,20 +12,22 @@
 /* This file is a stub implementing happy src/lib/bootvar.h API. */
 
 #include <bootvar.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
-int bootvar_init(void) {
+int bootvar_init(void)
+{
         return 0;
 }
-void bootvar_destroy(void) {
+void bootvar_destroy(void)
+{
         return;
 }
 
-int bootvar_create(const char *mnt_path, const char *bootloader_path,
-                char *name, size_t sz) {
+int bootvar_create(const char *mnt_path, const char *bootloader_path, char *name, size_t sz)
+{
         (void)mnt_path;
         (void)bootloader_path;
         static char *stub_name = "Boot0001";

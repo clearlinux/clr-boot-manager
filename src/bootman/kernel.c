@@ -593,12 +593,14 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         autofree(char) *initrd_target = NULL;
         const char *initrd_source = NULL;
         int is_uefi = (manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI);
-        autofree(char) *efi_boot_dir = is_uefi ? manager->bootloader->get_kernel_dst(manager) : NULL;
+        autofree(char) *efi_boot_dir =
+            is_uefi ? manager->bootloader->get_kernel_dst(manager) : NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
 
-        if (is_uefi && !efi_boot_dir) return false;
+        if (is_uefi && !efi_boot_dir)
+                return false;
 
         /* Boot path */
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
@@ -607,9 +609,9 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         /* for UEFI, the kernel location is prefixed with efi_boot_dir which is
          * guaranteed to start with '/' since it's its absolute path on ESP. */
         kfile_target = string_printf("%s%s/%s",
-                        base_path,
-                        (is_uefi ? efi_boot_dir : ""),
-                        (is_uefi ? kernel->target.path : kernel->target.legacy_path));
+                                     base_path,
+                                     (is_uefi ? efi_boot_dir : ""),
+                                     (is_uefi ? kernel->target.path : kernel->target.legacy_path));
 
         /* Now copy the kernel file to it's new location */
         if (!cbm_files_match(kernel->source.path, kfile_target)) {
@@ -629,7 +631,10 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
                 return true;
         }
 
-        initrd_target = string_printf("%s%s/%s", base_path, (is_uefi ? efi_boot_dir : ""), kernel->target.initrd_path);
+        initrd_target = string_printf("%s%s/%s",
+                                      base_path,
+                                      (is_uefi ? efi_boot_dir : ""),
+                                      kernel->target.initrd_path);
 
         if (!cbm_files_match(initrd_source, initrd_target)) {
                 if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
@@ -661,13 +666,15 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         autofree(char) *base_path = NULL;
         autofree(char) *initrd_target = NULL;
         int is_uefi = (manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI);
-        autofree(char) *efi_boot_dir = is_uefi ? manager->bootloader->get_kernel_dst(manager) : NULL;
+        autofree(char) *efi_boot_dir =
+            is_uefi ? manager->bootloader->get_kernel_dst(manager) : NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
 
         /* if it's UEFI, then bootloader->get_kernel_dst() must return a value. */
-        if (is_uefi && !efi_boot_dir) return false;
+        if (is_uefi && !efi_boot_dir)
+                return false;
 
         /* Boot path */
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
@@ -675,12 +682,15 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
 
         /* Remove old blobs */
         kfile_target = string_printf("%s%s/%s",
-                        base_path,
-                        (is_uefi ? efi_boot_dir : ""),
-                        (is_uefi ? kernel->target.path : kernel->target.legacy_path));
+                                     base_path,
+                                     (is_uefi ? efi_boot_dir : ""),
+                                     (is_uefi ? kernel->target.path : kernel->target.legacy_path));
 
         if (kernel->source.initrd_file) {
-                initrd_target = string_printf("%s%s/%s", base_path, (is_uefi ? efi_boot_dir : ""), kernel->target.initrd_path);
+                initrd_target = string_printf("%s%s/%s",
+                                              base_path,
+                                              (is_uefi ? efi_boot_dir : ""),
+                                              kernel->target.initrd_path);
         }
 
         /* Remove the kernel from the ESP */

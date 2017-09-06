@@ -184,8 +184,8 @@ char *sd_class_get_kernel_dst(const BootManager *manager)
 }
 
 bool sd_class_install_kernel_impl(const BootManager *manager, const Kernel *kernel,
-                char *(*get_kernel_dst)(const BootManager *),
-                bool (*ensure_layout)(const BootManager *))
+                                  char *(*get_kernel_dst)(const BootManager *),
+                                  bool (*ensure_layout)(const BootManager *))
 {
         if (!manager || !kernel) {
                 return false;
@@ -270,9 +270,12 @@ bool sd_class_install_kernel_impl(const BootManager *manager, const Kernel *kern
         return true;
 }
 
-bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel) {
-        return sd_class_install_kernel_impl(manager, kernel,
-                        sd_class_get_kernel_dst, sd_class_ensure_dirs);
+bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
+{
+        return sd_class_install_kernel_impl(manager,
+                                            kernel,
+                                            sd_class_get_kernel_dst,
+                                            sd_class_ensure_dirs);
 }
 
 bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
@@ -301,7 +304,7 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
 }
 
 bool sd_class_set_default_kernel_impl(const BootManager *manager, const Kernel *kernel,
-                bool (*ensure_layout)(const BootManager *))
+                                      bool (*ensure_layout)(const BootManager *))
 {
         if (!manager) {
                 return false;
@@ -367,8 +370,9 @@ write_config:
         return true;
 }
 
-bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel) {
-    return sd_class_set_default_kernel_impl(manager, kernel, sd_class_ensure_dirs);
+bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel)
+{
+        return sd_class_set_default_kernel_impl(manager, kernel, sd_class_ensure_dirs);
 }
 
 bool sd_class_needs_install(const BootManager *manager)
