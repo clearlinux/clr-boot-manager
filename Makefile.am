@@ -2,77 +2,78 @@ ACLOCAL_AMFLAGS = -I m4
 
 
 
-EXTRA_DIST = ${top_srcdir}/README.md \
-	     ${top_srcdir}/LICENSE.LGPL2.1 \
-	     ${top_srcdir}/HACKING \
-	     ${top_srcdir}/findstatic.pl \
-	     ${top_srcdir}/tests/data/blobfile \
-	     ${top_srcdir}/tests/data/match \
-	     ${top_srcdir}/tests/data/match1 \
-	     ${top_srcdir}/tests/data/nomatch1 \
-	     ${top_srcdir}/tests/data/nomatch2 \
-	     ${top_srcdir}/tests/data/clear.os-release \
-	     ${top_srcdir}/tests/data/solus.os-release \
-	     ${top_srcdir}/tests/data/cmdline/comments \
-	     ${top_srcdir}/tests/data/cmdline/mangledmess \
-	     ${top_srcdir}/tests/data/cmdline/multi \
-	     ${top_srcdir}/tests/data/cmdline/oneline \
-	     ${top_srcdir}/tests/data/etc/kernel/cmdline \
-	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/00_empty.conf \
-	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/00_newline.conf \
-	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/10_first.conf \
-	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/20_second.conf \
-	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/30_third.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/10_first.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/20_second.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/30_third.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/00_empty.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/00_newline.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/10_first.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/20_second.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/30_third.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/40_masked.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/10_local_first.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/20_local_second.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/30_local_third.conf \
-	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/40_masked.conf \
-	     ${top_srcdir}/tests/data/gptmbr.bin \
-	     ${top_srcdir}/tests/data/gptmbr.bin.v2 \
-	     ${top_srcdir}/sgcheck.suppressions \
-	     ${top_srcdir}/data/clr-boot-manager-booted.service \
-	     ${top_srcdir}/man/clr-boot-manager.1
+EXTRA_DIST =                                                                                        \
+        ${top_srcdir}/README.md                                                                     \
+        ${top_srcdir}/LICENSE.LGPL2.1                                                               \
+        ${top_srcdir}/HACKING                                                                       \
+        ${top_srcdir}/findstatic.pl                                                                 \
+        ${top_srcdir}/tests/data/blobfile                                                           \
+        ${top_srcdir}/tests/data/match                                                              \
+        ${top_srcdir}/tests/data/match1                                                             \
+        ${top_srcdir}/tests/data/nomatch1                                                           \
+        ${top_srcdir}/tests/data/nomatch2                                                           \
+        ${top_srcdir}/tests/data/clear.os-release                                                   \
+        ${top_srcdir}/tests/data/solus.os-release                                                   \
+        ${top_srcdir}/tests/data/cmdline/comments                                                   \
+        ${top_srcdir}/tests/data/cmdline/mangledmess                                                \
+        ${top_srcdir}/tests/data/cmdline/multi                                                      \
+        ${top_srcdir}/tests/data/cmdline/oneline                                                    \
+        ${top_srcdir}/tests/data/etc/kernel/cmdline                                                 \
+        ${top_srcdir}/tests/data/etc/kernel/cmdline.d/00_empty.conf                                 \
+        ${top_srcdir}/tests/data/etc/kernel/cmdline.d/00_newline.conf                               \
+        ${top_srcdir}/tests/data/etc/kernel/cmdline.d/10_first.conf                                 \
+        ${top_srcdir}/tests/data/etc/kernel/cmdline.d/20_second.conf                                \
+        ${top_srcdir}/tests/data/etc/kernel/cmdline.d/30_third.conf                                 \
+        ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/10_first.conf       \
+        ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/20_second.conf      \
+        ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/30_third.conf       \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/00_empty.conf     \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/00_newline.conf   \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/10_first.conf     \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/20_second.conf    \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/30_third.conf     \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/40_masked.conf    \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline                           \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/10_local_first.conf     \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/20_local_second.conf    \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/30_local_third.conf     \
+        ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/40_masked.conf          \
+        ${top_srcdir}/tests/data/gptmbr.bin                                                         \
+        ${top_srcdir}/tests/data/gptmbr.bin.v2                                                      \
+        ${top_srcdir}/sgcheck.suppressions                                                          \
+        ${top_srcdir}/data/clr-boot-manager-booted.service                                          \
+        ${top_srcdir}/man/clr-boot-manager.1
 
 NULL =
 CLEANFILES =
 
 DISTCHECK_CONFIGURE_FLAGS = \
-      --with-systemdsystemunitdir="${distdir}/${libdir}/systemd/system"
+	    --with-systemdsystemunitdir="${distdir}/${libdir}/systemd/system"
 
 
-AM_CFLAGS = -fstack-protector -Wall -pedantic \
-        -Wstrict-prototypes -Wundef -fno-common \
-        -Werror-implicit-function-declaration \
-        -Wformat -Wformat-security -Werror=format-security \
-        -Wconversion -Wunused-variable -Wunreachable-code \
-        -Wall -W -D_FORTIFY_SOURCE=2 \
-        -Wno-missing-field-initializers \
-        -std=c11 \
-        -DSYSCONFDIR=\"$(sysconfdir)\" \
-	    -D_POSIX_C_SOURCE=201112L
+AM_CFLAGS = -fstack-protector -Wall -pedantic                   \
+        -Wstrict-prototypes -Wundef -fno-common                 \
+        -Werror-implicit-function-declaration                   \
+        -Wformat -Wformat-security -Werror=format-security      \
+        -Wconversion -Wunused-variable -Wunreachable-code       \
+        -Wall -W -D_FORTIFY_SOURCE=2                            \
+        -Wno-missing-field-initializers                         \
+        -std=c11                                                \
+        -DSYSCONFDIR=\"$(sysconfdir)\"                          \
+        -D_POSIX_C_SOURCE=201112L
 
-AM_CPPFLAGS = 					 \
-	-I $(top_srcdir)/src			 \
-	-I $(top_srcdir)/src/bootman		 \
-	-I $(top_srcdir)/src/cli		 \
-	-I $(top_srcdir)/src/bootloaders	 \
-	-I $(top_srcdir)/src/lib		 \
-	-I $(top_srcdir)/src/libnica/src/include \
-	-isystem @efivar@ \
-	-isystem @gnuefi@ \
-	-isystem @gnuefi@/@host_cpu@ \
-	-DTOP_DIR=\"$(abs_top_srcdir)\"		 \
-	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
+AM_CPPFLAGS =                                           \
+        -I $(top_srcdir)/src                            \
+        -I $(top_srcdir)/src/bootman                    \
+        -I $(top_srcdir)/src/cli                        \
+        -I $(top_srcdir)/src/bootloaders                \
+        -I $(top_srcdir)/src/lib                        \
+        -I $(top_srcdir)/src/libnica/src/include        \
+        -isystem @efivar@                               \
+        -isystem @gnuefi@                               \
+        -isystem @gnuefi@/@host_cpu@                    \
+        -DTOP_DIR=\"$(abs_top_srcdir)\"                 \
+        -DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
 
 AUTOMAKE_OPTIONS = color-tests parallel-tests
 
@@ -93,82 +94,82 @@ noinst_LTLIBRARIES = \
 
 bin_PROGRAMS = clr-boot-manager
 
-SOURCE_FILES =			\
-	src/bootloaders/bootloader.h	\
-	src/bootloaders/systemd-class.h \
-	src/bootloaders/systemd-class.c \
-	src/bootloaders/shim-systemd.c	\
-	src/bootloaders/systemd-boot.c	\
-	src/bootloaders/grub2.c		\
-	src/bootloaders/gummiboot.c	\
-	src/bootloaders/goofiboot.c	\
-	src/bootloaders/syslinux.c	\
-	src/bootman/bootman.h		\
-	src/bootman/bootman_private.h	\
-	src/bootman/bootman.c		\
-	src/bootman/kernel.c		\
-	src/bootman/sysconfig.c		\
-	src/bootman/timeout.c		\
-	src/bootman/update.c		\
-	src/lib/blkid_stub.h            \
-	src/lib/blkid_stub.c            \
-	src/lib/cmdline.h               \
-	src/lib/cmdline.c               \
-	src/lib/files.h			\
-	src/lib/files.c			\
-	src/lib/os-release.h            \
-	src/lib/os-release.c            \
-	src/lib/log.h			\
-	src/lib/log.c			\
-	src/lib/probe.h                 \
-	src/lib/probe.c                 \
-	src/lib/system_stub.h           \
-	src/lib/system_stub.c           \
-	src/lib/writer.h                \
-	src/lib/writer.c                \
-	src/lib/util.h			\
-	src/lib/util.c					\
-	src/lib/bootvar.h
+SOURCE_FILES =                              \
+        src/bootloaders/bootloader.h        \
+        src/bootloaders/systemd-class.h     \
+        src/bootloaders/systemd-class.c     \
+        src/bootloaders/shim-systemd.c      \
+        src/bootloaders/systemd-boot.c      \
+        src/bootloaders/grub2.c             \
+        src/bootloaders/gummiboot.c         \
+        src/bootloaders/goofiboot.c         \
+        src/bootloaders/syslinux.c          \
+        src/bootman/bootman.h               \
+        src/bootman/bootman_private.h       \
+        src/bootman/bootman.c               \
+        src/bootman/kernel.c                \
+        src/bootman/sysconfig.c             \
+        src/bootman/timeout.c               \
+        src/bootman/update.c                \
+        src/lib/blkid_stub.h                \
+        src/lib/blkid_stub.c                \
+        src/lib/cmdline.h                   \
+        src/lib/cmdline.c                   \
+        src/lib/files.h                     \
+        src/lib/files.c                     \
+        src/lib/os-release.h                \
+        src/lib/os-release.c                \
+        src/lib/log.h                       \
+        src/lib/log.c                       \
+        src/lib/probe.h                     \
+        src/lib/probe.c                     \
+        src/lib/system_stub.h               \
+        src/lib/system_stub.c               \
+        src/lib/writer.h                    \
+        src/lib/writer.c                    \
+        src/lib/util.h                      \
+        src/lib/util.c                      \
+        src/lib/bootvar.h
 
-PROD_SOURCE_FILES = \
-	src/lib/bootvar.c
+PROD_SOURCE_FILES =                         \
+        src/lib/bootvar.c
 
-STUB_SOURCE_FILES = \
-	tests/stub/bootvar.c
+STUB_SOURCE_FILES =                         \
+        tests/stub/bootvar.c
 
-libcbm_la_SOURCES = \
-	$(SOURCE_FILES) \
-	$(PROD_SOURCE_FILES)
+libcbm_la_SOURCES =                         \
+        $(SOURCE_FILES)                     \
+        $(PROD_SOURCE_FILES)
 
-libcbm_la_CFLAGS =		\
-	-D_BOOTMAN_INTERNAL_	\
-	$(BLKID_CFLAGS)		\
-	$(AM_CFLAGS)
+libcbm_la_CFLAGS =                          \
+        -D_BOOTMAN_INTERNAL_                \
+        $(BLKID_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-libcbm_la_LIBADD =			\
-	src/libnica/libnica.la
+libcbm_la_LIBADD =                          \
+        src/libnica/libnica.la
 
-clr_boot_manager_SOURCES =		\
-	src/cli/cli.h 			\
-	src/cli/cli.c			\
-	src/cli/ops/update.h		\
-	src/cli/ops/update.c		\
-	src/cli/ops/timeout.h		\
-	src/cli/ops/timeout.c		\
-	src/cli/ops/report_booted.h	\
-	src/cli/ops/report_booted.c	\
-	src/cli/main.c
+clr_boot_manager_SOURCES =                  \
+        src/cli/cli.h                       \
+        src/cli/cli.c                       \
+        src/cli/ops/update.h                \
+        src/cli/ops/update.c                \
+        src/cli/ops/timeout.h               \
+        src/cli/ops/timeout.c               \
+        src/cli/ops/report_booted.h         \
+        src/cli/ops/report_booted.c         \
+        src/cli/main.c
 
-clr_boot_manager_CFLAGS =	\
-	$(BLKID_CFLAGS)		\
-	$(AM_CFLAGS)
+clr_boot_manager_CFLAGS =                   \
+    $(BLKID_CFLAGS)                         \
+    $(AM_CFLAGS)
 
-clr_boot_manager_LDADD =	\
-	libcbm.la		\
-	src/libnica/libnica.la		\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)
+clr_boot_manager_LDADD =                    \
+    libcbm.la                               \
+    src/libnica/libnica.la                  \
+    -lefiboot                               \
+    -lefivar                                \
+    $(BLKID_LIBS)
 
 install-exec-hook:
 	perl ${top_srcdir}/findstatic.pl ${top_builddir}/src/*.o ${top_builddir}/src/*/*.o | grep -v Checking ||:
@@ -180,210 +181,208 @@ dist_systemdsystemunit_DATA = ${top_srcdir}/data/clr-boot-manager-booted.service
 endif
 
 manpagesdir = $(mandir)/man1
-manpages_DATA = \
-	man/clr-boot-manager.1
+manpages_DATA =                             \
+        man/clr-boot-manager.1
 
 distclean-local:
 	rm -rf ${top_builddir}/tests/update_playground
 
-TESTS = 		\
-	check_core 	\
-	check_cmdline   \
-	check_files 	\
-	check_legacy    \
-	check_os_release \
-	check_uefi 	\
-	check_grub2 \
-	check_select_bootloader \
-	check_probe
+TESTS =                                     \
+        check_core                          \
+        check_cmdline                       \
+        check_files                         \
+        check_legacy                        \
+        check_os_release                    \
+        check_uefi                          \
+        check_grub2                         \
+        check_select_bootloader             \
+        check_probe
 
 check_PROGRAMS = $(TESTS)
 
 check_LTLIBRARIES =  libcbm-check.la
 
-libcbm_check_la_SOURCES =	\
-	$(SOURCE_FILES)			\
-	$(STUB_SOURCE_FILES)
+libcbm_check_la_SOURCES =                   \
+        $(SOURCE_FILES)                     \
+        $(STUB_SOURCE_FILES)
 
-libcbm_check_la_CFLAGS =	\
-	$(libcbm_la_CFLAGS)		\
-	-DTEST_STUB=1
+libcbm_check_la_CFLAGS =                    \
+        $(libcbm_la_CFLAGS)                 \
+        -DTEST_STUB=1
 
 libcbm_check_la_LIBADD = $(libcbm_la_LIBADD)
 
+check_core_SOURCES =                        \
+        tests/check-core.c                  \
+        tests/blkid-harness.h               \
+        tests/system-harness.h              \
+        tests/harness.h                     \
+        tests/harness.c
 
-check_core_SOURCES =		\
-	tests/check-core.c	\
-	tests/blkid-harness.h   \
-	tests/system-harness.h  \
-	tests/harness.h		\
-	tests/harness.c
+check_core_CFLAGS =                         \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_core_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_core_LDADD =                          \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_core_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_cmdline_SOURCES =                     \
+        tests/check-cmdline.c
 
-check_cmdline_SOURCES =		\
-	tests/check-cmdline.c
+check_cmdline_CFLAGS =                      \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_cmdline_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_cmdline_LDADD =                       \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_cmdline_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_files_SOURCES =                       \
+        tests/check-files.c                 \
+        tests/harness.h                     \
+        tests/harness.c
 
-check_files_SOURCES = \
-	tests/check-files.c 	\
-	tests/harness.h		\
-	tests/harness.c
+check_files_CFLAGS =                        \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_files_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_files_LDADD =                         \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_files_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_legacy_SOURCES =                      \
+        tests/check-legacy.c                \
+        tests/blkid-harness.h               \
+        tests/system-harness.h              \
+        tests/harness.h                     \
+        tests/harness.c
 
-check_legacy_SOURCES = \
-	tests/check-legacy.c 	\
-	tests/blkid-harness.h   \
-	tests/system-harness.h  \
-	tests/harness.h		\
-	tests/harness.c
+check_legacy_CFLAGS =                       \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_legacy_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_legacy_LDADD =                        \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_legacy_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_os_release_SOURCES =                  \
+        tests/check-os-release.c
 
-check_os_release_SOURCES = \
-	tests/check-os-release.c
+check_os_release_CFLAGS =                   \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_os_release_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_os_release_LDADD =                    \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_os_release_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_uefi_SOURCES =                        \
+        tests/check-uefi.c                  \
+        tests/blkid-harness.h               \
+        tests/system-harness.h              \
+        tests/harness.h                     \
+        tests/harness.c
 
-check_uefi_SOURCES = \
-	tests/check-uefi.c 	\
-	tests/blkid-harness.h   \
-	tests/system-harness.h  \
-	tests/harness.h		\
-	tests/harness.c
+check_uefi_CFLAGS =                         \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_uefi_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_uefi_LDADD =                          \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_uefi_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_grub2_SOURCES =                       \
+        tests/check-grub2.c                 \
+        tests/blkid-harness.h               \
+        tests/system-harness.h              \
+        tests/harness.h                     \
+        tests/harness.c
 
-check_grub2_SOURCES = \
-	tests/check-grub2.c 	\
-	tests/blkid-harness.h   \
-	tests/system-harness.h  \
-	tests/harness.h		\
-	tests/harness.c
+check_grub2_CFLAGS =                        \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_grub2_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_grub2_LDADD =                         \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_grub2_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_select_bootloader_SOURCES =           \
+        tests/check-select-bootloader.c     \
+        tests/blkid-harness.h               \
+        tests/system-harness.h              \
+        tests/harness.h                     \
+        tests/harness.c
 
-check_select_bootloader_SOURCES = \
-	tests/check-select-bootloader.c 	\
-	tests/blkid-harness.h   \
-	tests/system-harness.h  \
-	tests/harness.h		\
-	tests/harness.c
+check_select_bootloader_CFLAGS =            \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_select_bootloader_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
+check_select_bootloader_LDADD =             \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
-check_select_bootloader_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
+check_probe_SOURCES =                       \
+        tests/check-probe.c                 \
+        tests/blkid-harness.h               \
+        tests/system-harness.h              \
+        tests/harness.h                     \
+        tests/harness.c
 
-check_probe_SOURCES = \
-	tests/check-probe.c 	\
-	tests/blkid-harness.h   \
-	tests/system-harness.h  \
-	tests/harness.h		\
-	tests/harness.c
+check_probe_CFLAGS =                        \
+        $(BLKID_CFLAGS)                     \
+        $(CHECK_CFLAGS)                     \
+        $(AM_CFLAGS)
 
-check_probe_CFLAGS =		\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
-
-check_probe_LDADD =	\
-	libcbm-check.la	\
-	src/libnica/libnica.la	\
-	-lefiboot		\
-	-lefivar		\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
-
+check_probe_LDADD =                         \
+        libcbm-check.la                     \
+        src/libnica/libnica.la              \
+        -lefiboot                           \
+        -lefivar                            \
+        $(BLKID_LIBS)                       \
+        $(CHECK_LIBS)
 
 @VALGRIND_CHECK_RULES@
 
-VALGRIND_SUPPRESSIONS_FILES = \
+VALGRIND_SUPPRESSIONS_FILES =               \
 	${abs_top_srcdir}/sgcheck.suppressions
