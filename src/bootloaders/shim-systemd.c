@@ -197,7 +197,6 @@ static bool make_layout(const BootManager *manager)
 static bool shim_systemd_install(const BootManager *manager)
 {
         char varname[9];
-        (void)manager;
 
         if (!make_layout(manager))
                 return false;
