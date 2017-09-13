@@ -18,9 +18,25 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/cmdline/multi \
 	     ${top_srcdir}/tests/data/cmdline/oneline \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline \
+	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/00_empty.conf \
+	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/00_newline.conf \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/10_first.conf \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/20_second.conf \
 	     ${top_srcdir}/tests/data/etc/kernel/cmdline.d/30_third.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/10_first.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/20_second.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_only/usr/share/kernel/cmdline.d/30_third.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/00_empty.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/00_newline.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/10_first.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/20_second.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/30_third.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/usr/share/kernel/cmdline.d/40_masked.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/10_local_first.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/20_local_second.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/30_local_third.conf \
+	     ${top_srcdir}/tests/data/cmdline_vendor_merged/etc/kernel/cmdline.d/40_masked.conf \
 	     ${top_srcdir}/tests/data/gptmbr.bin \
 	     ${top_srcdir}/tests/data/gptmbr.bin.v2 \
 	     ${top_srcdir}/sgcheck.suppressions \

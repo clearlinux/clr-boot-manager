@@ -124,6 +124,15 @@ AC_SUBST(kernelconfdir)
 AC_DEFINE_UNQUOTED(KERNEL_CONF_DIRECTORY, "$kernelconfdir",
                    [The kernel configuration directory])
 
+# The kernel configuration directory (vendor)
+AC_ARG_WITH([vendor-kernel-conf-dir], AS_HELP_STRING([--with-vendor-kernel-conf-dir],
+        [the vendor kernel configuration directory]), [vendorkernelconfdir=${withval}],
+        [vendorkernelconfdir="/usr/share/kernel"])
+
+AC_SUBST(vendorkernelconfdir)
+AC_DEFINE_UNQUOTED(VENDOR_KERNEL_CONF_DIRECTORY, "$vendorkernelconfdir",
+                   [The vendor kernel configuration directory])
+
 
 # Options
 AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
@@ -161,6 +170,7 @@ AC_MSG_RESULT([
         kernel-modules-dir:     ${kernelmodulesdir}
         kernel-namespace:       ${kernelnamespace}
         kernel-conf-dir:        ${kernelconfdir}
+        vendor-kernel-conf-dir: ${vendorkernelconfdir}
         boot-dir:               ${bootdir}
         vendor-prefix:          ${vendorprefix}
 ])

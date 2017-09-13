@@ -77,6 +77,34 @@ START_TEST(cbm_cmdline_test_dirs)
 }
 END_TEST
 
+START_TEST(cbm_cmdline_test_dirs_vendor_only)
+{
+        const char *dir = TOP_DIR "/tests/data/cmdline_vendor_only";
+
+        autofree(char) *p = NULL;
+
+        p = cbm_parse_cmdline_files(dir);
+        fail_if(!p, "Failed to parse cmdline dirs");
+        fail_if(!streq(p, "this is an example of vendor only cmdline handling"),
+                "cmdline dirs does not match");
+}
+END_TEST
+
+START_TEST(cbm_cmdline_test_dirs_vendor_merged)
+{
+        const char *dir = TOP_DIR "/tests/data/cmdline_vendor_merged";
+
+        autofree(char) *p = NULL;
+
+        p = cbm_parse_cmdline_files(dir);
+        fail_if(!p, "Failed to parse cmdline dirs");
+        fail_if(!streq(p,
+                       "this goes before /etc/ <hi from cmdline> and this one goes last. :) "
+                       "overridden with mask"),
+                "cmdline dirs does not match");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -89,6 +117,8 @@ static Suite *core_suite(void)
         tcase_add_test(tc, cbm_cmdline_test_multi);
         tcase_add_test(tc, cbm_cmdline_test_oneline);
         tcase_add_test(tc, cbm_cmdline_test_dirs);
+        tcase_add_test(tc, cbm_cmdline_test_dirs_vendor_only);
+        tcase_add_test(tc, cbm_cmdline_test_dirs_vendor_merged);
         suite_add_tcase(s, tc);
 
         return s;
