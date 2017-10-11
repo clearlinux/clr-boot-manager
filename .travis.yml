@@ -42,10 +42,10 @@ script:
     - lcov --version | grep "1.10"
     - export CC="gcc-5"
     - ./configure --enable-coverage && make && make check && make distcheck && make check-valgrind
+    - clang-format-3.8 -i $(find . -name '*.[ch]') && git diff --exit-code
 
 after_success:
   - cd ${TRAVIS_BUILD_DIR}
   - lcov --compat-libtool --directory . --capture --output-file coverage.info
   - lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info
   - coveralls-lcov coverage.info
-  - clang-format-3.8 -i $(find . -name '*.[ch]') && git diff --exit-code
