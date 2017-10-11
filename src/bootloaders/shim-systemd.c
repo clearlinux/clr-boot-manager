@@ -18,9 +18,9 @@
 #include "bootvar.h"
 #include "config.h"
 #include "files.h"
-#include <log.h>
 #include "nica/files.h"
 #include "systemd-class.h"
+#include <log.h>
 
 /*
  * This file implements 2-stage bootloader configuration in which shim is used as
@@ -92,30 +92,30 @@ __cbm_export__ const BootLoader
 #define SHIM_SRC_DIR "usr/lib/shim"
 #define SHIM_SRC                                                                                   \
         SHIM_SRC_DIR                                                                               \
-            "/"                                                                                    \
-            "shim" EFI_SUFFIX
+        "/"                                                                                        \
+        "shim" EFI_SUFFIX
 #define MM_SRC                                                                                     \
         SHIM_SRC_DIR                                                                               \
-            "/"                                                                                    \
-            "mm" EFI_SUFFIX
+        "/"                                                                                        \
+        "mm" EFI_SUFFIX
 #define FB_SRC                                                                                     \
         SHIM_SRC_DIR                                                                               \
-            "/"                                                                                    \
-            "fb" EFI_SUFFIX
+        "/"                                                                                        \
+        "fb" EFI_SUFFIX
 #define SYSTEMD_SRC_DIR "usr/lib/systemd/boot/efi"
 #define SYSTEMD_SRC                                                                                \
         SYSTEMD_SRC_DIR                                                                            \
-            "/"                                                                                    \
-            "systemd-boot" EFI_SUFFIX
+        "/"                                                                                        \
+        "systemd-boot" EFI_SUFFIX
 #define DST_DIR "/" KERNEL_NAMESPACE
 #define SHIM_DST                                                                                   \
         DST_DIR                                                                                    \
-            "/"                                                                                    \
-            "bootloader" EFI_SUFFIX
+        "/"                                                                                        \
+        "bootloader" EFI_SUFFIX
 #define SYSTEMD_DST                                                                                \
         DST_DIR                                                                                    \
-            "/"                                                                                    \
-            "loader" EFI_SUFFIX
+        "/"                                                                                        \
+        "loader" EFI_SUFFIX
 #define KERNEL_DST_DIR DST_DIR "/kernel"
 #define SYSTEMD_CONFIG_DIR "/loader"
 #define SYSTEMD_CONFIG SYSTEMD_CONFIG_DIR "/loader.conf"

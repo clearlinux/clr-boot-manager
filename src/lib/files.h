@@ -59,9 +59,9 @@ char *get_parent_disk(char *path);
 char *get_legacy_boot_device(char *path);
 
 /**
-* Determine if the files match in content by comparing
-* their checksums
-*/
+ * Determine if the files match in content by comparing
+ * their checksums
+ */
 bool cbm_files_match(const char *p1, const char *p2);
 
 /**

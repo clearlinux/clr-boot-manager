@@ -538,8 +538,8 @@ int grub2_get_capabilities(__cbm_unused__ const BootManager *manager)
 
 __cbm_export__ const BootLoader grub2_bootloader = {.name = "grub2",
                                                     .init = grub2_init,
-                                                    .get_kernel_dst = NULL, /* kernel directory only
-                                                                               needed for EFI
+                                                    .get_kernel_dst = NULL, /* kernel directory
+                                                                               only needed for EFI
                                                                                booloaders */
                                                     .install_kernel = grub2_install_kernel,
                                                     .remove_kernel = grub2_remove_kernel,

@@ -23,8 +23,8 @@
 #include <alloca.h>
 #include <blkid.h>
 #include <ctype.h>
-#include <efiboot.h>
 #include <efi.h>
+#include <efiboot.h>
 #include <efilib.h>
 #include <efivar.h>
 #include <errno.h>
