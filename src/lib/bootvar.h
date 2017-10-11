@@ -11,6 +11,9 @@
 
 #include <stdlib.h>
 
+#define EBOOT_VAR_ERR    1      /* general error */
+#define EBOOT_VAR_NOSUP  127    /* EFI vars not supported */
+
 int bootvar_init(void);
 void bootvar_destroy(void);
 int bootvar_create(const char *, const char *, char *, size_t);

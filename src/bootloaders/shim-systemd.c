@@ -18,6 +18,7 @@
 #include "bootvar.h"
 #include "config.h"
 #include "files.h"
+#include <log.h>
 #include "nica/files.h"
 #include "systemd-class.h"
 
@@ -183,31 +184,45 @@ static bool make_layout(const BootManager *manager)
         char *boot_root = boot_manager_get_boot_dir((BootManager *)manager);
         char path[PATH_MAX];
         snprintf(path, PATH_MAX, "%s%s", boot_root, DST_DIR);
-        if (!nc_mkdir_p(path, 00755))
-                return false;
+        if (!nc_mkdir_p(path, 00755)) {
+                goto fail;
+        }
         snprintf(path, PATH_MAX, "%s%s", boot_root, KERNEL_DST_DIR);
-        if (!nc_mkdir_p(path, 00755))
-                return false;
+        if (!nc_mkdir_p(path, 00755)) {
+                goto fail;
+        }
         snprintf(path, PATH_MAX, "%s%s", boot_root, SYSTEMD_ENTRIES);
-        if (!nc_mkdir_p(path, 00755))
-                return false;
+        if (!nc_mkdir_p(path, 00755)) {
+                goto fail;
+        }
         return true;
+fail:
+        LOG_FATAL("Failed to make dir: %s", path);
+        return false;
 }
 
 static bool shim_systemd_install(const BootManager *manager)
 {
         char varname[9];
 
-        if (!make_layout(manager))
+        if (!make_layout(manager)) {
+                LOG_FATAL("Cannot create layout");
                 return false;
+        }
 
-        if (!copy_file_atomic(shim_src, shim_dst_host, 00644))
+        if (!copy_file_atomic(shim_src, shim_dst_host, 00644)) {
+                LOG_FATAL("Cannot copy %s to %s", shim_src, shim_dst_host);
                 return false;
-        if (!copy_file_atomic(systemd_src, systemd_dst_host, 00644))
+        }
+        if (!copy_file_atomic(systemd_src, systemd_dst_host, 00644)) {
+                LOG_FATAL("Cannot copy %s to %s", systemd_src, systemd_dst_host);
                 return false;
+        }
 
-        if (bootvar_create(BOOT_DIRECTORY, shim_dst_esp, varname, 9))
+        if (bootvar_create(BOOT_DIRECTORY, shim_dst_esp, varname, 9)) {
+                LOG_FATAL("Cannot create EFI variable");
                 return false;
+        }
 
         return true;
 }
@@ -248,9 +263,10 @@ static bool shim_systemd_init(const BootManager *manager)
         shim_src = string_printf("%s/%s", prefix, SHIM_SRC);
         systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
-        /* SHIM_DST and SYSTEMD_DST are defined with leading '/' */
         boot_root = strdup(boot_manager_get_boot_dir((BootManager *)manager));
         len = strlen(boot_root);
+        /* SHIM_DST and SYSTEMD_DST are defined with leading '/', take extra
+         * care to produce clean paths. */
         if (len > 0 && boot_root[len - 1] == '/')
                 boot_root[len - 1] = '\0';
         shim_dst_host = string_printf("%s%s", boot_root, SHIM_DST);
