@@ -38,6 +38,11 @@
  * enough. actual space occupied is normally >2 times less. */
 #define BOOT_VAR_MAX 1024
 
+/* env var to turn on the test mode. if set to "yes", turns off any side-effects
+ * functions defined in this file may have: the call will always succeed without
+ * side effects. */
+#define CBM_BOOTVAR_TEST_MODE_VAR "CBM_BOOTVAR_TEST_MODE"
+
 typedef struct boot_rec boot_rec_t;
 
 struct boot_rec {
@@ -49,6 +54,8 @@ struct boot_rec {
 
 static boot_rec_t *boot_recs;
 static int boot_recs_cnt;
+
+static int test_mode = 0;
 
 static void bootvar_free_boot_recs(void)
 {
@@ -374,6 +381,9 @@ int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path, 
         long int len;
         boot_rec_t *rec;
 
+        if (test_mode)
+                return 0;
+
         if (bootvar_get_part_info(esp_mount_path, &pi))
                 return -1;
 
@@ -422,6 +432,13 @@ int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path, 
 
 int bootvar_init(void)
 {
+        char *test_mode_env = getenv(CBM_BOOTVAR_TEST_MODE_VAR);
+        if (test_mode_env && !strncmp(test_mode_env, "yes", 4)) {
+                LOG_INFO("EFI variables support is disabled: " CBM_BOOTVAR_TEST_MODE_VAR " is set");
+                test_mode = 1;
+        }
+        if (test_mode)
+                return 0;
         if (efi_variables_supported() < 0)
                 return -EBOOT_VAR_NOSUP;
         if (bootvar_read_boot_recs() < 0)
@@ -431,6 +448,8 @@ int bootvar_init(void)
 
 void bootvar_destroy(void)
 {
+        if (test_mode)
+                return;
         bootvar_free_boot_recs();
 }
 
