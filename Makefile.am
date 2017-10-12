@@ -129,17 +129,11 @@ SOURCE_FILES =                              \
         src/lib/writer.c                    \
         src/lib/util.h                      \
         src/lib/util.c                      \
-        src/lib/bootvar.h
-
-PROD_SOURCE_FILES =                         \
+        src/lib/bootvar.h                   \
         src/lib/bootvar.c
 
-STUB_SOURCE_FILES =                         \
-        tests/stub/bootvar.c
-
 libcbm_la_SOURCES =                         \
-        $(SOURCE_FILES)                     \
-        $(PROD_SOURCE_FILES)
+        $(SOURCE_FILES)
 
 libcbm_la_CFLAGS =                          \
         -D_BOOTMAN_INTERNAL_                \
@@ -200,18 +194,6 @@ TESTS =                                     \
 
 check_PROGRAMS = $(TESTS)
 
-check_LTLIBRARIES =  libcbm-check.la
-
-libcbm_check_la_SOURCES =                   \
-        $(SOURCE_FILES)                     \
-        $(STUB_SOURCE_FILES)
-
-libcbm_check_la_CFLAGS =                    \
-        $(libcbm_la_CFLAGS)                 \
-        -DTEST_STUB=1
-
-libcbm_check_la_LIBADD = $(libcbm_la_LIBADD)
-
 check_core_SOURCES =                        \
         tests/check-core.c                  \
         tests/blkid-harness.h               \
@@ -225,7 +207,7 @@ check_core_CFLAGS =                         \
         $(AM_CFLAGS)
 
 check_core_LDADD =                          \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -241,7 +223,7 @@ check_cmdline_CFLAGS =                      \
         $(AM_CFLAGS)
 
 check_cmdline_LDADD =                       \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -259,7 +241,7 @@ check_files_CFLAGS =                        \
         $(AM_CFLAGS)
 
 check_files_LDADD =                         \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -279,7 +261,7 @@ check_legacy_CFLAGS =                       \
         $(AM_CFLAGS)
 
 check_legacy_LDADD =                        \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -295,7 +277,7 @@ check_os_release_CFLAGS =                   \
         $(AM_CFLAGS)
 
 check_os_release_LDADD =                    \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -315,7 +297,7 @@ check_uefi_CFLAGS =                         \
         $(AM_CFLAGS)
 
 check_uefi_LDADD =                          \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -335,7 +317,7 @@ check_grub2_CFLAGS =                        \
         $(AM_CFLAGS)
 
 check_grub2_LDADD =                         \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -355,7 +337,7 @@ check_select_bootloader_CFLAGS =            \
         $(AM_CFLAGS)
 
 check_select_bootloader_LDADD =             \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \
@@ -375,7 +357,7 @@ check_probe_CFLAGS =                        \
         $(AM_CFLAGS)
 
 check_probe_LDADD =                         \
-        libcbm-check.la                     \
+        libcbm.la                           \
         src/libnica/libnica.la              \
         -lefiboot                           \
         -lefivar                            \

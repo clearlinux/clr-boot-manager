@@ -441,6 +441,9 @@ int main(void)
         setenv("CBM_DEBUG", "1", 1);
         cbm_log_init(stderr);
 
+        /* Turn off the EFI variable manipulation. */
+        setenv("CBM_BOOTVAR_TEST_MODE", "yes", 1);
+
         s = core_suite();
         sr = srunner_create(s);
         srunner_run_all(sr, CK_VERBOSE);
