@@ -23,21 +23,20 @@ static bool gummiboot_init(const BootManager *manager)
         return sd_class_init(manager, &gummiboot_config);
 }
 
-__cbm_export__ const BootLoader gummiboot_bootloader = {.name = "gummiboot",
-                                                        .init = gummiboot_init,
-                                                        .get_kernel_dst = sd_class_get_kernel_dst,
-                                                        .install_kernel = sd_class_install_kernel,
-                                                        .remove_kernel = sd_class_remove_kernel,
-                                                        .set_default_kernel =
-                                                            sd_class_set_default_kernel,
-                                                        .needs_install = sd_class_needs_install,
-                                                        .needs_update = sd_class_needs_update,
-                                                        .install = sd_class_install,
-                                                        .update = sd_class_update,
-                                                        .remove = sd_class_remove,
-                                                        .destroy = sd_class_destroy,
-                                                        .get_capabilities =
-                                                            sd_class_get_capabilities };
+__cbm_export__ const BootLoader
+    gummiboot_bootloader = {.name = "gummiboot",
+                            .init = gummiboot_init,
+                            .get_kernel_destination = sd_class_get_kernel_destination,
+                            .install_kernel = sd_class_install_kernel,
+                            .remove_kernel = sd_class_remove_kernel,
+                            .set_default_kernel = sd_class_set_default_kernel,
+                            .needs_install = sd_class_needs_install,
+                            .needs_update = sd_class_needs_update,
+                            .install = sd_class_install,
+                            .update = sd_class_update,
+                            .remove = sd_class_remove,
+                            .destroy = sd_class_destroy,
+                            .get_capabilities = sd_class_get_capabilities };
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

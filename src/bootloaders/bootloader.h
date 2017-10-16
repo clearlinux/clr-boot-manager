@@ -21,7 +21,7 @@
 
 typedef bool (*boot_loader_init)(const BootManager *);
 typedef bool (*boot_loader_install_kernel)(const BootManager *, const Kernel *);
-typedef char *(*boot_loader_get_kernel_dst)(const BootManager *);
+typedef char *(*boot_loader_get_kernel_destination)(const BootManager *);
 typedef bool (*boot_loader_remove_kernel)(const BootManager *, const Kernel *);
 typedef bool (*boot_loader_set_default_kernel)(const BootManager *, const Kernel *kernel);
 typedef bool (*boot_loader_needs_update)(const BootManager *);
@@ -46,8 +46,8 @@ typedef enum {
 typedef struct BootLoader {
         const char *name;      /**<Name of the implementation */
         boot_loader_init init; /**<Init function */
-        boot_loader_get_kernel_dst
-            get_kernel_dst; /**<Get location where bootloader expects the kernels to reside */
+        boot_loader_get_kernel_destination
+            get_kernel_destination; /**<Get location where bootloader expects the kernels to reside */
         boot_loader_install_kernel install_kernel;         /**<Install a given kernel */
         boot_loader_remove_kernel remove_kernel;           /**<Remove a given kernel */
         boot_loader_set_default_kernel set_default_kernel; /**<Set the default kernel */

@@ -478,8 +478,8 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
         autofree(char) *initrd_file = NULL;
         autofree(char) *initrd_file_legacy = NULL;
         /* where the kernel files are expected to be found on the ESP */
-        char *esp_path = manager->bootloader->get_kernel_dst
-                             ? manager->bootloader->get_kernel_dst(manager)
+        char *esp_path = manager->bootloader->get_kernel_destination
+                             ? manager->bootloader->get_kernel_destination(manager)
                              : "efi/" KERNEL_NAMESPACE;
         const char *vendor = NULL;
         int file_count = 0;

@@ -54,23 +54,23 @@
  * EFI variable.
  */
 
-static char *shim_systemd_get_kernel_dst(const BootManager *manager);
-static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel);
-static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel);
-static bool shim_systemd_set_default_kernel(const BootManager *manager, const Kernel *kernel);
-static bool shim_systemd_needs_install(const BootManager *manager);
-static bool shim_systemd_needs_update(const BootManager *manager);
-static bool shim_systemd_install(const BootManager *manager);
-static bool shim_systemd_update(const BootManager *manager);
-static bool shim_systemd_remove(const BootManager *manager);
-static bool shim_systemd_init(const BootManager *manager);
-static void shim_systemd_destroy(const BootManager *manager);
-static int shim_systemd_get_capabilities(const BootManager *manager);
+static char *shim_systemd_get_kernel_dst(const BootManager *);
+static bool shim_systemd_install_kernel(const BootManager *, const Kernel *);
+static bool shim_systemd_remove_kernel(const BootManager *, const Kernel *);
+static bool shim_systemd_set_default_kernel(const BootManager *, const Kernel *);
+static bool shim_systemd_needs_install(const BootManager *);
+static bool shim_systemd_needs_update(const BootManager *);
+static bool shim_systemd_install(const BootManager *);
+static bool shim_systemd_update(const BootManager *);
+static bool shim_systemd_remove(const BootManager *);
+static bool shim_systemd_init(const BootManager *);
+static void shim_systemd_destroy(const BootManager *);
+static int shim_systemd_get_capabilities(const BootManager *);
 
 __cbm_export__ const BootLoader
     shim_systemd_bootloader = {.name = "systemd",
                                .init = shim_systemd_init,
-                               .get_kernel_dst = shim_systemd_get_kernel_dst,
+                               .get_kernel_destination = shim_systemd_get_kernel_dst,
                                .install_kernel = shim_systemd_install_kernel,
                                .remove_kernel = shim_systemd_remove_kernel,
                                .set_default_kernel = shim_systemd_set_default_kernel,
@@ -127,15 +127,16 @@ static char *shim_dst_esp;  /* absolute location of shim on the ESP. */
 static char *systemd_src;
 static char *systemd_dst_host;
 
-static char *shim_systemd_get_kernel_dst(const BootManager *manager)
+extern void sd_class_set_get_kernel_destination_impl(char *(*)(const BootManager *));
+
+static char *shim_systemd_get_kernel_dst(__cbm_unused__ const BootManager *manager)
 {
-        (void)manager;
         return strdup(KERNEL_DST_DIR);
 }
 
 static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel)
 {
-        return sd_class_install_kernel_impl(manager, kernel, shim_systemd_get_kernel_dst, NULL);
+        return sd_class_install_kernel(manager, kernel);
 }
 
 static bool shim_systemd_remove_kernel(const BootManager *manager, const Kernel *kernel)
@@ -147,7 +148,7 @@ static bool shim_systemd_set_default_kernel(const BootManager *manager, const Ke
 {
         /* this writes systemd config. systemd has the configuration paths
          * hardcoded, hence whatever sd_class is doing is OK. */
-        return sd_class_set_default_kernel_impl(manager, kernel, NULL);
+        return sd_class_set_default_kernel(manager, kernel);
 }
 
 static bool exists_identical(const char *path, const char *spath)
@@ -255,6 +256,7 @@ static bool shim_systemd_init(const BootManager *manager)
                                                   .efi_blob = "systemd-boot" EFI_SUFFIX,
                                                   .name = "systemd-boot" };
         sd_class_init(manager, &systemd_config);
+        sd_class_set_get_kernel_destination_impl(shim_systemd_get_kernel_dst);
 
         prefix = strdup(boot_manager_get_prefix((BootManager *)manager));
         len = strlen(prefix);

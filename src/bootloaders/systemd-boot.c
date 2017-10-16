@@ -25,7 +25,7 @@ static bool systemd_boot_init(const BootManager *manager)
 
 __cbm_export__ const BootLoader systemd_bootloader = {.name = "systemd",
                                                       .init = systemd_boot_init,
-                                                      .get_kernel_dst = sd_class_get_kernel_dst,
+                                                      .get_kernel_destination = sd_class_get_kernel_destination,
                                                       .install_kernel = sd_class_install_kernel,
                                                       .remove_kernel = sd_class_remove_kernel,
                                                       .set_default_kernel =
