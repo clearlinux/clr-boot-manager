@@ -151,6 +151,9 @@ blkid_partlist cbm_blkid_probe_get_partitions(blkid_probe pr)
 
 int cbm_blkid_partlist_numof_partitions(blkid_partlist ls)
 {
+        if (!ls) {
+                return 0;
+        }
         return blkid_ops->partlist_numof_partitions(ls);
 }
 
