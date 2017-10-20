@@ -30,8 +30,8 @@
  *
  *     /EFI/
  *          Boot/
- *              BOOTX64.EFI         <-- this implementation never modifies the
- *                                      default fallback loader
+ *              BOOTX64.EFI         <-- the fallback bootloader only modified if
+ *                                      image is being created
  *
  *      /org.clearlinux/
  *          bootloaderx64.efi       <-- shim
@@ -49,9 +49,10 @@
  *              ...
  *          loader.conf             <-- bootloader config
  *
- * Note that default bootloader at /EFI/Boot/BOOTX64.EFI is never modified.
- * Instead, we create an EFI BootXXX variable and put it first in the BootOrder
- * EFI variable.
+ * Note that default bootloader at /EFI/Boot/BOOTX64.EFI is modified only when
+ * bootable image is being created. This is a fallback scheme: using only
+ * systemd as the last resort to boot. When the system is being updated, an EFI
+ * boot entry is created (BootXXXX EFI variable) if it does not exist already.
  */
 
 static char *shim_systemd_get_kernel_dst(const BootManager *);
@@ -120,6 +121,14 @@ __cbm_export__ const BootLoader
 #define SYSTEMD_CONFIG_DIR "/loader"
 #define SYSTEMD_CONFIG SYSTEMD_CONFIG_DIR "/loader.conf"
 #define SYSTEMD_ENTRIES SYSTEMD_CONFIG_DIR "/entries"
+
+/* path to fallback bootloader: /EFI/Boot/BOOT(X64|IA32).EFI */
+#define EFI_FALLBACK_DIR        "/EFI/Boot"
+#define EFI_FALLBACK_PATH                                                                          \
+        EFI_FALLBACK_DIR                                                                           \
+        "/"                                                                                        \
+        "BOOT"                                                                                     \
+        EFI_SUFFIX
 
 static char *shim_src;
 static char *shim_dst_host; /* as accessible by the CMB for file ops. */
@@ -196,10 +205,31 @@ static bool make_layout(const BootManager *manager)
         if (!nc_mkdir_p(path, 00755)) {
                 goto fail;
         }
+        /* in case of image creation, override the fallback bootloader, so the
+         * media will be bootable. */
+        if (boot_manager_is_image_mode((BootManager *)manager)) {
+                snprintf(path, PATH_MAX, "%s%s", boot_root, EFI_FALLBACK_DIR);
+                LOG_INFO("Image mode: creating dir for fallback: %s", path);
+                if (!nc_mkdir_p(path, 00755)) {
+                        goto fail;
+                }
+        }
         return true;
 fail:
         LOG_FATAL("Failed to make dir: %s", path);
         return false;
+}
+
+/* Installs EFI fallback (default) bootloader at /EFI/Boot/BOOTX64.EFI */
+static bool shim_systemd_install_fallback_bootloader(const BootManager *manager) {
+        char *dst = string_printf("%s%s", boot_manager_get_boot_dir((BootManager *)manager), EFI_FALLBACK_PATH);
+        bool result = true;
+        if (!copy_file_atomic(systemd_src, dst, 00644)) {
+                LOG_FATAL("Cannot copy %s to %s", systemd_src, dst);
+                result = false;
+        }
+        free(dst);
+        return result;
 }
 
 static bool shim_systemd_install(const BootManager *manager)
@@ -220,9 +250,17 @@ static bool shim_systemd_install(const BootManager *manager)
                 return false;
         }
 
-        if (bootvar_create(BOOT_DIRECTORY, shim_dst_esp, varname, 9)) {
-                LOG_FATAL("Cannot create EFI variable");
-                return false;
+        /* override the fallback bootloader in case it's the image mode, create
+         * EFI boot entry otherwise. */
+        if (boot_manager_is_image_mode((BootManager *)manager)) {
+                if (!shim_systemd_install_fallback_bootloader(manager)) {
+                        return false;
+                }
+        } else {
+                if (bootvar_create(BOOT_DIRECTORY, shim_dst_esp, varname, 9)) {
+                        LOG_FATAL("Cannot create EFI variable (boot entry)");
+                        return false;
+                }
         }
 
         return true;
@@ -245,7 +283,7 @@ static bool shim_systemd_init(const BootManager *manager)
         size_t len;
         char *prefix, *boot_root;
 
-        if (bootvar_init())
+        if (!boot_manager_is_image_mode((BootManager *)manager) && bootvar_init())
                 return false;
 
         /* init systemd-class since we're reusing it for kernel install.
@@ -284,13 +322,12 @@ static bool shim_systemd_init(const BootManager *manager)
 
 static void shim_systemd_destroy(const BootManager *manager)
 {
-        (void)manager;
-
         free(shim_src);
         free(systemd_src);
         free(shim_dst_host);
         free(systemd_dst_host);
-        bootvar_destroy();
+        if (!boot_manager_is_image_mode((BootManager *)manager))
+                bootvar_destroy();
 
         return;
 }
