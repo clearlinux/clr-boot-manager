@@ -63,18 +63,18 @@ bool cbm_command_set_timeout(int argc, char **argv)
         }
 
         if (sscanf(argv[optind], "%d", &n_val) < 0) {
-                fprintf(stderr, "Erroronous input. Please provide an integer value\n");
+                fprintf(stderr, "Erroneous input. Please provide an integer value.\n");
                 return false;
         }
 
         if (!is_numeric(argv[optind])) {
-                fprintf(stderr, "Please provide a valid numeric value\n");
+                fprintf(stderr, "Please provide a valid numeric value.\n");
                 return false;
         }
 
         if (n_val < -1) {
                 fprintf(stderr,
-                        "Value of '%d' is incorrect. Use 0 if you mean to disable boot timeout\n",
+                        "Value of '%d' is incorrect. Use 0 if you mean to disable boot timeout.\n",
                         n_val);
                 return false;
         }
