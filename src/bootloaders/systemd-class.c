@@ -132,7 +132,8 @@ void sd_class_set_get_kernel_destination_impl(char *(*impl)(const BootManager *)
         get_kernel_destination_impl = impl;
 }
 
-char *sd_class_get_kernel_destination(const BootManager *manager) {
+char *sd_class_get_kernel_destination(const BootManager *manager)
+{
         return get_kernel_destination_impl(manager);
 }
 

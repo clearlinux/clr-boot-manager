@@ -123,12 +123,11 @@ __cbm_export__ const BootLoader
 #define SYSTEMD_ENTRIES SYSTEMD_CONFIG_DIR "/entries"
 
 /* path to fallback bootloader: /EFI/Boot/BOOT(X64|IA32).EFI */
-#define EFI_FALLBACK_DIR        "/EFI/Boot"
+#define EFI_FALLBACK_DIR "/EFI/Boot"
 #define EFI_FALLBACK_PATH                                                                          \
         EFI_FALLBACK_DIR                                                                           \
         "/"                                                                                        \
-        "BOOT"                                                                                     \
-        EFI_SUFFIX
+        "BOOT" EFI_SUFFIX
 
 static char *shim_src;
 static char *shim_dst_host; /* as accessible by the CMB for file ops. */
@@ -169,9 +168,8 @@ static bool exists_identical(const char *path, const char *spath)
         return true;
 }
 
-static bool shim_systemd_needs_install(const BootManager *manager)
+static bool shim_systemd_needs_install(__cbm_unused__ const BootManager *manager)
 {
-        (void)manager;
         if (!exists_identical(shim_dst_host, NULL))
                 return true;
         if (!exists_identical(systemd_dst_host, NULL))
@@ -179,9 +177,8 @@ static bool shim_systemd_needs_install(const BootManager *manager)
         return false;
 }
 
-static bool shim_systemd_needs_update(const BootManager *manager)
+static bool shim_systemd_needs_update(__cbm_unused__ const BootManager *manager)
 {
-        (void)manager;
         if (!exists_identical(shim_dst_host, shim_src))
                 return true;
         if (!exists_identical(systemd_dst_host, systemd_src))
@@ -192,37 +189,47 @@ static bool shim_systemd_needs_update(const BootManager *manager)
 static bool make_layout(const BootManager *manager)
 {
         char *boot_root = boot_manager_get_boot_dir((BootManager *)manager);
-        char path[PATH_MAX];
-        snprintf(path, PATH_MAX, "%s%s", boot_root, DST_DIR);
+        char *path = NULL;
+        path = string_printf("%s%s", boot_root, DST_DIR);
         if (!nc_mkdir_p(path, 00755)) {
                 goto fail;
         }
-        snprintf(path, PATH_MAX, "%s%s", boot_root, KERNEL_DST_DIR);
+        free(path);
+        path = string_printf("%s%s", boot_root, KERNEL_DST_DIR);
         if (!nc_mkdir_p(path, 00755)) {
                 goto fail;
         }
-        snprintf(path, PATH_MAX, "%s%s", boot_root, SYSTEMD_ENTRIES);
+        free(path);
+        path = string_printf("%s%s", boot_root, SYSTEMD_ENTRIES);
         if (!nc_mkdir_p(path, 00755)) {
                 goto fail;
         }
+        free(path);
         /* in case of image creation, override the fallback bootloader, so the
          * media will be bootable. */
         if (boot_manager_is_image_mode((BootManager *)manager)) {
-                snprintf(path, PATH_MAX, "%s%s", boot_root, EFI_FALLBACK_DIR);
+                path = string_printf("%s%s", boot_root, EFI_FALLBACK_DIR);
                 LOG_INFO("Image mode: creating dir for fallback: %s", path);
                 if (!nc_mkdir_p(path, 00755)) {
                         goto fail;
                 }
+                free(path);
         }
         return true;
 fail:
-        LOG_FATAL("Failed to make dir: %s", path);
+        if (path) {
+                LOG_FATAL("Failed to make dir: %s", path);
+                free(path);
+        }
         return false;
 }
 
 /* Installs EFI fallback (default) bootloader at /EFI/Boot/BOOTX64.EFI */
-static bool shim_systemd_install_fallback_bootloader(const BootManager *manager) {
-        char *dst = string_printf("%s%s", boot_manager_get_boot_dir((BootManager *)manager), EFI_FALLBACK_PATH);
+static bool shim_systemd_install_fallback_bootloader(const BootManager *manager)
+{
+        char *dst = string_printf("%s%s",
+                                  boot_manager_get_boot_dir((BootManager *)manager),
+                                  EFI_FALLBACK_PATH);
         bool result = true;
         if (!copy_file_atomic(systemd_src, dst, 00644)) {
                 LOG_FATAL("Cannot copy %s to %s", systemd_src, dst);
@@ -271,9 +278,8 @@ static bool shim_systemd_update(const BootManager *manager)
         return shim_systemd_install(manager);
 }
 
-static bool shim_systemd_remove(const BootManager *manager)
+static bool shim_systemd_remove(__cbm_unused__ const BootManager *manager)
 {
-        (void)manager;
         fprintf(stderr, "%s is not implemented\n", __func__);
         return true;
 }
@@ -332,9 +338,8 @@ static void shim_systemd_destroy(const BootManager *manager)
         return;
 }
 
-static int shim_systemd_get_capabilities(const BootManager *manager)
+static int shim_systemd_get_capabilities(__cbm_unused__ const BootManager *manager)
 {
-        (void)manager;
         return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI;
 }
 
