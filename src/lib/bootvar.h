@@ -17,5 +17,6 @@
 int bootvar_init(void);
 void bootvar_destroy(void);
 int bootvar_create(const char *, const char *, char *, size_t);
+int bootvar_has_boot_rec(const char *, const char *);
 
 /* vim: set nosi noai cin ts=8 sw=8 et tw=80: */

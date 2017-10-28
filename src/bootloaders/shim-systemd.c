@@ -134,6 +134,8 @@ static char *shim_dst_host; /* as accessible by the CMB for file ops. */
 static char *shim_dst_esp;  /* absolute location of shim on the ESP. */
 static char *systemd_src;
 static char *systemd_dst_host;
+static int is_image_mode;
+static int has_boot_rec = -1;
 
 extern void sd_class_set_get_kernel_destination_impl(char *(*)(const BootManager *));
 
@@ -170,20 +172,32 @@ static bool exists_identical(const char *path, const char *spath)
 
 static bool shim_systemd_needs_install(__cbm_unused__ const BootManager *manager)
 {
+        if (has_boot_rec < 0) {
+                if (!is_image_mode)
+                        has_boot_rec = bootvar_has_boot_rec(BOOT_DIRECTORY, shim_dst_esp);
+                else
+                        has_boot_rec = 1;
+        }
         if (!exists_identical(shim_dst_host, NULL))
                 return true;
         if (!exists_identical(systemd_dst_host, NULL))
                 return true;
-        return false;
+        return !has_boot_rec;
 }
 
 static bool shim_systemd_needs_update(__cbm_unused__ const BootManager *manager)
 {
+        if (has_boot_rec < 0) {
+                if (!is_image_mode)
+                        has_boot_rec = bootvar_has_boot_rec(BOOT_DIRECTORY, shim_dst_esp);
+                else
+                        has_boot_rec = 1;
+        }
         if (!exists_identical(shim_dst_host, shim_src))
                 return true;
         if (!exists_identical(systemd_dst_host, systemd_src))
                 return true;
-        return false;
+        return !has_boot_rec;
 }
 
 static bool make_layout(const BootManager *manager)
@@ -207,7 +221,7 @@ static bool make_layout(const BootManager *manager)
         free(path);
         /* in case of image creation, override the fallback bootloader, so the
          * media will be bootable. */
-        if (boot_manager_is_image_mode((BootManager *)manager)) {
+        if (is_image_mode) {
                 path = string_printf("%s%s", boot_root, EFI_FALLBACK_DIR);
                 LOG_INFO("Image mode: creating dir for fallback: %s", path);
                 if (!nc_mkdir_p(path, 00755)) {
@@ -257,15 +271,17 @@ static bool shim_systemd_install(const BootManager *manager)
                 return false;
         }
 
-        /* override the fallback bootloader in case it's the image mode, create
-         * EFI boot entry otherwise. */
-        if (boot_manager_is_image_mode((BootManager *)manager)) {
-                if (!shim_systemd_install_fallback_bootloader(manager)) {
-                        return false;
+        if (!is_image_mode) {
+                if (!has_boot_rec) {
+                        if (bootvar_create(BOOT_DIRECTORY, shim_dst_esp, varname, 9)) {
+                                LOG_FATAL("Cannot create EFI variable (boot entry)");
+                                return false;
+                        }
                 }
         } else {
-                if (bootvar_create(BOOT_DIRECTORY, shim_dst_esp, varname, 9)) {
-                        LOG_FATAL("Cannot create EFI variable (boot entry)");
+                /* override the fallback bootloader in case it's the image mode,
+                 * create EFI boot entry otherwise. */
+                if (!shim_systemd_install_fallback_bootloader(manager)) {
                         return false;
                 }
         }
@@ -289,8 +305,14 @@ static bool shim_systemd_init(const BootManager *manager)
         size_t len;
         char *prefix, *boot_root;
 
-        if (!boot_manager_is_image_mode((BootManager *)manager) && bootvar_init())
-                return false;
+        if (!boot_manager_is_image_mode((BootManager *)manager)) {
+                if (bootvar_init()) {
+                        return false;
+                }
+                is_image_mode = 0;
+        } else {
+                is_image_mode = 1;
+        }
 
         /* init systemd-class since we're reusing it for kernel install.
          * specific values do not matter as long as sd_class is not used to
@@ -326,13 +348,13 @@ static bool shim_systemd_init(const BootManager *manager)
         return true;
 }
 
-static void shim_systemd_destroy(const BootManager *manager)
+static void shim_systemd_destroy(__cbm_unused__ const BootManager *manager)
 {
         free(shim_src);
         free(systemd_src);
         free(shim_dst_host);
         free(systemd_dst_host);
-        if (!boot_manager_is_image_mode((BootManager *)manager))
+        if (!is_image_mode)
                 bootvar_destroy();
 
         return;

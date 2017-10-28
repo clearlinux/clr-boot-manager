@@ -371,18 +371,14 @@ static boot_rec_t *bootvar_add_boot_rec(uint8_t *data, size_t len)
         return res;
 }
 
-int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path, char *varname,
-                   size_t size)
+/* fills out data based on the partition data (pointed to by esp_mount_path) and
+ * the bootloader to use (bootloader_esp_path). data must be pre-allocated. */
+static int bootvar_make_boot_rec_data(const char *esp_mount_path, const char *bootloader_esp_path,
+                                      uint8_t *data, ssize_t *size)
 {
         part_info_t pi;
         uint8_t fdev_path[PATH_MAX];
-        uint8_t data[BOOT_VAR_MAX]; /* this is what efivar supports and it should be
-                                       enough. */
         long int len;
-        boot_rec_t *rec;
-
-        if (test_mode)
-                return 0;
 
         if (bootvar_get_part_info(esp_mount_path, &pi))
                 return -1;
@@ -399,7 +395,7 @@ int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path, 
         }
 
         len = efi_loadopt_create(data,
-                                 BOOT_VAR_MAX,
+                                 *size,
                                  LOAD_OPTION_ACTIVE,
                                  (void *)fdev_path,
                                  len,
@@ -411,7 +407,40 @@ int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path, 
                 return -EBOOT_VAR_ERR;
         }
 
-        rec = bootvar_add_boot_rec(data, (size_t)len);
+        *size = len;
+        return 0;
+}
+
+int bootvar_has_boot_rec(const char *esp_mount_path, const char *bootloader_esp_path)
+{
+        uint8_t data[BOOT_VAR_MAX];
+        ssize_t data_size = BOOT_VAR_MAX;
+
+        if (test_mode)
+                return 1;
+
+        if (bootvar_make_boot_rec_data(esp_mount_path, bootloader_esp_path, data, &data_size))
+                return 0;
+
+        return (bootvar_find_boot_rec(data, (size_t)data_size) != NULL);
+}
+
+int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path, char *varname,
+                   size_t size)
+{
+        uint8_t data[BOOT_VAR_MAX]; /* this is what efivar supports and it should be
+                                       enough. */
+        ssize_t data_size = BOOT_VAR_MAX;
+        boot_rec_t *rec;
+
+        if (test_mode)
+                return 0;
+
+        if (bootvar_make_boot_rec_data(esp_mount_path, bootloader_esp_path, data, &data_size)) {
+                return -EBOOT_VAR_ERR;
+        }
+
+        rec = bootvar_add_boot_rec(data, (size_t)data_size);
         if (!rec)
                 return -EBOOT_VAR_ERR;
 
