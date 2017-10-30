@@ -61,8 +61,9 @@ static void bootvar_free_boot_recs(void)
 {
         boot_rec_t *p, *c;
         c = boot_recs;
-        if (!c)
+        if (!c) {
                 return;
+        }
         boot_recs = NULL;
         do {
                 p = c;
@@ -75,8 +76,9 @@ static void bootvar_print_boot_recs(void) __attribute__((unused));
 static void bootvar_print_boot_recs(void)
 {
         boot_rec_t *c = boot_recs;
-        if (!c)
+        if (!c) {
                 return;
+        }
         do {
                 fprintf(stderr, "Boot record #%d: %s\n", c->num, c->name);
         } while ((c = c->next));
@@ -95,20 +97,24 @@ static int bootvar_read_boot_recs(void)
 
         while ((res = efi_get_next_variable_name(&guid, &name)) > 0) {
                 char *num_end;
-                if (strncmp(name, "Boot", 4))
+                if (strncmp(name, "Boot", 4)) {
                         continue;
+                }
                 if (!isxdigit(name[4]) || !isxdigit(name[5]) || !isxdigit(name[6]) ||
-                    !isxdigit(name[7]))
+                    !isxdigit(name[7])) {
                         continue;
-                if (memcmp(guid, &efi_guid_global, sizeof(efi_guid_t)))
+                }
+                if (memcmp(guid, &efi_guid_global, sizeof(efi_guid_t))) {
                         continue;
+                }
 
                 c = (boot_rec_t *)malloc(sizeof(boot_rec_t));
                 memset(c, 0, sizeof(boot_rec_t));
                 c->name = strdup(name);
                 c->num = (int)strtol(name + 4, &num_end, 16);
-                if (num_end - name - 4 != 4)
+                if (num_end - name - 4 != 4) {
                         continue;
+                }
 
                 if (!boot_recs) {
                         boot_recs = p = c;
@@ -139,8 +145,9 @@ static int bootvar_push_to_boot_order(boot_rec_t *rec)
         unsigned int i;
         int found = 0;
 
-        if (!rec || !rec->name)
+        if (!rec || !rec->name) {
                 return -EBOOT_VAR_ERR;
+        }
 
         if (efi_get_variable(EFI_GLOBAL_GUID,
                              "BootOrder",
@@ -210,10 +217,12 @@ static int bootvar_find_free_no(void)
         boot_rec_t *c = boot_recs;
         size_t cnt;
 
-        if (!boot_recs)
+        if (!boot_recs) {
                 return -1;
-        if (!boot_recs_cnt)
+        }
+        if (!boot_recs_cnt) {
                 return 0; /* no records. */
+        }
 
         cnt = (size_t)boot_recs_cnt;
 
@@ -228,11 +237,13 @@ static int bootvar_find_free_no(void)
         qsort(nums, cnt, sizeof(int), cmp);
 
         for (i = 0, res = 0; i < boot_recs_cnt; i++, res++) {
-                if (res < nums[i])
+                if (res < nums[i]) {
                         break;
+                }
         }
-        if (res == nums[boot_recs_cnt - 1])
+        if (res == nums[boot_recs_cnt - 1]) {
                 res++; /* no gap. */
+        }
         return res;
 }
 
@@ -246,8 +257,9 @@ static boot_rec_t *bootvar_find_boot_rec(uint8_t *data, size_t size)
         size_t csize;
         uint32_t cattr;
 
-        if (!boot_recs || !boot_recs_cnt)
+        if (!boot_recs || !boot_recs_cnt) {
                 return NULL;
+        }
 
         do {
                 if (efi_get_variable(EFI_GLOBAL_GUID, c->name, &cdata, &csize, &cattr) < 0) {
@@ -343,23 +355,28 @@ static boot_rec_t *bootvar_add_boot_rec(uint8_t *data, size_t len)
                         EFI_VARIABLE_RUNTIME_ACCESS;
         boot_rec_t *c, *res = bootvar_find_boot_rec(data, len);
 
-        if (res)
+        if (res) {
                 return res;
+        }
         /* no such record, create one. */
         slot = bootvar_find_free_no();
-        if (slot < 0)
+        if (slot < 0) {
                 return NULL;
-        if (snprintf(name, 9, "Boot%04X", slot) > 8)
+        }
+        if (snprintf(name, 9, "Boot%04X", slot) > 8) {
                 return NULL;
+        }
         if (efi_set_variable(EFI_GLOBAL_GUID, name, data, len, attr, 0644) < 0) {
                 LOG_FATAL("efi_set_variable() failed: %s", strerror(errno));
                 return NULL;
         }
         /* re-read the records and find the variable that was just created. */
-        if (bootvar_read_boot_recs() < 0)
+        if (bootvar_read_boot_recs() < 0) {
                 return NULL;
-        if (!boot_recs)
+        }
+        if (!boot_recs) {
                 return NULL; /* something went terribly wrong. */
+        }
         c = boot_recs;
         do {
                 if (!strcmp(c->name, name)) {
@@ -380,8 +397,9 @@ static int bootvar_make_boot_rec_data(const char *esp_mount_path, const char *bo
         uint8_t fdev_path[PATH_MAX];
         long int len;
 
-        if (bootvar_get_part_info(esp_mount_path, &pi))
+        if (bootvar_get_part_info(esp_mount_path, &pi)) {
                 return -1;
+        }
 
         len = efi_generate_file_device_path_from_esp(fdev_path,
                                                      PATH_MAX,
@@ -416,11 +434,13 @@ int bootvar_has_boot_rec(const char *esp_mount_path, const char *bootloader_esp_
         uint8_t data[BOOT_VAR_MAX];
         ssize_t data_size = BOOT_VAR_MAX;
 
-        if (test_mode)
+        if (test_mode) {
                 return 1;
+        }
 
-        if (bootvar_make_boot_rec_data(esp_mount_path, bootloader_esp_path, data, &data_size))
+        if (bootvar_make_boot_rec_data(esp_mount_path, bootloader_esp_path, data, &data_size)) {
                 return 0;
+        }
 
         return (bootvar_find_boot_rec(data, (size_t)data_size) != NULL);
 }
@@ -433,19 +453,22 @@ int bootvar_create(const char *esp_mount_path, const char *bootloader_esp_path, 
         ssize_t data_size = BOOT_VAR_MAX;
         boot_rec_t *rec;
 
-        if (test_mode)
+        if (test_mode) {
                 return 0;
+        }
 
         if (bootvar_make_boot_rec_data(esp_mount_path, bootloader_esp_path, data, &data_size)) {
                 return -EBOOT_VAR_ERR;
         }
 
         rec = bootvar_add_boot_rec(data, (size_t)data_size);
-        if (!rec)
+        if (!rec) {
                 return -EBOOT_VAR_ERR;
+        }
 
-        if (bootvar_push_to_boot_order(rec))
+        if (bootvar_push_to_boot_order(rec)) {
                 return -EBOOT_VAR_ERR;
+        }
 
         if (varname && size) {
                 size_t len = strlen(rec->name);
@@ -466,19 +489,23 @@ int bootvar_init(void)
                 LOG_INFO("EFI variables support is disabled: " CBM_BOOTVAR_TEST_MODE_VAR " is set");
                 test_mode = 1;
         }
-        if (test_mode)
+        if (test_mode) {
                 return 0;
-        if (efi_variables_supported() < 0)
+        }
+        if (efi_variables_supported() < 0) {
                 return -EBOOT_VAR_NOSUP;
-        if (bootvar_read_boot_recs() < 0)
+        }
+        if (bootvar_read_boot_recs() < 0) {
                 return -EBOOT_VAR_ERR;
+        }
         return 0;
 }
 
 void bootvar_destroy(void)
 {
-        if (test_mode)
+        if (test_mode) {
                 return;
+        }
         bootvar_free_boot_recs();
 }
 

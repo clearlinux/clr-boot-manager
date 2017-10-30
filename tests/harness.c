@@ -337,16 +337,18 @@ bool push_bootloader_update(int revision)
                 int i;
                 char path[PATH_MAX];
                 char *files[3] = { "fb", "mm", "shim" };
-                if (!nc_file_exists(SHIM_BOOT_COPY_DIR) && !nc_mkdir_p(SHIM_BOOT_COPY_DIR, 0755))
+                if (!nc_file_exists(SHIM_BOOT_COPY_DIR) && !nc_mkdir_p(SHIM_BOOT_COPY_DIR, 0755)) {
                         return false;
+                }
                 for (i = 0; i < 3; i++) {
                         snprintf(path,
                                  PATH_MAX,
                                  "%s/%s" EFI_STUB_SUFFIX_L,
                                  SHIM_BOOT_COPY_DIR,
                                  files[i]);
-                        if (!file_set_text(path, text))
+                        if (!file_set_text(path, text)) {
                                 return false;
+                        }
                 }
         }
 #endif /* HAVE_SHIM_SYSTEMD_BOOT */

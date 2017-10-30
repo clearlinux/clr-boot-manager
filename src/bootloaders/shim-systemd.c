@@ -178,10 +178,11 @@ static bool exists_identical(const char *path, const char *spath)
 static bool shim_systemd_needs_install(__cbm_unused__ const BootManager *manager)
 {
         if (has_boot_rec < 0) {
-                if (!is_image_mode)
+                if (!is_image_mode) {
                         has_boot_rec = bootvar_has_boot_rec(BOOT_DIRECTORY, shim_dst_esp);
-                else
+                } else {
                         has_boot_rec = 1;
+                }
         }
         if (!exists_identical(shim_dst_host, NULL)) {
                 return true;
@@ -195,10 +196,11 @@ static bool shim_systemd_needs_install(__cbm_unused__ const BootManager *manager
 static bool shim_systemd_needs_update(__cbm_unused__ const BootManager *manager)
 {
         if (has_boot_rec < 0) {
-                if (!is_image_mode)
+                if (!is_image_mode) {
                         has_boot_rec = bootvar_has_boot_rec(BOOT_DIRECTORY, shim_dst_esp);
-                else
+                } else {
                         has_boot_rec = 1;
+                }
         }
         if (!exists_identical(shim_dst_host, shim_src)) {
                 return true;
@@ -335,8 +337,9 @@ static bool shim_systemd_init(const BootManager *manager)
 
         prefix = strdup(boot_manager_get_prefix((BootManager *)manager));
         len = strlen(prefix);
-        if (len > 0 && prefix[len - 1] == '/')
+        if (len > 0 && prefix[len - 1] == '/') {
                 prefix[len - 1] = '\0';
+        }
         shim_src = string_printf("%s/%s", prefix, SHIM_SRC);
         systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
@@ -344,8 +347,9 @@ static bool shim_systemd_init(const BootManager *manager)
         len = strlen(boot_root);
         /* SHIM_DST and SYSTEMD_DST are defined with leading '/', take extra
          * care to produce clean paths. */
-        if (len > 0 && boot_root[len - 1] == '/')
+        if (len > 0 && boot_root[len - 1] == '/') {
                 boot_root[len - 1] = '\0';
+        }
         shim_dst_host = string_printf("%s%s", boot_root, SHIM_DST);
         systemd_dst_host = string_printf("%s%s", boot_root, SYSTEMD_DST);
 
@@ -363,8 +367,9 @@ static void shim_systemd_destroy(__cbm_unused__ const BootManager *manager)
         free(systemd_src);
         free(shim_dst_host);
         free(systemd_dst_host);
-        if (!is_image_mode)
+        if (!is_image_mode) {
                 bootvar_destroy();
+        }
 
         return;
 }

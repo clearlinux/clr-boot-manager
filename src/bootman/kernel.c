@@ -599,8 +599,9 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         assert(manager != NULL);
         assert(kernel != NULL);
 
-        if (is_uefi && !efi_boot_dir)
+        if (is_uefi && !efi_boot_dir) {
                 return false;
+        }
 
         /* Boot path */
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
@@ -673,8 +674,9 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         assert(kernel != NULL);
 
         /* if it's UEFI, then bootloader->get_kernel_dst() must return a value. */
-        if (is_uefi && !efi_boot_dir)
+        if (is_uefi && !efi_boot_dir) {
                 return false;
+        }
 
         /* Boot path */
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
