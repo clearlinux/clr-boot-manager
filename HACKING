@@ -1,6 +1,10 @@
 Hacking clr-boot-manager
 ----------------------
 
+clr-boot-manager makes use of clang-format and a .clang-format configuration
+file found in the source root in order to validate changes conform to most of
+the style rules around spacing and indentation.
+
 Indentation is strictly 8 spaces (set tab stops to 8 spaces) - No tabs
 No spaces between function name and parentheses. Only use space after
 "if (", etc.
@@ -32,11 +36,14 @@ looking back through the file.
 
 Use consistent pointers! "*" should prefix your variable name. Also ensure
 your pointers (where appropriate) are not left uninitialized, resulting
-in broken g_free() calls.
+in broken free() calls.
+
+Variable and function names are lower case and functions should be fully
+spelled out words. Use '_' to split words in variables and functions.
 
 Acceptable:
         char *something = NULL;
-        doFunc(&something);
+        do_function(&something);
 
 Unacceptable:
         char* something;
@@ -44,6 +51,9 @@ Unacceptable:
 
 Minimise your use of "goto"'s, and test every code path is reached. Also
 ensure *every* if/else, etc, even if single line, is wrapped in curly braces.
+
+All conditional statements (if, if-else, while, do-while) should always use
+brackets regardless of the number of lines in the consequent blocks.
 
 Memory management:
 ------------------
