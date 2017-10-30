@@ -26,26 +26,29 @@
  * This file implements 2-stage bootloader configuration in which shim is used as
  * the first stage bootloader and systemd-boot as the second stage bootloader.
  *
- * This implementation uses the following ESP layout:
+ * This implementation uses the following ESP layout. KERNEL_NAMESPACE is set
+ * with --with-kernel-namespace configure option and VENDOR_PREFIX is set using
+ * --with-vendor-prefix.
  *
  *     /EFI/
  *          Boot/
  *              BOOTX64.EFI         <-- the fallback bootloader only modified if
  *                                      image is being created
  *
- *          org.clearlinux/
+ *          KERNEL_NAMESPACE/
  *              bootloaderx64.efi       <-- shim
  *              loaderx64.efi           <-- systemd-boot bootloader
  *              mmx64.efi               <-- MOK manager
  *              fbx64.efi               <-- fallback bootloader
  *
- *              kernel/                 <-- kernels
- *                  kernel-org.clearlinux.....
+ *              kernel/                 <-- kernels and initrds
+ *                  kernel-KERNEL_NAMESPACE...
+ *                  initrd-KERNEL_NAMESPACE...
  *                  ...
  *
  *      /loader/                    <-- systemd-boot config
  *          entries/                <-- boot menu entries
- *              Clear-linux...conf
+ *              VENDOR_PREFIX....conf
  *              ...
  *          loader.conf             <-- bootloader config
  *
@@ -163,10 +166,12 @@ static bool shim_systemd_set_default_kernel(const BootManager *manager, const Ke
 
 static bool exists_identical(const char *path, const char *spath)
 {
-        if (!nc_file_exists(path))
+        if (!nc_file_exists(path)) {
                 return false;
-        if (spath && !cbm_files_match(path, spath))
+        }
+        if (spath && !cbm_files_match(path, spath)) {
                 return false;
+        }
         return true;
 }
 
@@ -178,10 +183,12 @@ static bool shim_systemd_needs_install(__cbm_unused__ const BootManager *manager
                 else
                         has_boot_rec = 1;
         }
-        if (!exists_identical(shim_dst_host, NULL))
+        if (!exists_identical(shim_dst_host, NULL)) {
                 return true;
-        if (!exists_identical(systemd_dst_host, NULL))
+        }
+        if (!exists_identical(systemd_dst_host, NULL)) {
                 return true;
+        }
         return !has_boot_rec;
 }
 
@@ -193,10 +200,12 @@ static bool shim_systemd_needs_update(__cbm_unused__ const BootManager *manager)
                 else
                         has_boot_rec = 1;
         }
-        if (!exists_identical(shim_dst_host, shim_src))
+        if (!exists_identical(shim_dst_host, shim_src)) {
                 return true;
-        if (!exists_identical(systemd_dst_host, systemd_src))
+        }
+        if (!exists_identical(systemd_dst_host, systemd_src)) {
                 return true;
+        }
         return !has_boot_rec;
 }
 
