@@ -33,15 +33,15 @@
  *              BOOTX64.EFI         <-- the fallback bootloader only modified if
  *                                      image is being created
  *
- *      /org.clearlinux/
- *          bootloaderx64.efi       <-- shim
- *          loaderx64.efi           <-- systemd-boot bootloader
- *          mmx64.efi               <-- MOK mgr
- *          fbx64.efi               <-- MOK mgr
+ *          org.clearlinux/
+ *              bootloaderx64.efi       <-- shim
+ *              loaderx64.efi           <-- systemd-boot bootloader
+ *              mmx64.efi               <-- MOK manager
+ *              fbx64.efi               <-- fallback bootloader
  *
- *          kernel/                 <-- kernels
- *              kernel-org.clearlinux.....
- *              ...
+ *              kernel/                 <-- kernels
+ *                  kernel-org.clearlinux.....
+ *                  ...
  *
  *      /loader/                    <-- systemd-boot config
  *          entries/                <-- boot menu entries
@@ -108,7 +108,7 @@ __cbm_export__ const BootLoader
         SYSTEMD_SRC_DIR                                                                            \
         "/"                                                                                        \
         "systemd-boot" EFI_SUFFIX
-#define DST_DIR "/" KERNEL_NAMESPACE
+#define DST_DIR "/EFI/" KERNEL_NAMESPACE
 #define SHIM_DST                                                                                   \
         DST_DIR                                                                                    \
         "/"                                                                                        \
