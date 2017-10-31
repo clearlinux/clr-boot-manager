@@ -25,7 +25,6 @@ addons:
         packages:
             - check
             - clang-3.8
-            - clang-format-3.8
             - gcc-5
             - libblkid-dev
             - lcov
@@ -42,7 +41,6 @@ script:
     - lcov --version | grep "1.10"
     - export CC="gcc-5"
     - ./configure --enable-coverage && make && make check && make distcheck && make check-valgrind
-    - clang-format-3.8 -i $(find . -name '*.[ch]') && git diff --exit-code
 
 after_success:
   - cd ${TRAVIS_BUILD_DIR}
