@@ -1,0 +1,19 @@
+# Bootloader to use
+option('with-bootloader', type: 'combo', choices:
+    ['systemd-boot', 'goofiboot', 'gummiboot', 'shim-systemd-boot'], value: 'shim-systemd-boot')
+
+# Currently we'll only look for gnu-efi when using shim-systemd-boot
+option('with-gnu-efi', type: 'string', description: 'Location of the gnu-efi headers')
+option('with-efi-var', type: 'string', description: 'Location of the efivar headers')
+
+# Kernel configuration
+option('with-kernel-conf-dir', type: 'string', description: 'System kernel configuration directory')
+option('with-kernel-dir', type: 'string', description: 'System kernel directory')
+option('with-kernel-modules-dir', type: 'string', description: 'System kernel modules directory')
+option('with-kernel-namespace', type: 'string', description: 'Identifier for boot assets', value: 'org.clearlinux')
+option('with-kernel-vendor-conf-dir', type: 'string', description: 'Vendor kernel configuration directory')
+
+# General options
+option('with-boot-dir', type: 'string', description: 'System boot directory', value: '/boot')
+option('with-vendor-prefix', type: 'string', description: 'Prefix for files created by clr-boot-manager', value: 'generic-linux-os')
+option('with-systemd-system-unit-dir', type: 'string', description: 'systemd unit directory')

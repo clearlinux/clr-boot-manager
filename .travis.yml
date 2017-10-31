@@ -11,10 +11,11 @@ compiler:
 os:
     - linux
 
-before_script:
-    ./autogen.sh CC="gcc-5"
-
 language: c
+
+env:
+    global:
+        - PATH="$HOME/prefix/bin:$PATH"
 
 addons:
     apt:
@@ -32,18 +33,22 @@ addons:
             - valgrind
             - gnu-efi
             - libefivar-dev
+            - python3-pip
 
 
 before_install:
   - gem install coveralls-lcov
+  - mkdir -p $HOME/prefix/bin
+  - pip3 install --user meson==0.42.1
+  - wget https://github.com/ninja-build/ninja/releases/download/v1.6.0/ninja-linux.zip
+  - unzip ninja-linux.zip
+  - mv ninja $HOME/prefix/bin/
 
 script:
     - lcov --version | grep "1.10"
     - export CC="gcc-5"
-    - ./configure --enable-coverage && make && make check && make distcheck && make check-valgrind
+    - ./scripts/travis_test.sh
 
 after_success:
   - cd ${TRAVIS_BUILD_DIR}
-  - lcov --compat-libtool --directory . --capture --output-file coverage.info
-  - lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info
-  - coveralls-lcov coverage.info
+  - coveralls-lcov outCoverage/coverage.info

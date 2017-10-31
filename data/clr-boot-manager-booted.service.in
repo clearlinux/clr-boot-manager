@@ -3,7 +3,7 @@ Description=clr-boot-manager tracking kernel boot success
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/clr-boot-manager report-booted
+ExecStart=@BINDIR@/clr-boot-manager report-booted
 
 [Install]
 WantedBy=multi-user.target

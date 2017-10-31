@@ -31,7 +31,9 @@
  * Total "usable" bootloaders
  */
 extern const BootLoader grub2_bootloader;
+#if defined(HAVE_SHIM_SYSTEMD_BOOT)
 extern const BootLoader shim_systemd_bootloader;
+#endif
 extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;

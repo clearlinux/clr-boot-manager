@@ -1,63 +1,9 @@
-Makefile
-Makefile.in
-aclocal.m4
-autom4te.cache/
-clr-boot-manager
-compile
-config.*
-configure
-depcomp
-install-sh
-missing
-.deps/
-.dirstamp
-*.o
-stamp-h1
-GTAGS
-GPATH
-GRTAGS
+# we meson into ./build/
+/build/
 
-# test suite junk
-check_core
-check_cmdline
-check_legacy
-check_files
-check_os_release
-check_uefi
-check_grub2
-check_select_bootloader
-check_probe
+# coverage when using ./travis_test.sh
+/outCoverage/
 
-*.log
-*.trs
-test-driver
-
-# coverage
-*.gcda
-*.gcno
-/coverage
-
-/tests/kernels
-/tests/dummy_install
-/tests/update_playground
-
+# distributed tarball
 clr-boot-manager-*.tar.xz
 
-libtool
-ltmain.sh
-m4/libtool.m4
-m4/ltoptions.m4
-m4/ltsugar.m4
-m4/ltversion.m4
-m4/lt~obsolete.m4
-
-*.plist
-.libs
-*.la
-*.lo
-
-# Nica tests
-check_array
-check_hashmap
-check_inifile
-check_list
