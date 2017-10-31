@@ -58,7 +58,7 @@
  * boot entry is created (BootXXXX EFI variable) if it does not exist already.
  */
 
-static char *shim_systemd_get_kernel_dst(const BootManager *);
+static const char *shim_systemd_get_kernel_destination(const BootManager *);
 static bool shim_systemd_install_kernel(const BootManager *, const Kernel *);
 static bool shim_systemd_remove_kernel(const BootManager *, const Kernel *);
 static bool shim_systemd_set_default_kernel(const BootManager *, const Kernel *);
@@ -74,7 +74,7 @@ static int shim_systemd_get_capabilities(const BootManager *);
 __cbm_export__ const BootLoader
     shim_systemd_bootloader = {.name = "systemd",
                                .init = shim_systemd_init,
-                               .get_kernel_destination = shim_systemd_get_kernel_dst,
+                               .get_kernel_destination = shim_systemd_get_kernel_destination,
                                .install_kernel = shim_systemd_install_kernel,
                                .remove_kernel = shim_systemd_remove_kernel,
                                .set_default_kernel = shim_systemd_set_default_kernel,
@@ -140,11 +140,11 @@ static char *systemd_dst_host;
 static int is_image_mode;
 static int has_boot_rec = -1;
 
-extern void sd_class_set_get_kernel_destination_impl(char *(*)(const BootManager *));
+extern void sd_class_set_get_kernel_destination_impl(const char *(*)(const BootManager *));
 
-static char *shim_systemd_get_kernel_dst(__cbm_unused__ const BootManager *manager)
+static const char *shim_systemd_get_kernel_destination(__cbm_unused__ const BootManager *manager)
 {
-        return strdup(KERNEL_DST_DIR);
+        return KERNEL_DST_DIR;
 }
 
 static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel)
@@ -240,8 +240,10 @@ static bool make_layout(const BootManager *manager)
                 }
                 free(path);
         }
+        free(boot_root);
         return true;
 fail:
+        free(boot_root);
         if (path) {
                 LOG_FATAL("Failed to make dir: %s", path);
                 free(path);
@@ -252,10 +254,12 @@ fail:
 /* Installs EFI fallback (default) bootloader at /EFI/Boot/BOOTX64.EFI */
 static bool shim_systemd_install_fallback_bootloader(const BootManager *manager)
 {
-        char *dst = string_printf("%s%s",
-                                  boot_manager_get_boot_dir((BootManager *)manager),
-                                  EFI_FALLBACK_PATH);
+        char *boot_dir = boot_manager_get_boot_dir((BootManager *)manager);
+        char *dst = string_printf("%s%s", boot_dir, EFI_FALLBACK_PATH);
         bool result = true;
+
+        free(boot_dir);
+
         if (!copy_file_atomic(systemd_src, dst, 00644)) {
                 LOG_FATAL("Cannot copy %s to %s", systemd_src, dst);
                 result = false;
@@ -333,7 +337,7 @@ static bool shim_systemd_init(const BootManager *manager)
                                                   .efi_blob = "systemd-boot" EFI_SUFFIX,
                                                   .name = "systemd-boot" };
         sd_class_init(manager, &systemd_config);
-        sd_class_set_get_kernel_destination_impl(shim_systemd_get_kernel_dst);
+        sd_class_set_get_kernel_destination_impl(shim_systemd_get_kernel_destination);
 
         prefix = strdup(boot_manager_get_prefix((BootManager *)manager));
         len = strlen(prefix);
@@ -343,7 +347,7 @@ static bool shim_systemd_init(const BootManager *manager)
         shim_src = string_printf("%s/%s", prefix, SHIM_SRC);
         systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
-        boot_root = strdup(boot_manager_get_boot_dir((BootManager *)manager));
+        boot_root = boot_manager_get_boot_dir((BootManager *)manager);
         len = strlen(boot_root);
         /* SHIM_DST and SYSTEMD_DST are defined with leading '/', take extra
          * care to produce clean paths. */
@@ -361,7 +365,7 @@ static bool shim_systemd_init(const BootManager *manager)
         return true;
 }
 
-static void shim_systemd_destroy(__cbm_unused__ const BootManager *manager)
+static void shim_systemd_destroy(const BootManager *manager)
 {
         free(shim_src);
         free(systemd_src);
@@ -370,6 +374,7 @@ static void shim_systemd_destroy(__cbm_unused__ const BootManager *manager)
         if (!is_image_mode) {
                 bootvar_destroy();
         }
+        sd_class_destroy(manager);
 
         return;
 }

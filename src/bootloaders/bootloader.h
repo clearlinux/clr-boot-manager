@@ -21,7 +21,7 @@
 
 typedef bool (*boot_loader_init)(const BootManager *);
 typedef bool (*boot_loader_install_kernel)(const BootManager *, const Kernel *);
-typedef char *(*boot_loader_get_kernel_destination)(const BootManager *);
+typedef const char *(*boot_loader_get_kernel_destination)(const BootManager *);
 typedef bool (*boot_loader_remove_kernel)(const BootManager *, const Kernel *);
 typedef bool (*boot_loader_set_default_kernel)(const BootManager *, const Kernel *kernel);
 typedef bool (*boot_loader_needs_update)(const BootManager *);

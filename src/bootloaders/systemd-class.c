@@ -44,7 +44,7 @@ typedef struct SdClassConfig {
 static SdClassConfig sd_class_config = { 0 };
 static BootLoaderConfig *sd_config = NULL;
 
-static char *(*get_kernel_destination_impl)(const BootManager *);
+static const char *(*get_kernel_destination_impl)(const BootManager *);
 
 #define FREE_IF_SET(x)                                                                             \
         {                                                                                          \
@@ -54,9 +54,9 @@ static char *(*get_kernel_destination_impl)(const BootManager *);
                 }                                                                                  \
         }
 
-char *sd_class_get_kernel_destination_default(__cbm_unused__ const BootManager *manager)
+const char *sd_class_get_kernel_destination_default(__cbm_unused__ const BootManager *manager)
 {
-        return strdup(sd_class_config.kernel_dir);
+        return sd_class_config.kernel_dir;
 }
 
 bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
@@ -127,12 +127,12 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         return true;
 }
 
-void sd_class_set_get_kernel_destination_impl(char *(*impl)(const BootManager *))
+void sd_class_set_get_kernel_destination_impl(const char *(*impl)(const BootManager *))
 {
         get_kernel_destination_impl = impl;
 }
 
-char *sd_class_get_kernel_destination(const BootManager *manager)
+const char *sd_class_get_kernel_destination(const BootManager *manager)
 {
         return get_kernel_destination_impl(manager);
 }

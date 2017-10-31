@@ -594,7 +594,7 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         const char *initrd_source = NULL;
         bool is_uefi = ((manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI) ==
                         BOOTLOADER_CAP_UEFI);
-        autofree(char) *efi_boot_dir =
+        const char *efi_boot_dir =
             is_uefi ? manager->bootloader->get_kernel_destination(manager) : NULL;
 
         assert(manager != NULL);
@@ -669,7 +669,7 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         autofree(char) *initrd_target = NULL;
         bool is_uefi = ((manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI) ==
                         BOOTLOADER_CAP_UEFI);
-        autofree(char) *efi_boot_dir =
+        const char *efi_boot_dir =
             is_uefi ? manager->bootloader->get_kernel_destination(manager) : NULL;
 
         assert(manager != NULL);
