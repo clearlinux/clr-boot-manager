@@ -263,7 +263,7 @@ START_TEST(bootman_uefi_remove_bootloader)
         autofree(BootManager) *m = NULL;
 
         fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                              "/efi/BOOT"),
+                                              "/EFI/Boot"),
                 "Main EFI directory missing, botched install");
 
         m = prepare_playground(&uefi_config);
@@ -281,19 +281,19 @@ START_TEST(bootman_uefi_remove_bootloader)
 
         /* Ensure that it is indeed removed. */
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground" BOOT_DIRECTORY
-                                             "/efi/BOOT" DEFAULT_EFI_BLOB),
+                                             "/EFI/Boot" DEFAULT_EFI_BLOB),
                 "Main x64 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                             "/efi/systemd"),
+                                             "/EFI/systemd"),
                 "Systemd x64 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                             "/efi/gummiboot"),
+                                             "/EFI/gummiboot"),
                 "gummiboot x64 bootloader present");
 #else
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                             "/efi/goofiboot"),
+                                             "/EFI/goofiboot"),
                 "goofiboot x64 bootloader present");
 #endif
 

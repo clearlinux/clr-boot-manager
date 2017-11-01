@@ -49,11 +49,11 @@
  */
 #define BOOT_FULL PLAYGROUND_ROOT "/" BOOT_DIRECTORY
 
-#define EFI_START BOOT_FULL "/efi"
+#define EFI_START BOOT_FULL "/EFI"
 /**
  * i.e. $dir/EFI/Boot/BOOTX64.EFI
  */
-#define EFI_STUB_MAIN BOOT_FULL "/efi/BOOT/BOOT" EFI_STUB_SUFFIX
+#define EFI_STUB_MAIN BOOT_FULL "/EFI/Boot/BOOT" EFI_STUB_SUFFIX
 
 /**
  * Places that need to exist..
@@ -437,7 +437,7 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 }
                 /* Create dir *after* init to simulate ESP mount behaviour with
                  * a different-case boot tree on the ESP */
-                fail_if(!nc_mkdir_p(EFI_START "/BOOT", 00755), "Failed to create boot structure");
+                fail_if(!nc_mkdir_p(EFI_START "/Boot", 00755), "Failed to create boot structure");
         } else {
                 push_syslinux();
         }
@@ -482,7 +482,7 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
         /* where the kernel files are expected to be found on the ESP */
         const char *esp_path = manager->bootloader->get_kernel_destination
                                    ? manager->bootloader->get_kernel_destination(manager)
-                                   : "efi/" KERNEL_NAMESPACE;
+                                   : "EFI/" KERNEL_NAMESPACE;
         const char *vendor = NULL;
         int file_count = 0;
 

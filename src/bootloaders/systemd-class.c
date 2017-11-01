@@ -175,6 +175,10 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
 
 static bool sd_class_ensure_dirs(void)
 {
+        autofree(char) *kernel_destination_path = nc_build_case_correct_path(sd_class_config.base_path,
+                                                                             sd_class_config.kernel_dir,
+                                                                             NULL);
+
         if (!nc_mkdir_p(sd_class_config.efi_dir, 00755)) {
                 LOG_FATAL("Failed to create %s: %s", sd_class_config.efi_dir, strerror(errno));
                 return false;
@@ -183,6 +187,12 @@ static bool sd_class_ensure_dirs(void)
 
         if (!nc_mkdir_p(sd_class_config.vendor_dir, 00755)) {
                 LOG_FATAL("Failed to create %s: %s", sd_class_config.vendor_dir, strerror(errno));
+                return false;
+        }
+        cbm_sync();
+
+        if (!nc_mkdir_p(kernel_destination_path, 00755)) {
+                LOG_FATAL("Failed to create %s: %s", kernel_destination_path, strerror(errno));
                 return false;
         }
         cbm_sync();
