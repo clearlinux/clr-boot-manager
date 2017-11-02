@@ -39,6 +39,7 @@ typedef struct SdClassConfig {
         char *default_path_efi_blob;
         char *loader_config;
         char *kernel_dir;
+        char *kernel_dir_esp;
 } SdClassConfig;
 
 static SdClassConfig sd_class_config = { 0 };
@@ -56,7 +57,7 @@ static const char *(*get_kernel_destination_impl)(const BootManager *);
 
 const char *sd_class_get_kernel_destination_default(__cbm_unused__ const BootManager *manager)
 {
-        return sd_class_config.kernel_dir;
+        return sd_class_config.kernel_dir_esp;
 }
 
 bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
@@ -122,7 +123,9 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         OOM_CHECK_RET(loader_config, false);
         sd_class_config.loader_config = loader_config;
 
-        sd_class_config.kernel_dir = "/EFI/" KERNEL_NAMESPACE;
+        sd_class_config.kernel_dir = nc_build_case_correct_path(sd_class_config.base_path,
+                                                                "EFI", KERNEL_NAMESPACE, NULL);
+        sd_class_config.kernel_dir_esp = strdup(sd_class_config.kernel_dir + strlen(sd_class_config.base_path));
 
         return true;
 }
@@ -147,6 +150,8 @@ void sd_class_destroy(__cbm_unused__ const BootManager *manager)
         FREE_IF_SET(sd_class_config.efi_blob_dest);
         FREE_IF_SET(sd_class_config.default_path_efi_blob);
         FREE_IF_SET(sd_class_config.loader_config);
+        FREE_IF_SET(sd_class_config.kernel_dir);
+        FREE_IF_SET(sd_class_config.kernel_dir_esp);
 }
 
 /* i.e. $prefix/$boot/loader/entries/Clear-linux-native-4.1.6-113.conf */
@@ -175,10 +180,6 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
 
 static bool sd_class_ensure_dirs(void)
 {
-        autofree(char) *kernel_destination_path = nc_build_case_correct_path(sd_class_config.base_path,
-                                                                             sd_class_config.kernel_dir,
-                                                                             NULL);
-
         if (!nc_mkdir_p(sd_class_config.efi_dir, 00755)) {
                 LOG_FATAL("Failed to create %s: %s", sd_class_config.efi_dir, strerror(errno));
                 return false;
@@ -191,8 +192,8 @@ static bool sd_class_ensure_dirs(void)
         }
         cbm_sync();
 
-        if (!nc_mkdir_p(kernel_destination_path, 00755)) {
-                LOG_FATAL("Failed to create %s: %s", kernel_destination_path, strerror(errno));
+        if (!nc_mkdir_p(sd_class_config.kernel_dir, 00755)) {
+                LOG_FATAL("Failed to create %s: %s", sd_class_config.kernel_dir, strerror(errno));
                 return false;
         }
         cbm_sync();

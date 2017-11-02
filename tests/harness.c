@@ -139,14 +139,14 @@ void confirm_bootloader(void)
         fail_if(!noisy_file_exists(ESP_BOOT_STUB), "ESP target stub missing");
 }
 
-bool confirm_bootloader_match(void)
+bool confirm_bootloader_match(bool check_default)
 {
-#if !defined(HAVE_SHIM_SYSTEMD_BOOT)
-        if (!cbm_files_match(BOOT_COPY_TARGET, EFI_STUB_MAIN)) {
-                fprintf(stderr, "EFI_STUB_MAIN doesn't match the source\n");
-                return false;
+        if (check_default) {
+                if (!cbm_files_match(BOOT_COPY_TARGET, EFI_STUB_MAIN)) {
+                        fprintf(stderr, "EFI_STUB_MAIN doesn't match the source\n");
+                        return false;
+                }
         }
-#endif /* !HAVE_SHIM_SYSTEMD_BOOT */
         if (!cbm_files_match(BOOT_COPY_TARGET, ESP_BOOT_STUB)) {
                 fprintf(stderr, "ESP_BOOT_STUB(vendor) doesn't match the source\n");
                 return false;

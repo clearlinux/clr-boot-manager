@@ -82,9 +82,11 @@ void confirm_bootloader(void);
 int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel);
 
 /**
- * Util - confirm the bootloader installed matches the source file
+ * Util - confirm the bootloader installed matches the source file. If
+ * check_default is true, also checks the default bootloader
+ * (/EFI/Boot/BOOT<ARCH>.efi)
  */
-bool confirm_bootloader_match(void);
+bool confirm_bootloader_match(bool check_default);
 
 /**
  * Assert that the kernel is fully installed
