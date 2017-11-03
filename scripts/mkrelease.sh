@@ -14,7 +14,7 @@ set -e
 git submodule init
 git submodule update
 
-VERSION="v1.5.4"
+VERSION=$(cat ./VERSION)
 NAME="clr-boot-manager"
 ./scripts/git-archive-all.sh --format tar --prefix ${NAME}-${VERSION}/ --verbose -t HEAD ${NAME}-${VERSION}.tar
 xz -9 "${NAME}-${VERSION}.tar"

@@ -1,7 +1,7 @@
 project(
     'clr-boot-manager',
     ['c'],
-    version: '1.5.5',
+    version: run_command('cat', 'VERSION').stdout().split()[0],
     license: [
         'LGPL-2.1',
     ],
@@ -184,6 +184,7 @@ report = [
     '    Build configuration:',
     '    ====================',
     '',
+    '    version:                                @0@'.format(meson.project_version()),
     '    prefix:                                 @0@'.format(path_prefix),
     '    datadir:                                @0@'.format(path_datadir),
     '    sysconfdir:                             @0@'.format(path_sysconfdir),
