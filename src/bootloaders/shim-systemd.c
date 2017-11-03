@@ -41,10 +41,9 @@
  *              mmx64.efi               <-- MOK manager
  *              fbx64.efi               <-- fallback bootloader
  *
- *              kernel/                 <-- kernels and initrds
- *                  kernel-KERNEL_NAMESPACE...
- *                  initrd-KERNEL_NAMESPACE...
- *                  ...
+ *              kernel-KERNEL_NAMESPACE... <-- kernels
+ *              initrd-KERNEL_NAMESPACE... <-- initrds
+ *              ...
  *
  *      /loader/                    <-- systemd-boot config
  *          entries/                <-- boot menu entries
@@ -118,36 +117,34 @@ __cbm_export__ const BootLoader
  * onto ESP which uses FAT. on actual FAT, use of ALL CAPS is enough to
  * construct usable EFI paths. however, probing is needed to comply with the
  * tests. */
-#define ESP_EFI "EFI" /* /EFI on ESP */
-#define ESP_BOOT "BOOT" /* BOOT component in /EFI/Boot */
+#define ESP_EFI "EFI"                    /* /EFI on ESP */
+#define ESP_BOOT "BOOT"                  /* BOOT component in /EFI/Boot */
 #define EFI_FALLBACK "BOOT" EFI_SUFFIX_U /* e.g. BOOTX64.EFI */
 
 /* these path components can be used as-is, no need to probe */
 #define SHIM_DST "bootloader" EFI_SUFFIX
 #define SYSTEMD_DST "loader" EFI_SUFFIX
-#define KERNEL_DST_DIR "kernel"
 #define SYSTEMD_CONFIG_DIR "loader"
 #define SYSTEMD_ENTRIES_DIR "entries"
 
 typedef struct shim_systemd_config {
-
         char *shim_src;
         char *systemd_src;
 
         char *shim_dst_host; /* as accessible by the CMB for file ops. */
         char *systemd_dst_host;
 
-        char *shim_dst_esp;  /* absolute location of shim on the ESP, for boot record */
+        char *shim_dst_esp; /* absolute location of shim on the ESP, for boot record */
 
         char *efi_fallback_dir;
         char *efi_fallback_dst_host;
-        char *kernel_dst_esp;
+        char *bin_dst_esp;
         int is_image_mode;
         int has_boot_rec;
 
-/* the following two are needed to create layout, but they have to be "probed"
- * to coincide with actual casing on ESP. */
-        char *kernel_dst_host;
+        /* the following two are needed to create layout, but they have to be "probed"
+         * to coincide with actual casing on ESP. */
+        char *bin_dst_host;
         char *efi_dst_host;
 } shim_systemd_config_t;
 
@@ -157,7 +154,7 @@ extern void sd_class_set_get_kernel_destination_impl(const char *(*)(const BootM
 
 static const char *shim_systemd_get_kernel_destination(__cbm_unused__ const BootManager *manager)
 {
-        return config.kernel_dst_esp;
+        return config.bin_dst_esp;
 }
 
 static bool shim_systemd_install_kernel(const BootManager *manager, const Kernel *kernel)
@@ -192,7 +189,8 @@ static bool shim_systemd_needs_install(__cbm_unused__ const BootManager *manager
 {
         if (config.has_boot_rec < 0) {
                 if (!config.is_image_mode) {
-                        config.has_boot_rec = bootvar_has_boot_rec(BOOT_DIRECTORY, config.shim_dst_esp);
+                        config.has_boot_rec =
+                            bootvar_has_boot_rec(BOOT_DIRECTORY, config.shim_dst_esp);
                 } else {
                         config.has_boot_rec = 1;
                 }
@@ -210,7 +208,8 @@ static bool shim_systemd_needs_update(__cbm_unused__ const BootManager *manager)
 {
         if (config.has_boot_rec < 0) {
                 if (!config.is_image_mode) {
-                        config.has_boot_rec = bootvar_has_boot_rec(BOOT_DIRECTORY, config.shim_dst_esp);
+                        config.has_boot_rec =
+                            bootvar_has_boot_rec(BOOT_DIRECTORY, config.shim_dst_esp);
                 } else {
                         config.has_boot_rec = 1;
                 }
@@ -229,11 +228,12 @@ static bool make_layout(const BootManager *manager)
         autofree(char) *boot_root = boot_manager_get_boot_dir((BootManager *)manager);
         autofree(char) *systemd_config_entries = NULL;
 
-        if (!nc_mkdir_p(config.kernel_dst_host, 00755)) {
+        if (!nc_mkdir_p(config.bin_dst_host, 00755)) {
                 return false;
         }
 
-        systemd_config_entries = nc_build_case_correct_path(boot_root, SYSTEMD_CONFIG_DIR, SYSTEMD_ENTRIES_DIR, NULL);
+        systemd_config_entries =
+            nc_build_case_correct_path(boot_root, SYSTEMD_CONFIG_DIR, SYSTEMD_ENTRIES_DIR, NULL);
         if (!nc_mkdir_p(systemd_config_entries, 00755)) {
                 return false;
         }
@@ -340,28 +340,24 @@ static bool shim_systemd_init(const BootManager *manager)
         config.systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
         boot_root = boot_manager_get_boot_dir((BootManager *)manager);
-        config.shim_dst_host = nc_build_case_correct_path(boot_root,
-                                                          ESP_EFI,
-                                                          KERNEL_NAMESPACE,
-                                                          SHIM_DST,
-                                                          NULL);
-        config.systemd_dst_host = nc_build_case_correct_path(boot_root,
-                                                             ESP_EFI,
-                                                             KERNEL_NAMESPACE,
-                                                             SYSTEMD_DST,
-                                                             NULL);
+        config.bin_dst_host =
+            nc_build_case_correct_path(boot_root, ESP_EFI, KERNEL_NAMESPACE, NULL);
+        /* bin_dst_esp is the ESP-absolute path which will be consumed by
+         * bootloaders and it have to be case-correct too, extract it from
+         * case-corrected bin_dst_host. */
+        config.bin_dst_esp = strdup(config.bin_dst_host + strlen(boot_root));
 
+        config.shim_dst_host = nc_build_case_correct_path(config.bin_dst_host, SHIM_DST, NULL);
+        config.systemd_dst_host =
+            nc_build_case_correct_path(config.bin_dst_host, SYSTEMD_DST, NULL);
+
+        /* extract case-corrected ESP-absolute path. needed for the boot record
+         * (EFI BootXXXX variable). */
         config.shim_dst_esp = strdup(config.shim_dst_host + strlen(boot_root));
 
         config.efi_fallback_dir = nc_build_case_correct_path(boot_root, ESP_EFI, ESP_BOOT, NULL);
         config.efi_fallback_dst_host =
-            nc_build_case_correct_path(boot_root, ESP_EFI, ESP_BOOT, EFI_FALLBACK, NULL);
-        config.kernel_dst_host =
-            nc_build_case_correct_path(boot_root, ESP_EFI, KERNEL_NAMESPACE, KERNEL_DST_DIR, NULL);
-        /* kernel_dst_esp is the ESP-absolute path which will be consumed by
-         * bootloaders and it have to be case-correct too, extract it from
-         * case-corrected kernel_dst_host. */
-        config.kernel_dst_esp = strdup(config.kernel_dst_host + strlen(boot_root));
+            nc_build_case_correct_path(config.efi_fallback_dir, EFI_FALLBACK, NULL);
 
         return true;
 }
@@ -375,8 +371,8 @@ static void shim_systemd_destroy(const BootManager *manager)
         free(config.shim_dst_esp);
         free(config.efi_fallback_dir);
         free(config.efi_fallback_dst_host);
-        free(config.kernel_dst_host);
-        free(config.kernel_dst_esp);
+        free(config.bin_dst_host);
+        free(config.bin_dst_esp);
         free(config.efi_dst_host);
         if (!config.is_image_mode) {
                 bootvar_destroy();
