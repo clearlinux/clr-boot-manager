@@ -11,7 +11,7 @@
 
 #define _GNU_SOURCE
 
-#include <linux/limits.h>
+#include <limits.h>
 
 #include "bootloader.h"
 #include "bootman.h"
