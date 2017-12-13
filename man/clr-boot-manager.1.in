@@ -93,6 +93,19 @@ Returns the currently configured timeout as set by \fBclr\-boot\-manager set\-ti
 .PP
 On success, 0 is returned, a non\-zero failure code otherwise\&
 
+.SH "CONFIGURATION"
+.PP
+clr-boot-manager takes into account the following paths to modify its behavior:
+
+.PP
+\fB@KERNEL_CONF_DIRECTORY@/cmdline.d/*.conf\fR
+.RS 4
+A set of files that will be used to modify the kernel commandline. The files
+can also be used to mask the vendor cmdline if the filename matches a vendor
+configuration file and is linked to /dev/null\&.
+.RE
+
+
 .SH "ENVIRONMENT"
 \fI$CBM_DEBUG\fR
 .RS 4
