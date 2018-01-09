@@ -85,8 +85,6 @@ the Free Software Foundation; either version 2.1 of the License, or\n\
 
 int main(int argc, char **argv)
 {
-        atexit(nc_dump_file_descriptor_leaks);
-
         autofree(NcHashmap) *commands = NULL;
         const char *command = NULL;
         SubCommand *s_command = NULL;
