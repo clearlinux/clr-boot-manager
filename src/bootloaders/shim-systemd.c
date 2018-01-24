@@ -71,7 +71,7 @@ static void shim_systemd_destroy(const BootManager *);
 static int shim_systemd_get_capabilities(const BootManager *);
 
 __cbm_export__ const BootLoader
-    shim_systemd_bootloader = {.name = "systemd",
+    shim_systemd_bootloader = {.name = "shim-systemd",
                                .init = shim_systemd_init,
                                .get_kernel_destination = shim_systemd_get_kernel_destination,
                                .install_kernel = shim_systemd_install_kernel,

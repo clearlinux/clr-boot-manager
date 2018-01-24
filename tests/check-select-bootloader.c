@@ -50,7 +50,9 @@
 /**
  * Define a single name for the UEFI bootloader to reduce complexity further down
  */
-#if defined(HAVE_SYSTEMD_BOOT)
+#if defined(HAVE_SHIM_SYSTEMD_BOOT)
+#define UEFI_BOOTLOADER_NAME "shim-systemd"
+#elif defined(HAVE_SYSTEMD_BOOT)
 #define UEFI_BOOTLOADER_NAME "systemd"
 #elif defined(HAVE_GUMMIBOOT)
 #define UEFI_BOOTLOADER_NAME "gummiboot"
