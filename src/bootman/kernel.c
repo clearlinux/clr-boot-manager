@@ -24,6 +24,7 @@
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
+#include "writer.h"
 
 #include "config.h"
 
@@ -787,6 +788,174 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         }
 
         return true;
+}
+
+NoDepInitrdArray *boot_manager_get_nodeps_initrd(BootManager *self)
+{
+        NoDepInitrdArray *ret = NULL;
+        char *initrd_name = NULL;
+        DIR *dir = NULL;
+        struct dirent *ent = NULL;
+        struct stat st = { 0 };
+        if (!self || !self->initrd_nodep_dir) {
+                return NULL;
+        }
+
+        ret = nc_array_new();
+        OOM_CHECK_RET(ret, NULL);
+
+        dir = opendir(self->initrd_nodep_dir);
+        if (!dir) {
+                LOG_ERROR("Error opening %s: %s", self->initrd_nodep_dir, strerror(errno));
+                nc_array_free(&ret, NULL);
+                return NULL;
+        }
+
+        while ((ent = readdir(dir)) != NULL) {
+                autofree(char) *path = NULL;
+
+                path = string_printf("%s/%s", self->initrd_nodep_dir, ent->d_name);
+
+                if (strstr(ent->d_name, "img.gz\0") == NULL) {
+                        continue;
+                }
+
+                /* Some kind of broken link */
+                if (lstat(path, &st) != 0) {
+                        continue;
+                }
+
+                /* Regular only */
+                if (!S_ISREG(st.st_mode)) {
+                        continue;
+                }
+
+                /* empty files are skipped too */
+                if (st.st_size == 0) {
+                        continue;
+                }
+
+                initrd_name = strdup(ent->d_name);
+                if (!nc_array_add(ret, initrd_name)) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+        closedir(dir);
+        return ret;
+}
+
+bool boot_manager_copy_initrd_nodep(BootManager *self)
+{
+        autofree(char) *base_path = NULL;
+        autofree(char) *initrd_target = NULL;
+        autofree(char) *initrd_source = NULL;
+        bool is_uefi = ((self->bootloader->get_capabilities(self) & BOOTLOADER_CAP_UEFI) ==
+                        BOOTLOADER_CAP_UEFI);
+        const char *efi_boot_dir =
+            is_uefi ? self->bootloader->get_kernel_destination(self) : NULL;
+        base_path = boot_manager_get_boot_dir((BootManager *)self);
+
+        /* if it's UEFI, then bootloader->get_kernel_dst() must return a value. */
+        if (is_uefi && !efi_boot_dir) {
+                return false;
+        }
+
+        for (uint16_t i = 0; i < self->nodep_initrd->len; i++) {
+
+                initrd_target = string_printf("%s%s/%s",
+                                              base_path,
+                                              (is_uefi ? efi_boot_dir : ""),
+                                              (char*)self->nodep_initrd->data[i]);
+                initrd_source = string_printf("%s/%s",
+                                              self->initrd_nodep_dir,
+                                              (char*)self->nodep_initrd->data[i]);
+                if (!cbm_files_match(initrd_source, initrd_target)) {
+                        if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
+                                LOG_FATAL("Failed to install initrd %s: %s",
+                                          initrd_target,
+                                          strerror(errno));
+                                return false;
+                        }
+                }
+        }
+        return true;
+}
+
+static bool boot_manager_is_initrd_nodep_included(BootManager *self, const char *search)
+{
+        bool ret = false;
+        for (uint16_t i = 0; i < self->nodep_initrd->len; i++) {
+                if (strcmp(search, self->nodep_initrd->data[i]) == 0) {
+                        ret = true;
+                        break;
+                }
+        }
+        return ret;
+}
+
+void boot_manager_remove_nodeps_initrd(BootManager * self)
+{
+        autofree(char) *base_path = NULL;
+        autofree(char) *initrd_dir = NULL;
+        autofree(char) *initrd_target = NULL;
+        bool is_uefi = ((self->bootloader->get_capabilities(self) & BOOTLOADER_CAP_UEFI) ==
+                        BOOTLOADER_CAP_UEFI);
+        const char *efi_boot_dir =
+            is_uefi ? self->bootloader->get_kernel_destination(self) : NULL;
+        DIR *dir = NULL;
+        struct dirent *ent = NULL;
+        /* if it's UEFI, then bootloader->get_kernel_dst() must return a value. */
+        if (is_uefi && !efi_boot_dir) {
+                return;
+        }
+
+        base_path = boot_manager_get_boot_dir((BootManager *)self);
+        initrd_dir = string_printf("%s%s",
+                                      base_path,
+                                      (is_uefi ? efi_boot_dir : ""));
+        dir = opendir(initrd_dir);
+        if (!dir) {
+                LOG_ERROR("Error opening %s: %s", initrd_dir, strerror(errno));
+        }
+
+        while ((ent = readdir(dir)) != NULL) {
+                if (strstr(ent->d_name, "img.gz\0") == NULL) {
+                        continue;
+                }
+
+                if (!boot_manager_is_initrd_nodep_included(self, ent->d_name)) {
+
+                        initrd_target = string_printf("%s%s/%s",
+                                                      base_path,
+                                                      (is_uefi ? efi_boot_dir : ""),
+                                                      ent->d_name);
+                        /* Remove old initrd */
+                        if (nc_file_exists(initrd_target)) {
+                                if (unlink(initrd_target) < 0) {
+                                        LOG_ERROR("Failed to remove legacy-path UEFI initrd %s: %s",
+                                                  initrd_target,
+                                                  strerror(errno));
+                                }
+                        }
+                }
+
+        }
+        closedir(dir);
+}
+
+void boot_manager_write_initrd_nodep(const BootManager *manager, CbmWriter *writer)
+{
+        bool is_uefi = ((manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI) ==
+                        BOOTLOADER_CAP_UEFI);
+        const char *efi_boot_dir =
+            is_uefi ? manager->bootloader->get_kernel_destination(manager) : NULL;
+        for (uint16_t i = 0; i < manager->nodep_initrd->len; i++) {
+                cbm_writer_append_printf(writer,
+                                         "initrd %s/%s\n",
+                                         (is_uefi ? efi_boot_dir : ""),
+                                         (char*)manager->nodep_initrd->data[i]);
+        }
 }
 
 /*

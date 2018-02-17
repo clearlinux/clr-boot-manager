@@ -96,6 +96,8 @@ void boot_manager_free(BootManager *self)
 
         cbm_free_sysconfig(self->sysconfig);
         free(self->kernel_dir);
+        free(self->initrd_nodep_dir);
+        nc_array_free(&self->nodep_initrd, free);
         free(self->abs_bootdir);
         free(self->cmdline);
         free(self);
@@ -146,6 +148,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         assert(self != NULL);
 
         char *kernel_dir = NULL;
+        char *initrd_dir = NULL;
         SystemConfig *config = NULL;
 
         if (!prefix) {
@@ -172,6 +175,14 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
                 free(self->kernel_dir);
         }
         self->kernel_dir = kernel_dir;
+
+        initrd_dir = string_printf("%s/%s", config->prefix, INITRD_DIRECTORY);
+
+        if (self->initrd_nodep_dir) {
+                free(self->initrd_nodep_dir);
+                self->initrd_nodep_dir = NULL;
+        }
+        self->initrd_nodep_dir = initrd_dir;
 
         if (self->bootloader) {
                 self->bootloader->destroy(self);

@@ -251,6 +251,9 @@ static bool boot_manager_update_native(BootManager *self)
                 return false;
         }
 
+        /* Grab the available initrd without kernel deps */
+        self->nodep_initrd = boot_manager_get_nodeps_initrd(self);
+
         LOG_DEBUG("update_native: %d available kernels", kernels->len);
 
         /* Get them sorted */
@@ -297,6 +300,10 @@ static bool boot_manager_update_native(BootManager *self)
                         LOG_SUCCESS("update_native: Repaired running kernel %s",
                                     running->source.path);
                 }
+        }
+
+        if (!boot_manager_copy_initrd_nodep(self)) {
+                goto cleanup;
         }
 
         nc_hashmap_iter_init(mapped_kernels, &map_iter);
@@ -420,6 +427,7 @@ static bool boot_manager_update_native(BootManager *self)
 
         ret = true;
 
+        boot_manager_remove_nodeps_initrd(self);
         if (!removals) {
                 /* We're done. */
                 LOG_DEBUG("No kernel removals found");

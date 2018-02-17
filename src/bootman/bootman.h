@@ -15,6 +15,7 @@
 #include "nica/hashmap.h"
 #include "probe.h"
 #include "util.h"
+#include "writer.h"
 
 typedef struct BootManager BootManager;
 
@@ -77,6 +78,8 @@ typedef struct Kernel {
 } Kernel;
 
 typedef NcArray KernelArray;
+
+typedef NcArray NoDepInitrdArray;
 
 /**
  * Represenative of the system configuration of a given target prefix.
@@ -349,6 +352,26 @@ static inline void kernel_array_free(void *v)
         KernelArray *a = v;
         nc_array_free(&a, (array_free_func)free_kernel);
 }
+
+/**
+ * Get initrds without kernel dependeny
+ */
+NoDepInitrdArray *boot_manager_get_nodeps_initrd(BootManager *self);
+
+/**
+ * Copy initrds without kernel dependeny to boot partition
+ */
+bool boot_manager_copy_initrd_nodep(BootManager *self);
+
+/**
+ * Remove old initrds without kernel dependency
+ */
+void boot_manager_remove_nodeps_initrd(BootManager * self);
+
+/**
+ * Write old initrds without kernel dependency in entry of bool conf
+ */
+void boot_manager_write_initrd_nodep(const BootManager *manager, CbmWriter *writer);
 
 DEF_AUTOFREE(BootManager, boot_manager_free)
 DEF_AUTOFREE(KernelArray, kernel_array_free)
