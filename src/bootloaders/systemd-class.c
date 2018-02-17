@@ -247,6 +247,10 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                                          get_kernel_destination_impl(manager),
                                          kernel->target.initrd_path);
         }
+
+        /* Optional initrd no deps */
+        boot_manager_write_initrd_nodep(manager, writer);
+
         /* Add the root= section */
         if (root_dev->part_uuid) {
                 cbm_writer_append_printf(writer, "options root=PARTUUID=%s ", root_dev->part_uuid);

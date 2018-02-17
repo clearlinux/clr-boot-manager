@@ -26,6 +26,7 @@
 
 struct BootManager {
         char *kernel_dir;             /**<Kernel directory */
+        char *initrd_nodep_dir;       /**<Initrd without kernel deps directory */
         const BootLoader *bootloader; /**<Selected bootloader */
         CbmOsRelease *os_release;     /**<Parsed os-release file */
         char *abs_bootdir;            /**<Real boot dir */
@@ -34,6 +35,7 @@ struct BootManager {
         bool image_mode;              /**<Are we in image mode? */
         SystemConfig *sysconfig;      /**<System configuration */
         char *cmdline;                /**<Additional cmdline to append */
+        NoDepInitrdArray *nodep_initrd;/**<Array of initrds without kernel deps */
 };
 
 /**

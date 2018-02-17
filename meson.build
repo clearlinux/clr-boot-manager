@@ -116,10 +116,22 @@ if with_kernel_dir == ''
     with_kernel_dir = join_paths(path_prefix, 'lib', 'kernel')
 endif
 
+# Defaults to /usr/lib/initrd.d
+with_initrd_dir = get_option('with-initrd-dir')
+if with_initrd_dir == ''
+    with_initrd_dir = join_paths(path_prefix, 'lib', 'initrd.d')
+endif
+
 # Defaults to /etc/kernel
 with_kernel_conf_dir = get_option('with-kernel-conf-dir')
 if with_kernel_conf_dir == ''
     with_kernel_conf_dir = join_paths(path_sysconfdir, 'kernel')
+endif
+
+# Defaults to /etc/initrd.d
+with_initrd_user_dir = get_option('with-initrd-user-dir')
+if with_initrd_user_dir == ''
+    with_initrd_user_dir = join_paths(path_sysconfdir, 'initrd.d')
 endif
 
 # Defaults to /usr/lib/modules
@@ -153,11 +165,13 @@ endif
 
 # Set config.h options up for our general directories, etc.
 cdata.set_quoted('KERNEL_DIRECTORY', with_kernel_dir)
+cdata.set_quoted('INITRD_DIRECTORY', with_initrd_dir)
 cdata.set_quoted('KERNEL_MODULES_DIRECTORY', with_kernel_modules_dir)
 cdata.set_quoted('KERNEL_NAMESPACE', with_kernel_namespace)
 cdata.set_quoted('BOOT_DIRECTORY', with_boot_dir)
 cdata.set_quoted('VENDOR_PREFIX', with_vendor_prefix)
 cdata.set_quoted('KERNEL_CONF_DIRECTORY', with_kernel_conf_dir)
+cdata.set_quoted('INITRD_USER_DIRECTORY', with_initrd_user_dir)
 cdata.set_quoted('VENDOR_KERNEL_CONF_DIRECTORY', with_kernel_vendor_conf_dir)
 
 # Helps the test suites
