@@ -112,6 +112,8 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         const CbmDeviceProbe *root_dev = NULL;
         autofree(char) *old_conf = NULL;
         autofree(CbmWriter) *writer = CBM_WRITER_INIT;
+        NcHashmapIter iter = { 0 };
+        char *initrd_name = NULL;
 
         root_dev = boot_manager_get_root_device((BootManager *)manager);
         if (!root_dev) {
@@ -133,6 +135,9 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
 
         for (uint16_t i = 0; i < kernel_queue->len; i++) {
                 const Kernel *k = nc_array_get(kernel_queue, i);
+                autofree(char) *initrd_paths = NULL;
+                initrd_paths = malloc(1);
+                initrd_paths[0] = '\0';
 
                 /* Mark it default */
                 if (default_kernel && streq(k->source.path, default_kernel->source.path)) {
@@ -141,9 +146,22 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
 
                 cbm_writer_append_printf(writer, "LABEL %s\n", k->target.legacy_path);
                 cbm_writer_append_printf(writer, "  KERNEL %s\n", k->target.legacy_path);
+
                 /* Add the initrd if we found one */
                 if (k->target.initrd_path) {
-                        cbm_writer_append_printf(writer, "  INITRD %s\n", k->target.initrd_path);
+                        char *tmp = initrd_paths;
+                        initrd_paths = string_printf("%s,%s", initrd_paths, k->target.initrd_path);
+                        free(tmp);
+                }
+                boot_manager_initrd_iterator_init(manager, &iter);
+                while (boot_manager_initrd_iterator_next(&iter, &initrd_name)) {
+                        char *tmp = initrd_paths;
+                        initrd_paths = string_printf("%s,%s", initrd_paths, initrd_name);
+                        free(tmp);
+                }
+
+                if (strlen(initrd_paths)) {
+                        cbm_writer_append_printf(writer, "  INITRD %s\n", initrd_paths + 1);
                 }
 
                 /* Begin options */

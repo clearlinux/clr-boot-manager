@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <sys/utsname.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "bootloader.h"
 #include "bootman.h"
@@ -77,6 +78,10 @@ BootManager *boot_manager_new()
         /* CLI can override this */
         boot_manager_set_image_mode(r, false);
 
+        r->initrd_freestanding = nc_hashmap_new_full(nc_string_hash, nc_string_compare, free, free);
+        OOM_CHECK(r->initrd_freestanding);
+
+
         return r;
 }
 
@@ -96,6 +101,8 @@ void boot_manager_free(BootManager *self)
 
         cbm_free_sysconfig(self->sysconfig);
         free(self->kernel_dir);
+        free(self->initrd_freestanding_dir);
+        nc_hashmap_free(self->initrd_freestanding);
         free(self->abs_bootdir);
         free(self->cmdline);
         free(self);
@@ -146,6 +153,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         assert(self != NULL);
 
         char *kernel_dir = NULL;
+        char *initrd_dir = NULL;
         SystemConfig *config = NULL;
 
         if (!prefix) {
@@ -172,6 +180,13 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
                 free(self->kernel_dir);
         }
         self->kernel_dir = kernel_dir;
+
+        initrd_dir = string_printf("%s/%s", config->prefix, INITRD_DIRECTORY);
+
+        if (self->initrd_freestanding_dir) {
+                free(self->initrd_freestanding_dir);
+        }
+        self->initrd_freestanding_dir = initrd_dir;
 
         if (self->bootloader) {
                 self->bootloader->destroy(self);
@@ -444,6 +459,180 @@ bool boot_manager_set_uname(BootManager *self, const char *uname)
         memcpy(&(self->sys_kernel), &k, sizeof(struct SystemKernel));
         self->have_sys_kernel = have_sys_kernel;
         return self->have_sys_kernel;
+}
+
+bool boot_manager_enumerate_initrds_freestanding(BootManager *self)
+{
+        autofree(DIR) *initrd_dir = NULL;
+        struct dirent *ent = NULL;
+        struct stat st = { 0 };
+
+        if (!self || !self->initrd_freestanding_dir) {
+                return false;
+        }
+
+        initrd_dir = opendir(self->initrd_freestanding_dir);
+        if (!initrd_dir) {
+                if (errno == ENOENT) {
+                        LOG_INFO("path %s does not exist", self->initrd_freestanding_dir);
+                        return true;
+                } else {
+                        LOG_ERROR("Error opening %s: %s", self->initrd_freestanding_dir, strerror(errno));
+                        return false;
+                }
+        }
+
+        while ((ent = readdir(initrd_dir)) != NULL) {
+                char *initrd_name_key = NULL;
+                char *initrd_name_val = NULL;
+                autofree(char) *path = NULL;
+
+                path = string_printf("%s/%s", self->initrd_freestanding_dir, ent->d_name);
+
+                /* Some kind of broken link */
+                if (lstat(path, &st) != 0) {
+                        continue;
+                }
+
+                /* Regular only */
+                if (!S_ISREG(st.st_mode)) {
+                        continue;
+                }
+
+                /* empty files are skipped too */
+                if (st.st_size == 0) {
+                        continue;
+                }
+
+                initrd_name_val = strdup(ent->d_name);
+                OOM_CHECK(initrd_name_val);
+
+                initrd_name_key = string_printf("freestanding-%s", ent->d_name);
+                OOM_CHECK(initrd_name_key);
+
+                if (!nc_hashmap_put(self->initrd_freestanding, initrd_name_key, initrd_name_val)) {
+                        free(initrd_name_key);
+                        free(initrd_name_val);
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+        return true;
+}
+
+bool boot_manager_copy_initrd_freestanding(BootManager *self)
+{
+        autofree(char) *base_path = NULL;
+        NcHashmapIter iter = { 0 };
+        void *key = NULL;
+        void *val = NULL;
+        bool is_uefi = ((self->bootloader->get_capabilities(self) & BOOTLOADER_CAP_UEFI) ==
+                        BOOTLOADER_CAP_UEFI);
+        const char *efi_boot_dir =
+            is_uefi ? self->bootloader->get_kernel_destination(self) : NULL;
+        base_path = boot_manager_get_boot_dir((BootManager *)self);
+        if (!self || !self->initrd_freestanding_dir || !self->initrd_freestanding) {
+                return false;
+        }
+
+        /* if it's UEFI, then bootloader->get_kernel_dst() must return a value. */
+        if (is_uefi && !efi_boot_dir) {
+                return false;
+        }
+
+        nc_hashmap_iter_init(self->initrd_freestanding, &iter);
+        while (nc_hashmap_iter_next(&iter, &key, &val)) {
+                autofree(char) *initrd_target = NULL;
+                autofree(char) *initrd_source = NULL;
+
+                initrd_target = string_printf("%s%s/%s",
+                                              base_path,
+                                              (is_uefi ? efi_boot_dir : ""),
+                                              (char*)key);
+                initrd_source = string_printf("%s/%s",
+                                              self->initrd_freestanding_dir,
+                                              (char*)val);
+                if (!cbm_files_match(initrd_source, initrd_target)) {
+                        if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
+                                LOG_FATAL("Failed to install initrd %s: %s",
+                                          initrd_target,
+                                          strerror(errno));
+                                return false;
+                        }
+                }
+        }
+        return true;
+}
+
+bool boot_manager_remove_initrd_freestanding(BootManager * self)
+{
+        autofree(char) *base_path = NULL;
+        autofree(char) *initrd_efi_path = NULL;
+        autofree(DIR) *initrd_dir = NULL;
+        struct dirent *ent = NULL;
+        bool is_uefi = ((self->bootloader->get_capabilities(self) & BOOTLOADER_CAP_UEFI) ==
+                        BOOTLOADER_CAP_UEFI);
+        const char *efi_boot_dir =
+            is_uefi ? self->bootloader->get_kernel_destination(self) : NULL;
+        if (!self || !self->initrd_freestanding_dir) {
+                return false;
+        }
+        /* if it's UEFI, then bootloader->get_kernel_dst() must return a value. */
+        if (is_uefi && !efi_boot_dir) {
+                return false;
+        }
+
+        base_path = boot_manager_get_boot_dir((BootManager *)self);
+
+        initrd_efi_path = string_printf("%s/%s",
+                                        base_path,
+                                        (is_uefi ? efi_boot_dir : ""));
+
+        initrd_dir = opendir(initrd_efi_path);
+        if (!initrd_dir) {
+                LOG_ERROR("Error opening %s: %s", initrd_efi_path, strerror(errno));
+                return false;
+        }
+
+        while ((ent = readdir(initrd_dir)) != NULL) {
+                autofree(char) *initrd_target = NULL;
+
+                if (strstr(ent->d_name, "freestanding-") != ent->d_name) {
+                        continue;
+                }
+
+                if (!nc_hashmap_get(self->initrd_freestanding, ent->d_name)) {
+                        initrd_target = string_printf("%s/%s",
+                                                      initrd_efi_path,
+                                                      ent->d_name);
+                        /* Remove old initrd */
+                        if (nc_file_exists(initrd_target)) {
+                                if (unlink(initrd_target) < 0) {
+                                        LOG_ERROR("Failed to remove legacy-path UEFI initrd %s: %s",
+                                                  initrd_target,
+                                                  strerror(errno));
+                                        return false;
+                                }
+                        }
+                }
+        }
+        return true;
+}
+
+void boot_manager_initrd_iterator_init(const BootManager *manager, NcHashmapIter *iter)
+{
+        if (!iter) {
+                return;
+        }
+        nc_hashmap_iter_init(manager->initrd_freestanding, iter);
+}
+
+bool boot_manager_initrd_iterator_next(NcHashmapIter *iter, char **name)
+{
+        if (!iter || !name) {
+                return false;
+        }
+        return nc_hashmap_iter_next(iter, (void **)name, NULL);
 }
 
 /*

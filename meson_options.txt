@@ -13,6 +13,9 @@ option('with-kernel-modules-dir', type: 'string', description: 'System kernel mo
 option('with-kernel-namespace', type: 'string', description: 'Identifier for boot assets', value: 'org.clearlinux')
 option('with-kernel-vendor-conf-dir', type: 'string', description: 'Vendor kernel configuration directory')
 
+# Initrd options
+option('with-initrd-dir', type: 'string', description: 'Directory containing freestanding initrds')
+
 # General options
 option('with-boot-dir', type: 'string', description: 'System boot directory', value: '/boot')
 option('with-vendor-prefix', type: 'string', description: 'Prefix for files created by clr-boot-manager', value: 'generic-linux-os')

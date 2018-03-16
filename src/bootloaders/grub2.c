@@ -43,6 +43,7 @@ typedef struct Grub2Config {
         const char *os_id;
         bool is_separate;
         bool submenu;
+        const BootManager *manager;
 } Grub2Config;
 
 /**
@@ -172,6 +173,11 @@ bool grub2_write_kernel(const Grub2Config *config, const Kernel *kernel)
         /* Submenu uses two tabs */
         const char *tab = config->submenu ? "\t\t" : "\t";
         const char *root_tab = config->submenu ? "\t" : "";
+        NcHashmapIter iter = { 0 };
+        char *initrd_name = NULL;
+        autofree(char) *initrd_paths = NULL;
+        initrd_paths = malloc(1);
+        initrd_paths[0] = '\0';
 
         /* Write the start of the entry
          * e.g. menuentry 'Some Linux OS (4.4.9-12.lts)' --class some-linux-os --class gnu-linux
@@ -240,21 +246,31 @@ bool grub2_write_kernel(const Grub2Config *config, const Kernel *kernel)
 
         /* Optional initrd */
         if (kernel->target.initrd_path) {
+                char *tmp = initrd_paths;
+                initrd_paths = string_printf("%s %s/%s",
+                                         initrd_paths,
+                                         (!config->is_separate) ? BOOT_DIRECTORY : "", /* i.e. /boot */
+                                         kernel->target.initrd_path);
+                free(tmp);
+        }
+        boot_manager_initrd_iterator_init(config->manager, &iter);
+        while (boot_manager_initrd_iterator_next(&iter, &initrd_name)) {
+                char *tmp = initrd_paths;
+                initrd_paths = string_printf("%s %s/%s",
+                                         initrd_paths,
+                                         (!config->is_separate) ? BOOT_DIRECTORY : "", /* i.e. /boot */
+                                         initrd_name);
+                free(tmp);
+        }
+
+        if (strlen(initrd_paths)) {
                 cbm_writer_append_printf(config->writer,
                                          "echo \"%secho 'Loading initial ramdisk'\"\n",
                                          tab);
-                if (config->is_separate) {
-                        cbm_writer_append_printf(config->writer,
-                                                 "echo \"%sinitrd /%s\"\n",
-                                                 tab,
-                                                 kernel->target.initrd_path);
-                } else {
-                        cbm_writer_append_printf(config->writer,
-                                                 "echo \"%sinitrd %s/%s\"\n",
-                                                 tab,
-                                                 BOOT_DIRECTORY, /* i.e. /boot */
-                                                 kernel->target.initrd_path);
-                }
+                cbm_writer_append_printf(config->writer,
+                                         "echo \"%sinitrd %s\"\n",
+                                         tab,
+                                         initrd_paths + 1);
         }
 
         /* Finalize the entry */
@@ -312,6 +328,7 @@ static bool grub2_write_config(const BootManager *manager, const Kernel *default
                 .os_id = os_id,
                 .is_separate = is_separate,
                 .submenu = false,
+                .manager = manager,
         };
 
         /* Try to select a default kernel for update situations whereby CBM

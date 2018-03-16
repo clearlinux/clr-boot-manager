@@ -387,6 +387,31 @@ START_TEST(bootman_uefi_namespace_migration)
 }
 END_TEST
 
+START_TEST(bootman_uefi_initrd_freestandings)
+{
+        autofree(BootManager) *m = NULL;
+        autofree(char) *path_initrd = NULL;
+        char *initrd_name = "00-initrd";
+
+        m = prepare_playground(&uefi_config);
+        fail_if(!m, "Failed to prepare update playground");
+
+        path_initrd = string_printf("%s%s/%s",
+                                        PLAYGROUND_ROOT,
+                                        INITRD_DIRECTORY,
+                                        initrd_name);
+
+        file_set_text(path_initrd, "Placeholder initrd");
+        /* Validate image install */
+        boot_manager_set_image_mode(m, false);
+        fail_if(!boot_manager_enumerate_initrds_freestanding(m), "Failed to find freestanding initrd");
+
+        fail_if(!check_freestanding_initrds_available(m, initrd_name), "Failed reading from initrd path");
+        fail_if(!boot_manager_update(m), "Failed to update image");
+        fail_if(!check_initrd_file_exist(m, initrd_name), "Failed copying initrd file");
+}
+END_TEST
+
 /**
  * Ensure all blobs are removed for garbage collected kernels
  */
@@ -437,6 +462,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_uefi_remove_bootloader);
         tcase_add_test(tc, bootman_uefi_namespace_migration);
         tcase_add_test(tc, bootman_uefi_ensure_removed);
+        tcase_add_test(tc, bootman_uefi_initrd_freestandings);
         suite_add_tcase(s, tc);
 
         /* Tests without kernel modules */

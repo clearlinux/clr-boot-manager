@@ -114,6 +114,15 @@ void set_test_system_uefi(void);
  */
 void set_test_system_legacy(void);
 
+/**
+ * Check initrd nodeps in BootManager
+ */
+bool check_freestanding_initrds_available(BootManager *manager, const char *file_name);
+
+/**
+ * Check if initrd file exist
+ */
+bool check_initrd_file_exist(BootManager *manager, const char *file_name);
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

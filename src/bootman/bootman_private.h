@@ -25,15 +25,17 @@
 #include "os-release.h"
 
 struct BootManager {
-        char *kernel_dir;             /**<Kernel directory */
-        const BootLoader *bootloader; /**<Selected bootloader */
-        CbmOsRelease *os_release;     /**<Parsed os-release file */
-        char *abs_bootdir;            /**<Real boot dir */
-        SystemKernel sys_kernel;      /**<Native kernel info, if any */
-        bool have_sys_kernel;         /**<Whether sys_kernel is set */
-        bool image_mode;              /**<Are we in image mode? */
-        SystemConfig *sysconfig;      /**<System configuration */
-        char *cmdline;                /**<Additional cmdline to append */
+        char *kernel_dir;              /**<Kernel directory */
+        const BootLoader *bootloader;  /**<Selected bootloader */
+        CbmOsRelease *os_release;      /**<Parsed os-release file */
+        char *abs_bootdir;             /**<Real boot dir */
+        SystemKernel sys_kernel;       /**<Native kernel info, if any */
+        bool have_sys_kernel;          /**<Whether sys_kernel is set */
+        bool image_mode;               /**<Are we in image mode? */
+        SystemConfig *sysconfig;       /**<System configuration */
+        char *cmdline;                 /**<Additional cmdline to append */
+        char *initrd_freestanding_dir; /**<Initrd without kernel deps directory */
+        NcHashmap *initrd_freestanding;/**<Array of initrds without kernel deps */
 };
 
 /**

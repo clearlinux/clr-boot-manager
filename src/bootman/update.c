@@ -299,6 +299,11 @@ static bool boot_manager_update_native(BootManager *self)
                 }
         }
 
+        if (!boot_manager_copy_initrd_freestanding(self)) {
+                LOG_ERROR("Failed to copying freestanding initrd");
+                return false;
+        }
+
         nc_hashmap_iter_init(mapped_kernels, &map_iter);
         while (nc_hashmap_iter_next(&map_iter, (void **)&kernel_type, (void **)&typed_kernels)) {
                 Kernel *tip = NULL;
@@ -436,7 +441,12 @@ static bool boot_manager_update_native(BootManager *self)
                         goto cleanup;
                 }
         }
+
 cleanup:
+        if (!boot_manager_remove_initrd_freestanding(self)) {
+                ret = false;
+                LOG_ERROR("Failed to remove old freestanding initrd");
+        }
         if (removals) {
                 nc_array_free(&removals, NULL);
         }

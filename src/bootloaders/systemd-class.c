@@ -217,6 +217,8 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         const char *os_name = NULL;
         autofree(char) *old_conf = NULL;
         autofree(CbmWriter) *writer = CBM_WRITER_INIT;
+        NcHashmapIter iter = { 0 };
+        char *initrd_name = NULL;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
@@ -240,6 +242,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                                  "linux %s/%s\n",
                                  get_kernel_destination_impl(manager),
                                  kernel->target.path);
+
         /* Optional initrd */
         if (kernel->target.initrd_path) {
                 cbm_writer_append_printf(writer,
@@ -247,6 +250,15 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                                          get_kernel_destination_impl(manager),
                                          kernel->target.initrd_path);
         }
+
+        boot_manager_initrd_iterator_init(manager, &iter);
+        while (boot_manager_initrd_iterator_next(&iter, &initrd_name)) {
+                cbm_writer_append_printf(writer,
+                                         "initrd %s/%s\n",
+                                         get_kernel_destination_impl(manager),
+                                         initrd_name);
+        }
+
         /* Add the root= section */
         if (root_dev->part_uuid) {
                 cbm_writer_append_printf(writer, "options root=PARTUUID=%s ", root_dev->part_uuid);

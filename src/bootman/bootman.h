@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <dirent.h>
+
 #include "nica/array.h"
 #include "nica/hashmap.h"
 #include "probe.h"
@@ -350,9 +352,40 @@ static inline void kernel_array_free(void *v)
         nc_array_free(&a, (array_free_func)free_kernel);
 }
 
+/**
+ * Enumerates freestanding initrds. A "freestanding" initrd is an initrd which is
+ * not associated with a specific version of the kernel and is added to each
+ * boot configuration entry. Such initrd is expected to not contain any kernel
+ * modules. There could be any number of freestanding initrds configured.
+ * They are appended in arbitrary order after the kernel-specific initrd in the
+ * bootloader configuration file.
+ */
+bool boot_manager_enumerate_initrds_freestanding(BootManager *self);
+
+/**
+ * Copy freestanding initrd
+ */
+bool boot_manager_copy_initrd_freestanding(BootManager *self);
+
+/**
+ * Remove old freestanding initrd
+ */
+bool boot_manager_remove_initrd_freestanding(BootManager * self);
+
+/*
+ * Iterate initrd elements
+ */
+void boot_manager_initrd_iterator_init(const BootManager *manager, NcHashmapIter *iter);
+
+/**
+ * Get freestanding initrd to bootloader entry
+ */
+bool boot_manager_initrd_iterator_next(NcHashmapIter *iter, char **name);
+
 DEF_AUTOFREE(BootManager, boot_manager_free)
 DEF_AUTOFREE(KernelArray, kernel_array_free)
 DEF_AUTOFREE(Kernel, free_kernel)
+DEF_AUTOFREE(DIR, closedir)
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

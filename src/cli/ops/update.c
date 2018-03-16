@@ -64,6 +64,11 @@ bool cbm_command_update(int argc, char **argv)
                 }
         }
 
+        /* Grab the available freestanding initrd */
+        if (!boot_manager_enumerate_initrds_freestanding(manager)) {
+                return false;
+        }
+
         /* Let CBM take care of the rest */
         return boot_manager_update(manager);
 }

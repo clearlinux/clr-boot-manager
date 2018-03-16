@@ -415,6 +415,11 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        /* Construct the root initrd no deps directory */
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/" INITRD_DIRECTORY, 00755)) {
+                goto fail;
+        }
+
         if (!config->disable_modules) {
                 /* Construct the root kernel modules directory */
                 if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_MODULES_DIRECTORY, 00755)) {
@@ -655,6 +660,28 @@ void set_test_system_legacy(void)
         }
 }
 
+bool check_freestanding_initrds_available(BootManager *manager, const char *file_name)
+{
+        autofree(char) *name = string_printf("freestanding-%s", file_name);
+        return nc_hashmap_get(manager->initrd_freestanding, name);
+}
+
+bool check_initrd_file_exist(BootManager *manager, const char *file_name)
+{
+        autofree(char) *initrd_file = NULL;
+        struct stat st = { 0 };
+        /* where the kernel files are expected to be found on the ESP */
+        const char *esp_path = manager->bootloader->get_kernel_destination
+                                   ? manager->bootloader->get_kernel_destination(manager)
+                                   : "efi/" KERNEL_NAMESPACE;
+
+        initrd_file = string_printf("%s/%s/freestanding-%s",
+                                    BOOT_FULL,
+                                    esp_path,
+                                    file_name);
+
+        return stat(initrd_file, &st) == 0;
+}
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
