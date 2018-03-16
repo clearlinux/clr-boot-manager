@@ -39,8 +39,8 @@ addons:
 before_install:
   - gem install coveralls-lcov
   - mkdir -p $HOME/prefix/bin
-  - pip3 install --user meson==0.42.1
-  - wget https://github.com/ninja-build/ninja/releases/download/v1.6.0/ninja-linux.zip
+  - pip3 install --user meson==0.44.1
+  - wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip
   - unzip ninja-linux.zip
   - mv ninja $HOME/prefix/bin/
 
