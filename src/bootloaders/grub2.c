@@ -239,6 +239,7 @@ bool grub2_write_kernel(const Grub2Config *config, const Kernel *kernel)
                 cbm_writer_append_printf(config->writer,
                                          "rd.luks.uuid=%s ",
                                          config->root_dev->luks_uuid);
+                cbm_writer_append_printf(config->writer, "rd.luks.options=timeout=90 ");
         }
 
         /* Finish it off with the command line options */
