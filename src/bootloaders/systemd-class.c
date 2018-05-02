@@ -268,6 +268,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         /* Add LUKS information if relevant */
         if (root_dev->luks_uuid) {
                 cbm_writer_append_printf(writer, "rd.luks.uuid=%s ", root_dev->luks_uuid);
+                cbm_writer_append_printf(writer, "rd.luks.options=timeout=90 ");
         }
 
         /* Finish it off with the command line options */
