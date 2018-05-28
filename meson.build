@@ -66,10 +66,6 @@ elif with_bootloader == 'shim-systemd-boot'
     cdata.set('HAVE_SHIM_SYSTEMD_BOOT', 1)
     cdata.set('HAVE_SYSTEMD_BOOT', 1)
     require_efi = true
-elif with_bootloader == 'goofiboot'
-    cdata.set('HAVE_GOOFIBOOT', 1)
-elif with_bootloader == 'gummiboot'
-    cdata.set('HAVE_GUMMIBOOT', 1)
 endif
 
 # Let's find gnu-efi / efi-var

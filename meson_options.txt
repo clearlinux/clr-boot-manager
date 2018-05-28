@@ -1,6 +1,6 @@
 # Bootloader to use
 option('with-bootloader', type: 'combo', choices:
-    ['systemd-boot', 'goofiboot', 'gummiboot', 'shim-systemd-boot'], value: 'shim-systemd-boot')
+    ['systemd-boot', 'shim-systemd-boot'], value: 'shim-systemd-boot')
 
 # Currently we'll only look for gnu-efi when using shim-systemd-boot
 option('with-gnu-efi', type: 'string', description: 'Location of the gnu-efi headers')

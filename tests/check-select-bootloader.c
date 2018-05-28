@@ -54,10 +54,6 @@
 #define UEFI_BOOTLOADER_NAME "shim-systemd"
 #elif defined(HAVE_SYSTEMD_BOOT)
 #define UEFI_BOOTLOADER_NAME "systemd"
-#elif defined(HAVE_GUMMIBOOT)
-#define UEFI_BOOTLOADER_NAME "gummiboot"
-#else
-#define UEFI_BOOTLOADER_NAME "goofiboot"
 #endif
 
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"

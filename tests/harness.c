@@ -74,24 +74,7 @@
 
 #define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/systemd/boot/efi/systemd-boot" EFI_STUB_SUFFIX_L
 #define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/systemd/boot/efi"
-/**
- * gummiboot support
- */
-#elif defined(HAVE_GUMMIBOOT)
-#define ESP_BOOT_DIR EFI_START "/gummiboot"
-#define ESP_BOOT_STUB ESP_BOOT_DIR "/gummiboot" EFI_STUB_SUFFIX_L
 
-#define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/gummiboot/gummiboot" EFI_STUB_SUFFIX_L
-#define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/gummiboot"
-
-/**
- * goofiboot support
- */
-#elif defined(HAVE_GOOFIBOOT)
-#define ESP_BOOT_DIR EFI_START "/goofiboot"
-#define ESP_BOOT_STUB ESP_BOOT_DIR "/goofiboot" EFI_STUB_SUFFIX_L
-#define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/goofiboot/goofiboot" EFI_STUB_SUFFIX_L
-#define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/goofiboot"
 #else
 #error No known ESP loader
 #endif

@@ -83,7 +83,7 @@ stash_coverage
 # Now let's do a non-stock build, i.e. one like Solus
 echo "Performing non-stock configuration build"
 nuke_build
-build_one -Dwith-bootloader=goofiboot --libdir=/usr/lib64
+build_one -Dwith-bootloader=systemd-boot --libdir=/usr/lib64
 check_normal
 check_valgrind
 

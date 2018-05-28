@@ -36,8 +36,6 @@ extern const BootLoader grub2_bootloader;
 extern const BootLoader shim_systemd_bootloader;
 #endif
 extern const BootLoader systemd_bootloader;
-extern const BootLoader gummiboot_bootloader;
-extern const BootLoader goofiboot_bootloader;
 extern const BootLoader syslinux_bootloader;
 
 /**
@@ -49,10 +47,6 @@ const BootLoader *bootman_known_loaders[] =
       &shim_systemd_bootloader,
 #elif defined(HAVE_SYSTEMD_BOOT)
       &systemd_bootloader,
-#elif defined(HAVE_GUMMIBOOT)
-      &gummiboot_bootloader,
-#else
-      &goofiboot_bootloader,
 #endif
       /* non-systemd-class */
       &syslinux_bootloader };

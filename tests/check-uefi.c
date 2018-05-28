@@ -296,14 +296,6 @@ START_TEST(bootman_uefi_remove_bootloader)
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                              "/efi/systemd"),
                 "Systemd x64 bootloader present");
-#elif defined(HAVE_GUMMIBOOT)
-        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                             "/efi/gummiboot"),
-                "gummiboot x64 bootloader present");
-#else
-        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
-                                             "/efi/goofiboot"),
-                "goofiboot x64 bootloader present");
 #endif
 
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
