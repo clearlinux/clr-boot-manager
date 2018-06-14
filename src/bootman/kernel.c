@@ -56,6 +56,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *initrd_file = NULL;
         autofree(char) *user_initrd_file = NULL;
         autofree(char) *sysmap_file = NULL;
+        autofree(char) *vmlinux_file = NULL;
         autofree(char) *headers_dir = NULL;
         ssize_t r = 0;
         char *bcp = NULL;
@@ -80,6 +81,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         cmdline = string_printf("%s/cmdline-%s-%d.%s", parent, version, release, type);
         kconfig_file = string_printf("%s/config-%s-%d.%s", parent, version, release, type);
         sysmap_file = string_printf("%s/System.map-%s-%d.%s", parent, version, release, type);
+        vmlinux_file = string_printf("%s/vmlinux-%s-%d.%s", parent, version, release, type);
 
         /* i.e. /usr/lib/kernel/initrd-org.clearlinux.lts.4.9.1-1  */
         initrd_file = string_printf("%s/initrd-%s.%s.%s-%d",
@@ -167,6 +169,14 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         if (nc_file_exists(sysmap_file)) {
                 kern->source.sysmap_file = strdup(sysmap_file);
                 if (!kern->source.sysmap_file) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+
+        if (nc_file_exists(vmlinux_file)) {
+                kern->source.vmlinux_file = strdup(vmlinux_file);
+                if (!kern->source.vmlinux_file) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -300,6 +310,7 @@ void free_kernel(Kernel *t)
         free(t->source.headers_dir);
         free(t->source.kconfig_file);
         free(t->source.sysmap_file);
+        free(t->source.vmlinux_file);
         free(t->source.kboot_file);
         free(t->source.initrd_file);
         free(t->source.user_initrd_file);
@@ -745,6 +756,13 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                 if (unlink(kernel->source.sysmap_file) < 0) {
                         LOG_ERROR("Failed to remove System.map file %s: %s",
                                   kernel->source.sysmap_file,
+                                  strerror(errno));
+                }
+        }
+        if (kernel->source.vmlinux_file && nc_file_exists(kernel->source.vmlinux_file)) {
+                if (unlink(kernel->source.vmlinux_file) < 0) {
+                        LOG_ERROR("Failed to remove vmlinux file %s: %s",
+                                  kernel->source.vmlinux_file,
                                   strerror(errno));
                 }
         }

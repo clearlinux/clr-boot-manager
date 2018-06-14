@@ -67,6 +67,7 @@ typedef struct Kernel {
                 char *kboot_file;       /**<Path to the k_booted_$(uname -r) file */
                 char *module_dir;       /**<Path to the modules directory */
                 char *sysmap_file;      /**<Path to the System.map file */
+                char *vmlinux_file;     /**<Path to the vmlinux file */
                 char *headers_dir;      /**<Path to the kernels header directory */
         } source;
 
