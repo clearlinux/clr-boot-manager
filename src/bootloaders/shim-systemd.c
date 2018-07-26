@@ -280,8 +280,8 @@ static bool shim_systemd_install(const BootManager *manager)
         if (!config.is_image_mode) {
                 if (!config.has_boot_rec) {
                         if (bootvar_create(BOOT_DIRECTORY, config.shim_dst_esp, varname, 9)) {
-                                LOG_FATAL("Cannot create EFI variable (boot entry)");
-                                return false;
+                                LOG_ERROR("Cannot create EFI variable (boot entry)");
+                                LOG_ERROR("Please manually update your bios to add a boot entry for Clear Linux");
                         }
                 }
         } else {

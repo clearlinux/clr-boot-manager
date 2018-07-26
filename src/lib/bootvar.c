@@ -125,7 +125,7 @@ static int bootvar_read_boot_recs(void)
                 i++;
         }
         if (res < 0) {
-                LOG_FATAL("efi_get_next_variable_name() failed: %s", strerror(errno));
+                LOG_ERROR("efi_get_next_variable_name() failed: %s", strerror(errno));
                 return -EBOOT_VAR_ERR;
         }
         boot_recs_cnt = i;
@@ -154,7 +154,7 @@ static int bootvar_push_to_boot_order(boot_rec_t *rec)
                              (uint8_t **)&boot_order,
                              &boot_order_size,
                              &boot_order_attrs)) {
-                LOG_FATAL("efi_get_variable() failed: %s", strerror(errno));
+                LOG_ERROR("efi_get_variable() failed: %s", strerror(errno));
                 return -EBOOT_VAR_ERR;
         }
 
@@ -196,7 +196,7 @@ static int bootvar_push_to_boot_order(boot_rec_t *rec)
                              new_boot_order_size,
                              boot_order_attrs,
                              0644)) {
-                LOG_FATAL("efi_set_variable() failed: %s", strerror(errno));
+                LOG_ERROR("efi_set_variable() failed: %s", strerror(errno));
                 return -EBOOT_VAR_ERR;
         }
 
@@ -294,47 +294,47 @@ static int bootvar_get_part_info(const char *path, part_info_t *pi)
         const char *part_type;
 
         if (stat(path, &st)) {
-                LOG_FATAL("stat() failed on %s: %s", path, strerror(errno));
+                LOG_ERROR("stat() failed on %s: %s", path, strerror(errno));
                 return -EBOOT_VAR_ERR;
         }
 
         strcpy(disk_path, "/dev/");
         if (blkid_devno_to_wholedisk(st.st_dev, disk_path + 5, PATH_MAX - 5, &disk_dev)) {
-                LOG_FATAL("blkid_devno_to_wholedisk() error");
+                LOG_ERROR("blkid_devno_to_wholedisk() error");
                 return -EBOOT_VAR_ERR;
         }
 
         if (!(probe = blkid_new_probe_from_filename(disk_path))) {
-                LOG_FATAL("blkid_new_probe_from_filename() error");
+                LOG_ERROR("blkid_new_probe_from_filename() error");
                 return -EBOOT_VAR_ERR;
         }
 
         if (blkid_probe_enable_partitions(probe, 1)) {
-                LOG_FATAL("blkid_probe_enable_partitions() error");
+                LOG_ERROR("blkid_probe_enable_partitions() error");
                 return -EBOOT_VAR_ERR;
         }
 
         if (!(parts = blkid_probe_get_partitions(probe))) {
-                LOG_FATAL("blkid_probe_get_partitions() error");
+                LOG_ERROR("blkid_probe_get_partitions() error");
                 return -EBOOT_VAR_ERR;
         }
 
         if (!(part = blkid_partlist_devno_to_partition(parts, st.st_dev))) {
-                LOG_FATAL("blkid_partlist_devno_to_partition() error");
+                LOG_ERROR("blkid_partlist_devno_to_partition() error");
                 return -EBOOT_VAR_ERR;
         }
 
         if ((pi->part_no = blkid_partition_get_partno(part)) < 0) {
-                LOG_FATAL("blkid_partition_get_partno() error");
+                LOG_ERROR("blkid_partition_get_partno() error");
                 return -EBOOT_VAR_ERR;
         }
 
         part_type = blkid_partition_get_type_string(part);
         if (!part_type) {
-                LOG_FATAL("blkid_partition_get_type_string() returned NULL");
+                LOG_ERROR("blkid_partition_get_type_string() returned NULL");
                 return -EBOOT_VAR_ERR;
         } else if (strlen(part_type) != 36) {
-                LOG_FATAL("partition type does not seem to be a GUID: %s", part_type);
+                LOG_ERROR("partition type does not seem to be a GUID: %s", part_type);
                 return -EBOOT_VAR_ERR;
         }
 
@@ -367,7 +367,7 @@ static boot_rec_t *bootvar_add_boot_rec(uint8_t *data, size_t len)
                 return NULL;
         }
         if (efi_set_variable(EFI_GLOBAL_GUID, name, data, len, attr, 0644) < 0) {
-                LOG_FATAL("efi_set_variable() failed: %s", strerror(errno));
+                LOG_ERROR("efi_set_variable() failed: %s", strerror(errno));
                 return NULL;
         }
         /* re-read the records and find the variable that was just created. */
@@ -408,7 +408,7 @@ static int bootvar_make_boot_rec_data(const char *esp_mount_path, const char *bo
                                                      bootloader_esp_path,
                                                      EFIBOOT_ABBREV_HD);
         if (len < 0) {
-                LOG_FATAL("efi_generate_file_device_path_from_esp() failed: %s", strerror(errno));
+                LOG_ERROR("efi_generate_file_device_path_from_esp() failed: %s", strerror(errno));
                 return -EBOOT_VAR_ERR;
         }
 
@@ -421,7 +421,7 @@ static int bootvar_make_boot_rec_data(const char *esp_mount_path, const char *bo
                                  NULL,
                                  0);
         if (len < 0) {
-                LOG_FATAL("efi_loadopt_create() failed: %s", strerror(errno));
+                LOG_ERROR("efi_loadopt_create() failed: %s", strerror(errno));
                 return -EBOOT_VAR_ERR;
         }
 
