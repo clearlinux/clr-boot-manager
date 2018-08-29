@@ -113,7 +113,7 @@ static bool cbm_os_release_parse(CbmOsRelease *self, const char *path)
                 r -= cur;
 
                 /* Strip trailing whitespace */
-                l = rstrip(l, (size_t)r, &r);
+                l = rstrip(l, (size_t *)&r);
 
                 /* May now be an empty line */
                 if (r < 1) {

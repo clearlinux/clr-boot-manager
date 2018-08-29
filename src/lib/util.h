@@ -55,7 +55,7 @@
  * Strip the right side of a string of it's whitespace
  * This must be allocated memory
  */
-char *rstrip(char *a, size_t len, ssize_t *newlen);
+char *rstrip(char *a, size_t *len);
 
 /**
  * Similar to asprintf, but will assert allocation of the string.

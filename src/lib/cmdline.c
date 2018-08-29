@@ -79,7 +79,7 @@ static int cbm_parse_cmdline_file_internal(const char *path, FILE *out)
                 r -= cur;
 
                 /* Strip trailing whitespace */
-                l = rstrip(l, (size_t)r, &r);
+                l = rstrip(l, (size_t *)&r);
 
                 /* May now be an empty line */
                 if (r < 1) {

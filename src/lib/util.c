@@ -16,24 +16,30 @@
 
 #include "util.h"
 
-char *rstrip(char *a, size_t len, ssize_t *newlen)
+char *rstrip(char *a, size_t *len)
 {
-        char *e = a + len - 1;
-        if (len < 1) {
+        /* start at the last character in the string */
+        char *e = a + *len - 1;
+
+        if (*len < 1) {
                 return a;
         }
 
         for (;;) {
-                if (!isspace(*e) || e <= a) {
+                if (e < a || !isspace(*e)) {
                         break;
                 }
                 --e;
         }
-        if (newlen) {
-                *newlen = e - a + 1;
+
+        if (e < a) {
+                *len = 0;
+                *a = '\0';
+        } else {
+                *len = (size_t)(e - a) + 1;
+                *(e + 1) = '\0';
         }
 
-        *(e + 1) = '\0';
         return a;
 }
 
