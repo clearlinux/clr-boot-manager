@@ -118,6 +118,135 @@ static int cbm_parse_cmdline_file_internal(const char *path, FILE *out)
         return nbytes;
 }
 
+/**
+ * Attempt to parse a command line file and remove its content from the out buffer.
+ *
+ * @Returns negative code if parsing failed, otherwise the new buffer size.
+ */
+static int cbm_parse_cmdline_file_removal_internal(const char *path, char *out, size_t buflen)
+{
+        autofree(FILE) *f = NULL;
+        size_t sn = 0;
+        ssize_t r = 0;
+        size_t sz = 0;
+        char *buf = NULL;
+        bool ret = true;
+        size_t nbytes = buflen;
+
+        /* Cleanup trailing whitespace of out buf */
+        out = rstrip(out, &nbytes);
+
+        f = fopen(path, "r");
+        if (!f) {
+                if (errno != ENOENT) {
+                        LOG_ERROR("Unable to open %s: %s", path, strerror(errno));
+                }
+                return false;
+        }
+
+        while ((r = getline(&buf, &sn, f)) > 0) {
+                sz = (size_t)r;
+                char *m = NULL;
+
+                /* Strip newlines */
+                if (sz >= 1 && buf[sz - 1] == '\n') {
+                        buf[sz - 1] = '\0';
+                        --sz;
+                }
+                char *l = buf;
+
+                /* Skip empty lines */
+                if (sz < 1) {
+                        goto next_line;
+                }
+
+                /* Skip the starting whitespace */
+                while (isspace(*l)) {
+                        ++l;
+                        if (!*l) {
+                                break;
+                        }
+                }
+
+                /* Skip a comment */
+                if (l[0] == '#') {
+                        goto next_line;
+                }
+
+                /* Reset length */
+                sz = sz - (size_t)(l - buf);
+
+                /* Strip trailing whitespace */
+                l = rstrip(l, &sz);
+
+                /* May now be an empty line */
+                if (sz < 1) {
+                        goto next_line;
+                }
+
+                m = memmem(out, nbytes, l, sz);
+                if (!m) {
+                        goto next_line;
+                }
+
+                /* check match wasn't a substring */
+                if (m[sz] != '\0' && m[sz] != ' ') {
+                        goto next_line;
+                }
+
+                /* Given memem matched, check if it matched the entire line */
+                if (sz == nbytes) {
+                        m[0] = '\0';
+                } else {
+                        /* Kill spaces in between options */
+                        if (m[sz] == ' ') {
+                                sz += 1;
+                        }
+
+                        /* a bit of casting but given memem results we assume:
+                           out <= m && nbytes > sz
+                           this means m - out is the distance from the start
+                           of the string to the start of the match and
+                           nbytes - sz is the length of the characters not
+                           in the match
+                           this leaves rest_len to be the number of characters
+                           that were not in the match minus the characters
+                           before the match as the number of characters needed
+                           to be copied */
+
+                        /* Example:
+                           out = "test cmdline options"
+                           m = "cmdline options"
+                           sz = 8 -> strlen("cmdline ")
+                           nbytes = 20 -> strlen("test cmdline options")
+                           nbytes - sz = 12 -> strlen("test ")
+                           + strlen("options")
+                           m - out = 5 -> 0x5 - 0x0
+                           12 - 5 = 7 -> strlen("options") == rest_len
+                           0x5 + 8 = 13 -> out[13] = 'o'
+                           (next character position in out after m) */
+                        size_t rest_len = (nbytes - sz) - (size_t)(m - out);
+                        (void)memmove(m, m + sz, rest_len);
+                        m[rest_len] = '\0';
+                }
+                nbytes -= sz;
+
+        next_line:
+                free(buf);
+                buf = NULL;
+        }
+
+        if (buf) {
+                free(buf);
+                buf = NULL;
+        }
+
+        if (!ret) {
+                return -1;
+        }
+        return (int)nbytes;
+}
+
 char *cbm_parse_cmdline_file(const char *file)
 {
         FILE *memstr = NULL;
@@ -238,23 +367,50 @@ clean:
         return ret;
 }
 
+static bool cbm_parse_cmdline_removal_files_directory(char *globfile, char *buffer, size_t buflen)
+{
+        glob_t glo = { 0 };
+        glo.gl_offs = 0;
+        size_t sz = buflen;
+        glob(globfile, GLOB_DOOFFS, NULL, &glo);
+        int ret = false;
+
+        for (size_t i = 0; i < glo.gl_pathc; i++) {
+                char *argv = glo.gl_pathv[i];
+                int r = 0;
+
+                r = cbm_parse_cmdline_file_removal_internal(argv, buffer, sz);
+                if (r < 0) {
+                        goto clean;
+                }
+                sz = (size_t)r;
+        }
+        ret = true;
+
+clean:
+        globfree(&glo);
+        return ret;
+}
+
 char *cbm_parse_cmdline_files(const char *root)
 {
         autofree(char) *cmdline = NULL;
         autofree(char) *globfile = NULL;
         autofree(char) *vendor_glob = NULL;
+        autofree(char) *vendor_negative_glob = NULL;
         FILE *memstr = NULL;
         autofree(char) *buf = NULL;
         bool bump_start = false;
         int ret = 0;
         size_t sz = 0;
 
-        bool fail = true;
+        bool success = false;
 
         /* global cmdline */
         cmdline = string_printf("%s/%s/cmdline", root, KERNEL_CONF_DIRECTORY);
         globfile = string_printf("%s/%s/cmdline.d/*.conf", root, KERNEL_CONF_DIRECTORY);
         vendor_glob = string_printf("%s/%s/cmdline.d/*.conf", root, VENDOR_KERNEL_CONF_DIRECTORY);
+        vendor_negative_glob = string_printf("%s/%s/cmdline-removal.d/*.conf", root, KERNEL_CONF_DIRECTORY);
 
         memstr = open_memstream(&buf, &sz);
         if (!memstr) {
@@ -287,11 +443,11 @@ char *cbm_parse_cmdline_files(const char *root)
         if (cbm_parse_cmdline_files_directory(root, bump_start, false, globfile, memstr) < 0) {
                 goto clean;
         }
+        success = true;
 
-        fail = false;
 clean:
         fclose(memstr);
-        if (!fail) {
+        if (success && cbm_parse_cmdline_removal_files_directory(vendor_negative_glob, buf, sz)) {
                 return strdup(buf);
         }
         return NULL;

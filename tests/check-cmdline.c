@@ -105,6 +105,42 @@ START_TEST(cbm_cmdline_test_dirs_vendor_merged)
 }
 END_TEST
 
+START_TEST(cbm_cmdline_test_delete_middle)
+{
+        const char *dir = TOP_DIR "/tests/data/cmdline_delete_middle";
+
+        autofree(char) *p = NULL;
+
+        p = cbm_parse_cmdline_files(dir);
+        fail_if(!p, "Failed to parse cmdline file");
+        fail_if(!streq(p, "pre post"), "Delete middle file does not match");
+}
+END_TEST
+
+START_TEST(cbm_cmdline_test_delete_ends)
+{
+        const char *dir = TOP_DIR "/tests/data/cmdline_delete_ends";
+
+        autofree(char) *p = NULL;
+
+        p = cbm_parse_cmdline_files(dir);
+        fail_if(!p, "Failed to parse cmdline file");
+        fail_if(!streq(p, "two three "), "Delete ends does not match");
+}
+END_TEST
+
+START_TEST(cbm_cmdline_test_delete_all)
+{
+        const char *dir = TOP_DIR "/tests/data/cmdline_delete_all";
+
+        autofree(char) *p = NULL;
+
+        p = cbm_parse_cmdline_files(dir);
+        fail_if(!p, "Failed to parse cmdline file");
+        fail_if(!streq(p, ""), "Delete all cmdline does not match");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -119,6 +155,9 @@ static Suite *core_suite(void)
         tcase_add_test(tc, cbm_cmdline_test_dirs);
         tcase_add_test(tc, cbm_cmdline_test_dirs_vendor_only);
         tcase_add_test(tc, cbm_cmdline_test_dirs_vendor_merged);
+        tcase_add_test(tc, cbm_cmdline_test_delete_middle);
+        tcase_add_test(tc, cbm_cmdline_test_delete_ends);
+        tcase_add_test(tc, cbm_cmdline_test_delete_all);
         suite_add_tcase(s, tc);
 
         return s;

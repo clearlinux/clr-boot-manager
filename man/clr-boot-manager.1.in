@@ -105,6 +105,16 @@ can also be used to mask the vendor cmdline if the filename matches a vendor
 configuration file and is linked to /dev/null\&.
 .RE
 
+.PP
+\fB@KERNEL_CONF_DIRECTORY@/cmdline-removal.d/*.conf\fR
+.RS 4
+A set of files that will be used to modify the kernel commandline by removing
+string matches from the final consolidated commandline (removal happens after
+the content from cmdline and cmdline.d/*.conf files are added). The matches
+are made on a per line basis so multiple different removals should be placed
+on their own line or file\&.
+.RE
+
 
 .SH "ENVIRONMENT"
 \fI$CBM_DEBUG\fR
