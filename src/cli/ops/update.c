@@ -19,6 +19,7 @@
 #include "bootman.h"
 #include "cli.h"
 #include "log.h"
+#include "nica/files.h"
 
 bool cbm_command_update(int argc, char **argv)
 {
@@ -63,7 +64,10 @@ bool cbm_command_update(int argc, char **argv)
                         return false;
                 }
         }
-
+        if (!nc_file_exists(boot_manager_get_kernel_dir(manager))) {
+                LOG_INFO("No kernels to process, exiting");
+                return true;
+        }
         /* Grab the available freestanding initrd */
         if (!boot_manager_enumerate_initrds_freestanding(manager)) {
                 return false;
