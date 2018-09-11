@@ -77,6 +77,7 @@ __cbm_export__ const BootLoader
                                .install_kernel = shim_systemd_install_kernel,
                                .remove_kernel = shim_systemd_remove_kernel,
                                .set_default_kernel = shim_systemd_set_default_kernel,
+                               .get_default_kernel = sd_class_get_default_kernel,
                                .needs_install = shim_systemd_needs_install,
                                .needs_update = shim_systemd_needs_update,
                                .install = shim_systemd_install,

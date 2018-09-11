@@ -109,6 +109,16 @@ BootManager *boot_manager_new(void);
 void boot_manager_free(BootManager *manager);
 
 /**
+ * Display all the installed kernel files
+ *
+ * @note In future this will switch to an int-error return for integration
+ * with other tooling.
+ *
+ * @return NULL terminated array of allocated strings or NULL.
+ */
+char **boot_manager_list_kernels(BootManager *manager);
+
+/**
  * Main actor of the operation, apply all relevant update and GC operations
  *
  * @note In future this will switch to an int-error return for integration
@@ -237,6 +247,11 @@ bool boot_manager_remove_kernel(BootManager *manager, const Kernel *kernel);
  * Attempt to set the default kernel entry
  */
 bool boot_manager_set_default_kernel(BootManager *manager, const Kernel *kernel);
+
+/**
+ * Attempt to get the default kernel entry
+ */
+char *boot_manager_get_default_kernel(BootManager *manager);
 
 /**
  * Return the CbmDeviceProbe for the root partition

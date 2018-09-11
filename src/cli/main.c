@@ -21,6 +21,7 @@
 #include "ops/report_booted.h"
 #include "ops/timeout.h"
 #include "ops/update.h"
+#include "ops/kernels.h"
 
 static SubCommand cmd_update;
 static SubCommand cmd_help;
@@ -28,6 +29,8 @@ static SubCommand cmd_version;
 static SubCommand cmd_set_timeout;
 static SubCommand cmd_get_timeout;
 static SubCommand cmd_report_booted;
+static SubCommand cmd_list_kernels;
+static SubCommand cmd_set_kernel;
 static char *binary_name = NULL;
 static NcHashmap *g_commands = NULL;
 static bool explicit_help = false;
@@ -98,7 +101,8 @@ int main(int argc, char **argv)
         }
         g_commands = commands;
 
-        /* Currently our only "real" command */
+        /* Add subcommands */
+        /* Update bootloader and kernel */
         cmd_update = (SubCommand){
                 .name = "update",
                 .blurb = "Perform post-update configuration of the system",
@@ -165,6 +169,38 @@ to forcibly delay the system boot for a specified number of seconds.",
                          .callback = cbm_command_report_booted,
                          .requires_root = true };
         if (!nc_hashmap_put(commands, cmd_report_booted.name, &cmd_report_booted)) {
+                DECLARE_OOM();
+                return EXIT_FAILURE;
+        }
+
+        /* Display currently available kernels */
+        cmd_list_kernels = (SubCommand){
+                .name = "list-kernels",
+                .blurb = "Display currently selectable kernels to boot",
+                .help = "This command will show available kernels that can be used\n\
+as the argument to select-kernel with a * marking the currently selected kernel.",
+                .callback = cbm_command_list_kernels,
+                .usage = " [--path=/path/to/filesystem/root]",
+                .requires_root = true
+        };
+
+        if (!nc_hashmap_put(commands, cmd_list_kernels.name, &cmd_list_kernels)) {
+                DECLARE_OOM();
+                return EXIT_FAILURE;
+        }
+
+        /* Set kernel to be booted */
+        cmd_set_kernel = (SubCommand){
+                .name = "set-kernel",
+                .blurb = "Configure kernel to be used at next boot",
+                .help = "This command will set a kernel to be used as the default\n\
+kernel for the next time the system boots.",
+                .callback = cbm_command_set_kernel,
+                .usage = " [--path=/path/to/filesystem/root]",
+                .requires_root = true
+        };
+
+        if (!nc_hashmap_put(commands, cmd_set_kernel.name, &cmd_set_kernel)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }

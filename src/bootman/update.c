@@ -42,6 +42,47 @@ static int kernel_compare_reverse(const void *a, const void *b)
         return 1;
 }
 
+/**
+ * List kernels available on the target
+ *
+ * Returns a list of kernels available to be run.
+ */
+char **boot_manager_list_kernels(BootManager *self)
+{
+        assert(self != NULL);
+        autofree(KernelArray) *kernels = NULL;
+        autofree(char) *default_kernel = NULL;
+        char **results;
+
+        /* Grab the available kernels */
+        kernels = boot_manager_get_kernels(self);
+        if (!kernels || kernels->len == 0) {
+                LOG_ERROR("No kernels discovered in %s, bailing", self->kernel_dir);
+                return NULL;
+        }
+
+        /* Sort them to ensure static ordering */
+        nc_array_qsort(kernels, kernel_compare_reverse);
+
+        default_kernel = boot_manager_get_default_kernel(self);
+        results = calloc(kernels->len + (size_t)1, sizeof(char *));
+        if (!results) {
+                DECLARE_OOM();
+                return NULL;
+        }
+        for (uint16_t i = 0; i < kernels->len; i++) {
+                const Kernel *k = nc_array_get(kernels, i);
+                if (streq(default_kernel, k->meta.bpath)) {
+                        results[i] = string_printf("* %s", k->meta.bpath);
+                } else {
+                        results[i] = string_printf("  %s", k->meta.bpath);
+                }
+        }
+        results[kernels->len] = NULL;
+
+        return results;
+}
+
 bool boot_manager_update(BootManager *self)
 {
         assert(self != NULL);
@@ -414,18 +455,21 @@ static bool boot_manager_update_native(BootManager *self)
         } else {
                 new_default = boot_manager_get_default_for_type(self, kernels, running->meta.ktype);
         }
-        if (!boot_manager_set_default_kernel(self, new_default)) {
-                LOG_ERROR("Failed to set the default kernel to: %s",
-                          new_default ? new_default->source.path : "<timeout mode>");
-                goto cleanup;
-        }
 
         if (new_default) {
+                if (!boot_manager_set_default_kernel(self, new_default)) {
+                        LOG_ERROR("Failed to set the default kernel to: %s",
+                                  new_default ? new_default->source.path : "<timeout mode>");
+                        goto cleanup;
+                }
+
                 LOG_SUCCESS("update_native: Default kernel for %s is %s",
                             new_default->meta.ktype,
                             new_default->source.path);
         } else if (running) {
                 LOG_INFO("update_native: No possible default kernel for %s", running->meta.ktype);
+        } else {
+                LOG_INFO("No kernel available for any type");
         }
 
         ret = true;

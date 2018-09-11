@@ -37,12 +37,18 @@
 static PlaygroundKernel uefi_kernels[] = { { "4.2.1", "kvm", 121, false, false },
                                            { "4.2.3", "kvm", 124, true, false },
                                            { "4.2.1", "native", 137, false, false },
-                                           { "4.2.3", "native", 138, true, false } };
+                                           { "4.2.3", "native", 138, true, false },
+                                           { "4.2.1", "dash-test", 1, true, false } };
 
 static PlaygroundConfig uefi_config = { "4.2.1-121.kvm",
                                         uefi_kernels,
                                         ARRAY_SIZE(uefi_kernels),
                                         .uefi = true };
+
+static PlaygroundConfig uefi_config_dash_test = { "4.2.1-1.dash-test",
+                                                  uefi_kernels,
+                                                  ARRAY_SIZE(uefi_kernels),
+                                                  .uefi = true };
 
 static PlaygroundConfig uefi_config_no_modules = { "4.2.1-121.kvm",
                                                    uefi_kernels,
@@ -491,6 +497,97 @@ START_TEST(bootman_uefi_ensure_removed)
 }
 END_TEST
 
+START_TEST(bootman_uefi_list_kernels)
+{
+        autofree(BootManager) *m = NULL;
+        char *kernels[] = {
+                "* " KERNEL_NAMESPACE ".native.4.2.3-138",
+                "  " KERNEL_NAMESPACE ".native.4.2.1-137",
+                "  " KERNEL_NAMESPACE ".kvm.4.2.3-124",
+                "  " KERNEL_NAMESPACE ".kvm.4.2.1-121",
+                "  " KERNEL_NAMESPACE ".dash-test.4.2.1-1",
+                NULL
+        };
+        int klen = sizeof(kernels) / sizeof(char *);
+        char **results = NULL;
+        m = prepare_playground(&uefi_config_dash_test);
+        fail_if(!m, "Failed to prepare update playground");
+
+        /* Validate image install */
+        boot_manager_set_image_mode(m, true);
+        fail_if(!boot_manager_update(m), "Failed to update image");
+        results = boot_manager_list_kernels(m);
+        fail_if(!results, "Failed to get kernels");
+        for (int i = 0; i < klen; i++) {
+                fail_if(!streq(results[i], kernels[i]),
+                        "Failed to get correct kernel list %s %s", results[i], kernels[i]);
+                free(results[i]);
+        }
+        fail_if(results[klen - 1] != NULL,
+                "Failed to get correct kernel list");
+        free(results);
+}
+END_TEST
+
+START_TEST(bootman_uefi_set_kernel)
+{
+        autofree(BootManager) *m = NULL;
+        char *kernels[] = {
+                "  " KERNEL_NAMESPACE ".native.4.2.3-138",
+                "  " KERNEL_NAMESPACE ".native.4.2.1-137",
+                "  " KERNEL_NAMESPACE ".kvm.4.2.3-124",
+                "  " KERNEL_NAMESPACE ".kvm.4.2.1-121",
+                "* " KERNEL_NAMESPACE ".dash-test.4.2.1-1",
+                NULL
+        };
+        int klen = sizeof(kernels) / sizeof(char *);
+        char **results = NULL;
+        Kernel kern = { 0 };
+        kern.meta.version = strdup(uefi_kernels[4].version);
+        kern.meta.ktype = strdup(uefi_kernels[4].ktype);
+        kern.meta.release = uefi_kernels[4].release;
+
+        m = prepare_playground(&uefi_config_dash_test);
+        fail_if(!m, "Failed to prepare update playground");
+
+        /* Validate image install */
+        boot_manager_set_image_mode(m, true);
+        fail_if(!boot_manager_update(m), "Failed to update image");
+        fail_if(!boot_manager_set_default_kernel(m, &kern), "Failed to set default kernel");
+        results = boot_manager_list_kernels(m);
+        fail_if(!results, "Failed to get kernels");
+        for (int i = 0; i < klen; i++) {
+                fail_if(!streq(results[i], kernels[i]),
+                        "Failed to get correct kernel list %s %s", results[i], kernels[i]);
+                free(results[i]);
+        }
+        fail_if(results[klen - 1] != NULL,
+                "Failed to get correct kernel list");
+        free(results);
+        free(kern.meta.version);
+        free(kern.meta.ktype);
+}
+END_TEST
+
+START_TEST(bootman_uefi_set_kernel_missing)
+{
+        autofree(BootManager) *m = NULL;
+        Kernel kern = { 0 };
+        kern.meta.version = "not";
+        kern.meta.ktype = "exist";
+        kern.meta.release = 0;
+
+        m = prepare_playground(&uefi_config);
+        fail_if(!m, "Failed to prepare update playground");
+
+        /* Validate image install */
+        boot_manager_set_image_mode(m, true);
+        fail_if(!boot_manager_update(m), "Failed to update image");
+        fail_if(boot_manager_set_default_kernel(m, &kern),
+                "Set default kernel that doesn't exist");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -510,6 +607,9 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_uefi_initrd_freestandings);
         tcase_add_test(tc, bootman_uefi_missing_initrd_freestandings);
         tcase_add_test(tc, bootman_uefi_initrd_freestandings_image);
+        tcase_add_test(tc, bootman_uefi_list_kernels);
+        tcase_add_test(tc, bootman_uefi_set_kernel);
+        tcase_add_test(tc, bootman_uefi_set_kernel_missing);
         suite_add_tcase(s, tc);
 
         /* Tests without kernel modules */

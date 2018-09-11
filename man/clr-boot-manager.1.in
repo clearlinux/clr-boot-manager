@@ -89,6 +89,23 @@ Setting this to a value of 0 will remove the timout entirely\&.
 Returns the currently configured timeout as set by \fBclr\-boot\-manager set\-timeout\fR\&.
 .RE
 
+.PP
+\fBlist-kernels\fR
+.RS 4
+Display kernels currently available for booting that were provisioned by clr-boot-manager.
+
+This command will present a sorted list of kernels with the kernel that is selected for
+the next boot highlighted with a * prefix\&.
+.RE
+
+.PP
+\fBset-kernel\fR
+.RS 4
+Configure the default booting kernel.
+
+This command will not prevent the update command from changing the default kernel\&.
+.RE
+
 .SH "EXIT STATUS"
 .PP
 On success, 0 is returned, a non\-zero failure code otherwise\&

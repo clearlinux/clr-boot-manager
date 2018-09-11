@@ -37,6 +37,8 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel);
 
 bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel);
 
+char *sd_class_get_default_kernel(const BootManager *manager);
+
 bool sd_class_needs_install(const BootManager *manager);
 
 bool sd_class_needs_update(const BootManager *manager);

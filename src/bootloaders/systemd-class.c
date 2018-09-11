@@ -384,6 +384,131 @@ write_config:
         return true;
 }
 
+static char *parse_kernel_from_loader(char *conf, const BootManager *manager)
+{
+        char ktype[32] = { 0 };
+        char version[16] = { 0 };
+        long int release = -1;
+        const char *prefix = NULL;
+        char * const hdr = "default ";
+        char *start = NULL;
+        char *end = NULL;
+        int field = 0;
+        size_t ln;
+
+        if (!conf) {
+                return NULL;
+        }
+
+        /*
+         * Looking for the 'default $kernel' line, it may contain extra
+         * lines around it, but just grab the start and end of the
+         * $kernel content.
+         */
+        start = strstr(conf, hdr);
+        if (!start) {
+                return NULL;
+        }
+        start = start + strlen(hdr);
+        *(start - 1) = '-';
+        end = strstr(start, "\n");
+
+        /* Make end a nul character */
+        if (end) {
+                *end = 0;
+        } else {
+                end = start + strlen(start);
+        }
+
+        /*
+         * Horrible manually parsing a string of the form:
+         * 'Clear-linux-pk414-standard-4.14.74-115' below.
+         *
+         * Idea is to parse backwards using the dashes '-' as field
+         * boundries. First comes release #, then kernel version and
+         * finally the kernel identifier with the vendor prefix.
+         *
+         * So given the example we want:
+         * release = 115;
+         * version = "4.14.74";
+         * ktype = "pk414-standard";
+         */
+        for (char *c = end; c > start; c--) {
+                if (field == 2) {
+                        /* The rest includes ktype */
+                        prefix = boot_manager_get_vendor_prefix((BootManager *)manager);
+                        ln = strlen(start);
+                        /*
+                         * Add one to prefix length for the dash between
+                         * prefix and ktype.
+                         */
+                        size_t pln = strlen(prefix) + 1;
+                        if (((pln) >= ln) || (ln - pln > 31)) {
+                                break;
+                        }
+                        memcpy(ktype, start + pln, ln - pln);
+                        break;
+                }
+
+                if (*c == '-') {
+                        if (*(c + 1) == 0) {
+                                /* Invalid field */
+                                break;
+                        }
+                        switch (field) {
+                        case 0:
+                                errno = 0;
+                                release = strtol(c + 1, NULL, 10);
+                                if (errno != 0) {
+                                        release = -1;
+                                }
+                                break;
+                        case 1:
+                                ln = strlen(c + 1);
+                                if (ln > 15) {
+                                        break;
+                                }
+                                memcpy(version, c + 1, ln);
+                                break;
+                        default:
+                                break;
+                        }
+                        *c = 0;
+                        field++;
+                }
+        }
+
+        if (!ktype[0] || !version[0] || release < 0) {
+                return NULL;
+        }
+
+        return string_printf("%s.%s.%s-%ld",
+                             KERNEL_NAMESPACE,
+                             ktype,
+                             version,
+                             release);
+
+}
+
+char *sd_class_get_default_kernel(const BootManager *manager)
+{
+        if (!manager) {
+                return NULL;
+        }
+
+        autofree(char) *conf = NULL;
+        char *kernel = NULL;
+
+        if (file_get_text(sd_class_config.loader_config, &conf)) {
+                kernel = parse_kernel_from_loader(conf, manager);
+        }
+
+        if (!kernel) {
+                LOG_FATAL("sd_class_get_default_kernel Unable to parse loader config");
+        }
+        return kernel;
+}
+
 bool sd_class_needs_install(const BootManager *manager)
 {
         if (!manager) {

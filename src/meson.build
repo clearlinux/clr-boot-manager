@@ -89,6 +89,7 @@ link_libcbm = declare_dependency(
 clr_boot_manager_sources = [
     'cli/cli.c',
     'cli/main.c',
+    'cli/ops/kernels.c',
     'cli/ops/report_booted.c',
     'cli/ops/timeout.c',
     'cli/ops/update.c',

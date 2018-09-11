@@ -24,6 +24,7 @@ typedef bool (*boot_loader_install_kernel)(const BootManager *, const Kernel *);
 typedef const char *(*boot_loader_get_kernel_destination)(const BootManager *);
 typedef bool (*boot_loader_remove_kernel)(const BootManager *, const Kernel *);
 typedef bool (*boot_loader_set_default_kernel)(const BootManager *, const Kernel *kernel);
+typedef char *(*boot_loader_get_default_kernel)(const BootManager *);
 typedef bool (*boot_loader_needs_update)(const BootManager *);
 typedef bool (*boot_loader_needs_install)(const BootManager *);
 typedef bool (*boot_loader_install)(const BootManager *);
@@ -51,6 +52,7 @@ typedef struct BootLoader {
         boot_loader_install_kernel install_kernel;         /**<Install a given kernel */
         boot_loader_remove_kernel remove_kernel;           /**<Remove a given kernel */
         boot_loader_set_default_kernel set_default_kernel; /**<Set the default kernel */
+        boot_loader_get_default_kernel get_default_kernel; /**<Get the default kernel */
         boot_loader_needs_update needs_update;             /**<Check if an update is required */
         boot_loader_needs_install needs_install;           /**<Check if an install is required */
         boot_loader_install install;                       /**<Install this bootloader */

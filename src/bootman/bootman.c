@@ -295,6 +295,7 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
 bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
 {
         assert(self != NULL);
+        autofree(KernelArray) *kernels = NULL;
 
         if (!self->bootloader) {
                 return false;
@@ -302,7 +303,37 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
         if (!cbm_is_sysconfig_sane(self->sysconfig)) {
                 return false;
         }
-        return self->bootloader->set_default_kernel(self, kernel);
+
+        /* Grab the available kernels */
+        kernels = boot_manager_get_kernels(self);
+        if (!kernels || kernels->len == 0) {
+                LOG_ERROR("No kernels discovered in %s, bailing", self->kernel_dir);
+                return false;
+        }
+
+        for (uint16_t i = 0; i < kernels->len; i++) {
+                const Kernel *k = nc_array_get(kernels, i);
+                if (streq(kernel->meta.ktype, k->meta.ktype) &&
+                    streq(kernel->meta.version, k->meta.version) &&
+                    kernel->meta.release == k->meta.release) {
+                        return self->bootloader->set_default_kernel(self, kernel);
+                }
+        }
+        LOG_ERROR("No matching kernel in %s, bailing", self->kernel_dir);
+        return false;
+}
+
+char *boot_manager_get_default_kernel(BootManager *self)
+{
+        assert(self != NULL);
+
+        if (!self->bootloader) {
+                return NULL;
+        }
+        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
+                return NULL;
+        }
+        return self->bootloader->get_default_kernel(self);
 }
 
 char *boot_manager_get_boot_dir(BootManager *self)

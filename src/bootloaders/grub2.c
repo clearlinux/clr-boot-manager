@@ -517,6 +517,11 @@ bool grub2_set_default_kernel(const BootManager *manager, const Kernel *default_
         return true;
 }
 
+char *grub2_get_default_kernel(__cbm_unused__ const BootManager *manager)
+{
+        return NULL;
+}
+
 bool grub2_needs_install(__cbm_unused__ const BootManager *manager)
 {
         return false;
@@ -562,6 +567,7 @@ __cbm_export__ const BootLoader grub2_bootloader = {.name = "grub2",
                                                     .install_kernel = grub2_install_kernel,
                                                     .remove_kernel = grub2_remove_kernel,
                                                     .set_default_kernel = grub2_set_default_kernel,
+                                                    .get_default_kernel = grub2_get_default_kernel,
                                                     .needs_install = grub2_needs_install,
                                                     .needs_update = grub2_needs_update,
                                                     .install = grub2_install,

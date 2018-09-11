@@ -30,6 +30,7 @@ __cbm_export__ const BootLoader
                           .install_kernel = sd_class_install_kernel,
                           .remove_kernel = sd_class_remove_kernel,
                           .set_default_kernel = sd_class_set_default_kernel,
+                          .get_default_kernel = sd_class_get_default_kernel,
                           .needs_install = sd_class_needs_install,
                           .needs_update = sd_class_needs_update,
                           .install = sd_class_install,
