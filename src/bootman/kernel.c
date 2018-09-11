@@ -47,7 +47,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         Kernel *kern = NULL;
         autofree(char) *cmp = NULL;
         char type[32] = { 0 };
-        char version[15] = { 0 };
+        char version[16] = { 0 };
         int release = 0;
         autofree(char) *parent = NULL;
         autofree(char) *cmdline = NULL;
@@ -72,7 +72,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         bcp = basename(cmp);
 
         /* org.clearlinux.kvm.4.2.1-121 */
-        r = sscanf(bcp, KERNEL_NAMESPACE ".%32[^.].%15[^-]-%d", type, version, &release);
+        r = sscanf(bcp, KERNEL_NAMESPACE ".%31[^.].%15[^-]-%d", type, version, &release);
         if (r != 3) {
                 return NULL;
         }
