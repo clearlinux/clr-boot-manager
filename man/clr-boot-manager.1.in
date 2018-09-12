@@ -100,9 +100,13 @@ clr-boot-manager takes into account the following paths to modify its behavior:
 .PP
 \fB@KERNEL_CONF_DIRECTORY@/cmdline.d/*.conf\fR
 .RS 4
-A set of files that will be used to modify the kernel commandline. The files
-can also be used to mask the vendor cmdline if the filename matches a vendor
-configuration file and is linked to /dev/null\&.
+A set of files that will be used to modify the kernel commandline. The files can
+also be used to mask the vendor cmdline if the filename matches a vendor
+configuration file and is linked to /dev/null. The vendor configuration files are
+\fB@KERNEL_DIRECTORY@/cmdline-*\fR and \fB@KERNEL_DIRECTORY@/cmdline.d/*.conf\fR.
+
+The files should be in plain text format and each line will be appended directly
+to the kernel commandline\&.
 .RE
 
 .PP
