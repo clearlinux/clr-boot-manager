@@ -4,7 +4,7 @@
  * This file masks private implementation details to share throughout the
  * libcbm implementation for the purposes of organisational sanity.
  *
- * Copyright © 2016-2017 Intel Corporation
+ * Copyright © 2016-2018 Intel Corporation
  *
  * clr-boot-manager is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as

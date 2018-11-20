@@ -64,4 +64,4 @@ License
 -------
 LGPL-2.1
 
-Copyright © 2016-2017 Intel Corporation
+Copyright © 2016-2018 Intel Corporation

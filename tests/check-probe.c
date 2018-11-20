@@ -17,7 +17,7 @@
  * determine whether the disk for the rootfs is GPT or not, and *only* use
  * a PartUUID when it is definitely GPT.
  *
- * Copyright © 2016-2017 Intel Corporation
+ * Copyright © 2016-2018 Intel Corporation
  *
  * clr-boot-manager is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as

@@ -14,7 +14,7 @@
  * trying to ascertain that the correct bootloader is selected in every case
  * for the given system configuration.
  *
- * Copyright © 2016-2017 Intel Corporation
+ * Copyright © 2016-2018 Intel Corporation
  *
  * clr-boot-manager is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
