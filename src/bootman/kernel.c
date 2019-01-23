@@ -213,7 +213,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                     string_printf("initrd-%s.%s.%s-%d", KERNEL_NAMESPACE, type, version, release);
         }
 
-        kern->meta.release = (int16_t)release;
+        kern->meta.release = (int)release;
 
         /* cmdline */
         kern->meta.cmdline = cbm_parse_cmdline_file(cmdline);
