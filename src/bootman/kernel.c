@@ -449,7 +449,7 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
                 ++len;
         }
 
-        if (len < 1 || len >= CBM_KELEM_LEN) {
+        if (len < 1 || len > CBM_KELEM_LEN) {
                 return false;
         }
 
