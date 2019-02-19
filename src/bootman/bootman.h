@@ -32,7 +32,7 @@ typedef enum {
 /**
  * Maximum length for each component in a kernel identifier
  */
-#define CBM_KELEM_LEN 15
+#define CBM_KELEM_LEN 31
 
 /**
  * Represents the currently running system kernel
