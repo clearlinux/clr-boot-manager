@@ -442,7 +442,7 @@ int mount_boot(BootManager *self, char **boot_directory)
                 }
                 /* Successfully using their premounted ESP, go use it */
                 LOG_INFO("Skipping to native update");
-                *boot_directory = boot_dir;
+                *boot_directory = strdup(boot_dir);
                 if (*boot_directory) {
                         ret = 0;
                 }
