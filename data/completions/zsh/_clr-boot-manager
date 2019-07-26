@@ -17,26 +17,70 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------
 
-local ret=1 curcontext="$curcontext"
-local context state state_descr line
-local -A opt_args
+local context curcontext="$curcontext" state state_descr line ret=1
+local -A opt_args val_args
+local -a subcmds; subcmds=(
+  "version:Print the version and quit"
+  "report-booted:Report the current kernel as successfully booted"
+  "update:Perform post-update configuration of the system"
+  "set-timeout:Set the timeout to be used by the bootloader"
+  "get-timeout:Get the timeout to be used by the bootloader"
+  "set-kernel:Configure kernel to be used at next boot"
+  "list-kernels:Display currently selectable kernels to boot"
+  "help:Display help information on available commands"
+)
 
 _arguments -C \
-           ':clr-boot-manager subcommand:->subcmd' \
+           '1:clr-boot-manager subcommand:->subcmd' \
+           '*::clr-boot-mannager argument:->args' \
   && ret=0
 
-if [[ $state == subcmd ]]; then
-   local -a subcmds; subcmds=(
-     "version:Print the version and quit"
-     "report-booted:Report the current kernel as successfully booted"
-     "update:Perform post-update configuration of the system"
-     "set-timeout:Set the timeout to be used by the bootloader"
-     "get-timeout:Get the timeout to be used by the bootloader"
-     "set-kernel:Configure kernel to be used at next boot"
-     "list-kernels:Display currently selectable kernels to boot"
-     "help:Display help information on available commands"
-   )
-   _describe -t subcmds 'clr-boot-manager sub-commands' subcmds && ret=0
+if [[ -n "$state" ]]; then
+  local -a args=('--path=[Set the base path for boot management operations.]:path: _path_files -/')
+  case "$state" in
+    subcmd)
+      _describe -t subcmds 'clr-boot-manager subcommand' subcmds && ret=0
+      ;;
+    args)
+      case $line[1] in
+        get-timeout|list-kernels|update)
+          _arguments $args && ret=0
+        ;;
+        set-kernel)
+          # Anonymous function to get the root filesystem path specified by --path=
+          local -a kernelpath args=($args)
+          () {
+            zparseopts -E -a kernelpath '-path:' '-path\=:' 2>/dev/null
+          } $words
+          if (( $#kernelpath )); then
+            # Filename expansion, path start with `~` (zsh completion system doesn't expand ~
+            eval kernelpath=$kernelpath
+            # Convert to absolute path (_path_files function cannot understand relative path)
+            kernelpath=$(realpath -e "$kernelpath")
+          fi
+          # Prepend it to /usr/lib/kernel
+          kernelpath="$kernelpath/usr/lib/kernel"
+          if [ -r "$kernelpath" ]; then
+            args+=(':kernel: _path_files -W "$kernelpath" -g org.clearlinux.\*')
+          else
+            args+=(': : _message -r "Directory \"$kernelpath\" does not exist."')
+          fi
+          _arguments $args && ret=0
+          ;;
+        set-timeout)
+          local -a args=($args)
+          args+=(':timeout: _message -r "Please enter a integer value"')
+          _arguments $args && ret=0
+          ;;
+        help)
+          _describe -t subcmds 'clr-boot-manager subcommand' subcmds && ret=0
+        ;;
+      esac
+      ;;
+    *)
+      ret=1
+      ;;
+  esac
 fi
 
 return ret
