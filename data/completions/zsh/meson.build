@@ -9,8 +9,8 @@ if (get_option('zsh_completions'))
       with_zsh_completions_dir = join_paths(path_datadir, 'zsh', 'site-functions')
    endif
    configure_file(
-     input: 'completions/zsh/_clr-boot-manager.in',
-     output: 'completions/zsh/_clr-boot-manager',
+     input: '_clr-boot-manager.in',
+     output: '_clr-boot-manager',
      configuration: completions_conf,
      install_dir: with_zsh_completions_dir,
    )
