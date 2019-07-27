@@ -1,11 +1,19 @@
 # Install commandline completion files
+completions_conf = configuration_data()
+completions_conf.set('KERNEL_DIRECTORY', with_kernel_dir)
+completions_conf.set('KERNEL_NAMESPACE', with_kernel_namespace)
+
 if (get_option('bash_completions'))
    with_bash_completions_dir = get_option('with-bash-completions-dir')
    if with_bash_completions_dir == ''
       with_bash_completions_dir = join_paths(path_datadir, 'bash-completion', 'completions')
    endif
-   bash_files = files('completions/bash/clr-boot-manager')
-   install_data(bash_files, install_dir: with_bash_completions_dir)
+   configure_file(
+     input: 'completions/bash/clr-boot-manager.in',
+     output: 'completions/bash/clr-boot-manager',
+     configuration: completions_conf,
+     install_dir: with_bash_completions_dir,
+   )
 endif
 
 if (get_option('zsh_completions'))
@@ -13,8 +21,12 @@ if (get_option('zsh_completions'))
    if with_zsh_completions_dir == ''
       with_zsh_completions_dir = join_paths(path_datadir, 'zsh', 'site-functions')
    endif
-   zsh_files = files('completions/zsh/_clr-boot-manager')
-   install_data(zsh_files, install_dir: with_zsh_completions_dir)
+   configure_file(
+     input: 'completions/zsh/_clr-boot-manager.in'
+     output: 'completions/zsh/_clr-boot-manager',
+     configuration: completions_conf,
+     install_dir: with_zsh_completions_dir,
+   )
 endif
 
 # Write systemd unit

@@ -59,9 +59,9 @@ if [[ -n "$state" ]]; then
             kernelpath=$(realpath -e "$kernelpath")
           fi
           # Prepend it to /usr/lib/kernel
-          kernelpath="$kernelpath/usr/lib/kernel"
+          kernelpath="$kernelpath@KERNEL_DIRECTORY@"
           if [ -r "$kernelpath" ]; then
-            args+=(':kernel: _path_files -W "$kernelpath" -g org.clearlinux.\*')
+            args+=(':kernel: _path_files -W "$kernelpath" -g @KERNEL_NAMESPACE@.\*')
           else
             args+=(': : _message -r "Directory \"$kernelpath\" does not exist."')
           fi

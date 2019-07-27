@@ -1,0 +1,84 @@
+#!/bin/bash
+# -----------------------------------------------------------------------
+#   Software Updater - autocompletion script
+#
+#   Author: Lucius Hu - http://github.com/lebensterben
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, version 2 or later of the License.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------
+
+_clr_boot_manager() {
+  local IFS=$' \t\n'
+  local opts _has_path
+
+  case "$3" in
+		"$1"|help)
+			opts="version report-booted help update set-timeout get-timeout set-kernel list-kernels help"
+      COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
+			;;
+    get-timeout|list-kernels|update|set-timeout)
+      opts="--path"
+      COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
+      ;;
+    set-kernel)
+      opts="--path"
+      COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
+      COMPREPLY+=($(compgen -G "@KERNEL_DIRECTORY@/@KERNEL_NAMESPACE@*" ))
+      ;;
+    '--path')
+      # Tilde expansion
+      case "$2" in
+        \~*)
+          eval cur="$2"
+          ;;
+        *)
+          cur="$2"
+          ;;
+      esac
+      # If no $CDPATH or Absolute pathname
+      if [ -z "$CDPATH" ] || [[ "$cur" == @(./*|../*|/*) ]]; then
+        # Print path one per line in completion, and reset it
+        IFS=$'\n'
+        COMPREPLY=($(compgen -d -- "$cur"))
+        IFS=$' \t\n'
+      # CDPATH+directories in the current directory if not in CDPATH
+      else
+        IFS=$'\n'
+        _skipdot=false
+        # preprocess CDPATH to convert null directory names to .
+        _cdpath=${CDPATH/#:/.:}
+        _cdpath=${_cdpath//::/:.:}
+        _cdpath=${_cdpath/%:/:.}
+        for i in ${_cdpath//:/$'\n'}; do
+            if [[ $i -ef . ]]; then _skipdot=true; fi
+            k="${#COMPREPLY[@]}"
+            for j in $( compgen -d -- "$i/$cur" ); do
+                COMPREPLY[k++]=${j#$i/}        # cut off directory
+            done
+        done
+        $_skipdot || COMPREPLY+=( $(compgen -d -- "$cur") )
+        IFS=$' \t\n'
+      fi
+      ;;
+    *)
+      i=${COMP_CWORD}
+      if [ "${COMP_WORDS[$i-2]}" == "--path" ]; then
+        _has_path="${COMP_WORDS[$i-1]}"
+        COMPREPLY=($(compgen -W "$(find "$_has_path@KERNEL_DIRECTORY@" -maxdepth 1 -name "@KERNEL_NAMESPACE@*" -printf "%f\t" 2>/dev/null)" -- "$2" ))
+      fi
+      ;;
+	esac
+
+}
+
+complete -o filenames -o nospace -o bashdefault -F _clr_boot_manager clr-boot-manager
