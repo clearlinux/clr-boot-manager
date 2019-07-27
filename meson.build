@@ -173,8 +173,10 @@ config_h = configure_file(
 )
 config_h_dir = include_directories('.')
 
-# Data files (manpages + systemd unit)
+# Data files (systemd unit + shell completions + manpages)
 subdir('data')
+subdir('data/completions/bash')
+subdir('data/completions/zsh')
 subdir('man')
 
 # Aggregate library + binary configuration
