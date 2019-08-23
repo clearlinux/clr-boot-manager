@@ -162,6 +162,12 @@ void cbm_mapped_file_close(CbmMappedFile *file);
 bool cbm_mapped_file_open(const char *path, CbmMappedFile *file);
 
 /**
+ * Cananolize @path and compare with @resolved. Returns true case paths are the same,
+ * returns false otherwise.
+ */
+bool cbm_path_check(const char *path, const char *resolved);
+
+/**
  * Ensure a stack pointer vs a heap pointer, to save on copies
  */
 #define CBM_MAPPED_FILE_INIT &(CbmMappedFile){ 0 };

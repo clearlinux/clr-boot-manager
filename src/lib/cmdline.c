@@ -13,6 +13,7 @@
 
 #include "cmdline.h"
 #include "config.h"
+#include "files.h"
 #include "log.h"
 #include "nica/files.h"
 #include "util.h"
@@ -286,26 +287,6 @@ static bool cbm_cmdline_disabled_by_mask(const char *root, char *path)
 }
 
 /**
- * Determine if the file is disabled through a link to /dev/null and should be
- * ignored. Together with @cbm_cmdline_disabled_by_mask, it is possible to disable
- * a vendor file by masking the file into /etc/kernel/cmdline.d and linking it to
- * /dev/null.
- */
-static bool cbm_cmdline_disabled_by_link(char *path)
-{
-        autofree(char) *p = NULL;
-
-        /* GCC incorrectly complains about us freeing the return from realpath()
-         * which is allocated, however GCC believes it is heap storage.
-         */
-        p = realpath(path, NULL);
-        if (!p) {
-                return false;
-        }
-        return streq(p, "/dev/null");
-}
-
-/**
  * Glob *.conf files within the given glob, and merge the resulting command
  * line into the final stream
  *
@@ -331,7 +312,7 @@ static int cbm_parse_cmdline_files_directory(const char *root, bool bump_start, 
                 }
 
                 /* If we're not in a maskable, check if it links to /dev/null */
-                if (!check_masked && cbm_cmdline_disabled_by_link(argv)) {
+                if (!check_masked && cbm_path_check(argv, "/dev/null")) {
                         LOG_DEBUG("Skipping disabled cmdline: %s", argv);
                         continue;
                 }

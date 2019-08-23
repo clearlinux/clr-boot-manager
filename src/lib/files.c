@@ -488,6 +488,20 @@ void cbm_mapped_file_close(CbmMappedFile *file)
         memset(file, 0, sizeof(CbmMappedFile));
 }
 
+bool cbm_path_check(const char *path, const char *resolved)
+{
+        autofree(char) *p = NULL;
+
+        /* GCC incorrectly complains about us freeing the return from realpath()
+         * which is allocated, however GCC believes it is heap storage.
+         */
+        p = realpath(path, NULL);
+        if (!p) {
+                return false;
+        }
+        return streq(p, resolved);
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
