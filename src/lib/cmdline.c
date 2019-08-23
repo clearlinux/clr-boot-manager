@@ -385,7 +385,6 @@ void cbm_parse_cmdline_removal_files_directory(const char *root, char *buffer)
                 sz = (size_t)r;
         }
 
-clean:
         globfree(&glo);
 }
 
