@@ -221,7 +221,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 
         /* Target initrd is just basename'd initrd file, simpler to just
          * reprintf it than copy & basename it */
-        if (kern->source.initrd_file || kern->source.initrd_file) {
+        if (kern->source.initrd_file || kern->source.user_initrd_file) {
                 kern->target.initrd_path =
                     string_printf("initrd-%s.%s.%s-%d", KERNEL_NAMESPACE, type, version, release);
         }
