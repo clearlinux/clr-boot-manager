@@ -353,18 +353,18 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         if (nc_file_exists(PLAYGROUND_ROOT)) {
                 if (!nc_rm_rf(PLAYGROUND_ROOT)) {
                         fprintf(stderr, "Failed to rm_rf: %s\n", strerror(errno));
-                        return false;
+                        goto fail;
                 }
         }
         /* Now create fresh tree */
         if (!nc_mkdir_p(PLAYGROUND_ROOT, 00755)) {
                 fprintf(stderr, "Cannot create playground root: %s\n", strerror(errno));
-                return false;
+                goto fail;
         }
 
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/var/lib/kernel", 00755)) {
                 fprintf(stderr, "Cannot set up the booted dir: %s\n", strerror(errno));
-                return false;
+                goto fail;
         }
 
         /* Construct /etc directory for os-release */
