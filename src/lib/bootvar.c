@@ -97,7 +97,12 @@ static int bootvar_read_boot_recs(void)
 
         while ((res = efi_get_next_variable_name(&guid, &name)) > 0) {
                 char *num_end;
+                int num;
                 if (strncmp(name, "Boot", 4)) {
+                        continue;
+                }
+                num = (int)strtol(name + 4, &num_end, 16);
+                if (num_end - name - 4 != 4) {
                         continue;
                 }
                 if (!isxdigit(name[4]) || !isxdigit(name[5]) || !isxdigit(name[6]) ||
@@ -111,11 +116,7 @@ static int bootvar_read_boot_recs(void)
                 c = (boot_rec_t *)malloc(sizeof(boot_rec_t));
                 memset(c, 0, sizeof(boot_rec_t));
                 c->name = strdup(name);
-                c->num = (int)strtol(name + 4, &num_end, 16);
-                if (num_end - name - 4 != 4) {
-                        continue;
-                }
-
+                c->num = num;
                 if (!boot_recs) {
                         boot_recs = p = c;
                 } else {
