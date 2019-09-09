@@ -157,22 +157,14 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
         char *realp = NULL;
         char *rel = NULL;
 
-        if (!path) {
-                return NULL;
-        }
+        CHECK_ERR_RET_VAL(!path, NULL, "invalid \"path\" value: null");
 
         realp = realpath(path, NULL);
-        if (!realp) {
-                LOG_ERROR("Path specified does not exist: %s", path);
-                return NULL;
-        }
+        CHECK_ERR_RET_VAL(!realp, NULL, "Path specified does not exist: %s", path);
 
         c = calloc(1, sizeof(struct SystemConfig));
-        if (!c) {
-                DECLARE_OOM();
-                free(realp);
-                return NULL;
-        }
+        CHECK_ERR_GOTO(!c, error, "Could not allocate SystemConfig");
+
         c->prefix = realp;
         c->wanted_boot_mask = 0;
 
@@ -203,18 +195,18 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
         c->root_device = cbm_probe_path(realp);
 
         return c;
+
+ error:
+        DECLARE_OOM();
+        free(realp);
+        return NULL;
 }
 
 bool cbm_is_sysconfig_sane(SystemConfig *config)
 {
-        if (!config) {
-                LOG_FATAL("sysconfig insane: Missing config");
-                return false;
-        }
-        if (!config->root_device) {
-                LOG_FATAL("sysconfig insane: Missing root device");
-                return false;
-        }
+        CHECK_FATAL_RET_VAL(!config, false, "sysconfig insane: Missing config");
+        CHECK_FATAL_RET_VAL(!config->root_device, false,
+                            "sysconfig insane: Missing root device");
         return true;
 }
 

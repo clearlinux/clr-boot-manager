@@ -125,10 +125,8 @@ static bool boot_manager_select_bootloader(BootManager *self)
                 }
         }
 
-        if (!selected) {
-                LOG_FATAL("Failed to find an appropriate bootloader for this system");
-                return false;
-        }
+        CHECK_FATAL_RET_VAL(!selected, false, "Failed to find an appropriate"
+                            " bootloader for this system");
 
         self->bootloader = selected;
 
@@ -157,17 +155,14 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         char *initrd_dir = NULL;
         SystemConfig *config = NULL;
 
-        if (!prefix) {
-                return false;
-        }
+        CHECK_DBG_RET_VAL(!prefix, false, "Invalid prefix value: null");
 
         cbm_free_sysconfig(self->sysconfig);
         self->sysconfig = NULL;
 
         config = cbm_inspect_root(prefix, self->image_mode);
-        if (!config) {
-                return false;
-        }
+        CHECK_DBG_RET_VAL(!config, false, "Could not inspect root");
+
         self->sysconfig = config;
 
         if (self->kernel_dir) {
@@ -323,10 +318,7 @@ int detect_and_mount_boot(BootManager *self, char **boot_dir) {
                 boot_dev = get_legacy_boot_device((char *)prefix);
         }
 
-        if (!boot_dev) {
-                LOG_DEBUG("No boot partition, nothing to mount.");
-                return 0;
-        }
+        CHECK_DBG_RET_VAL(!boot_dev, 0, "No boot partition, nothing to mount.");
 
         return mount_boot(self, boot_dir);
 }
@@ -340,24 +332,19 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
         bool matched = false;
         bool default_set = false;
 
-        if (!self->bootloader) {
-                return false;
-        }
-        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
-                return false;
-        }
+        CHECK_DBG_RET_VAL(!self->bootloader, false, "Invalid boot loader: null");
+
+        CHECK_DBG_RET_VAL(!cbm_is_sysconfig_sane(self->sysconfig), false,
+                          "Sysconfig is not sane");
 
         /* Grab the available kernels */
         kernels = boot_manager_get_kernels(self);
-        if (!kernels || kernels->len == 0) {
-                LOG_ERROR("No kernels discovered in %s, bailing", self->kernel_dir);
-                return false;
-        }
+        CHECK_ERR_RET_VAL(!kernels || kernels->len == 0, false,
+                          "No kernels discovered in %s, bailing", self->kernel_dir);
 
         did_mount = detect_and_mount_boot(self, &boot_dir);
-        if (did_mount < 0) {
-                return false;
-        }
+        CHECK_DBG_RET_VAL(did_mount < 0, false, "Boot was not mounted");
+
         for (uint16_t i = 0; i < kernels->len; i++) {
                 const Kernel *k = nc_array_get(kernels, i);
                 if (streq(kernel->meta.ktype, k->meta.ktype) &&
@@ -372,9 +359,8 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
                 umount_boot(boot_dir);
         }
 
-        if (!matched) {
-                LOG_ERROR("No matching kernel in %s, bailing", self->kernel_dir);
-        };
+        CHECK_ERR(!matched, "No matching kernel in %s, bailing", self->kernel_dir);
+
         return default_set;
 }
 
@@ -382,12 +368,9 @@ char *boot_manager_get_default_kernel(BootManager *self)
 {
         assert(self != NULL);
 
-        if (!self->bootloader) {
-                return NULL;
-        }
-        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
-                return NULL;
-        }
+        CHECK_DBG_RET_VAL(!self->bootloader, NULL, "Invalid bootloader value: null");
+        CHECK_DBG_RET_VAL(!cbm_is_sysconfig_sane(self->sysconfig), NULL,
+                            "Sysconfig is not sane");
         return self->bootloader->get_default_kernel(self);
 }
 
@@ -457,20 +440,17 @@ int mount_boot(BootManager *self, char **boot_directory)
 
         /* Determine root device */
         root_base = self->sysconfig->boot_device;
-        if (!root_base) {
-                LOG_FATAL("Cannot determine boot device");
-                goto out;
-        }
+        CHECK_FATAL_GOTO(!root_base, out, "Cannot determine boot device");
 
         abs_bootdir = cbm_system_get_mountpoint_for_device(root_base);
 
         if (abs_bootdir) {
                 LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
+
                 /* User has already mounted the ESP somewhere else, use that */
-                if (!boot_manager_set_boot_dir(self, abs_bootdir)) {
-                        LOG_FATAL("Cannot initialise with premounted ESP");
-                        goto out;
-                }
+                CHECK_FATAL_GOTO(!boot_manager_set_boot_dir(self, abs_bootdir), out,
+                                 "Cannot initialize with premounted ESP");
+
                 /* Successfully using their premounted ESP, go use it */
                 LOG_INFO("Skipping to native update");
                 *boot_directory = strdup(boot_dir);
@@ -499,10 +479,9 @@ int mount_boot(BootManager *self, char **boot_directory)
          * as it may have paths that already exist, and we must adjust for case
          * sensitivity (ignorant) issues
          */
-        if (!boot_manager_set_boot_dir(self, boot_dir)) {
-                LOG_FATAL("Cannot initialise with newly mounted ESP");
-                goto out;
-        }
+        CHECK_FATAL_GOTO(!boot_manager_set_boot_dir(self, boot_dir), out,
+                         "Cannot initialize with newly mounted ESP");
+
         *boot_directory = strdup(boot_dir);
         if (*boot_directory) {
                 ret = 1;

@@ -115,10 +115,9 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         /* TODO: We may actually be uninstalling a partially flopped kernel,
          * so validity of existing kernels may be questionable
          * Thus, flag it, and return kernel */
-        if (!nc_file_exists(cmdline)) {
-                LOG_ERROR("Valid kernel found with no cmdline: %s (expected %s)", path, cmdline);
-                return NULL;
-        }
+        CHECK_ERR_RET_VAL(!nc_file_exists(cmdline), NULL,
+                          "Valid kernel found with no cmdline: %s (expected %s)",
+                          path, cmdline);
 
         /* Check local modules */
         module_dir = string_printf("%s/%s/%s-%d.%s",
@@ -345,9 +344,8 @@ Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernel
 
         default_file = string_printf("%s/default-%s", self->kernel_dir, type);
 
-        if (readlink(default_file, linkbuf, sizeof(linkbuf)) < 0) {
-                return NULL;
-        }
+        CHECK_DBG_RET_VAL(readlink(default_file, linkbuf, sizeof(linkbuf)) < 0,
+                          NULL, "Could not resolve symlink");
 
         for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *k = nc_array_get(kernels, i);

@@ -70,6 +70,97 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
  */
 #define LOG_WARNING(...) (cbm_log(CBM_LOG_WARNING, __FILE__, __LINE__, __VA_ARGS__))
 
+#define check_common_ret_val(level, exp, ret_val, ...)                  \
+  do {                                                                  \
+          if (exp) {                                                    \
+                  LOG_##level(__VA_ARGS__);                             \
+                  return ret_val;                                       \
+          }                                                             \
+  } while(false)                                                        \
+
+#define check_common_ret(level, exp, ...)                       \
+        do {                                                    \
+                if (exp) {                                      \
+                        LOG_##level(__VA_ARGS__);               \
+                        return;                                 \
+                }                                               \
+        } while(false)                                          \
+
+#define check_common_goto(level, exp, label, ...)               \
+        do {                                                    \
+                if (exp) {                                      \
+                        LOG_##level(__VA_ARGS__);               \
+                        goto label;                             \
+                }                                               \
+        } while(false)                                          \
+
+#define check_common(level, exp, ...)                                   \
+  do {                                                                  \
+          if (exp) {                                                    \
+                  LOG_##level(__VA_ARGS__);                             \
+          }                                                             \
+  } while(false)                                                        \
+
+#define CHECK_ERR(exp, ...)                   \
+        check_common(ERROR, exp, __VA_ARGS__) \
+
+#define CHECK_ERR_RET_VAL(exp, ret_val, ...)                     \
+        check_common_ret_val(ERROR, exp, ret_val, __VA_ARGS__)   \
+
+#define CHECK_ERR_RET(exp, ...)                           \
+        check_common_ret(ERROR, exp, __VA_ARGS__)         \
+
+#define CHECK_ERR_GOTO(exp, label, ...)                           \
+        check_common_goto(ERROR, exp, label, __VA_ARGS__)         \
+
+#define CHECK_WARN(exp, ...)                    \
+        check_common(WARNING, exp, __VA_ARGS__) \
+
+#define CHECK_WARN_RET_VAL(exp, ret_val, ...)                           \
+        check_common_ret_val(WARNING, exp, ret_val, __VA_ARGS__)        \
+
+#define CHECK_WARN_RET(exp, ...)                           \
+        check_common_ret(WARNING, exp, __VA_ARGS__)        \
+
+#define CHECK_WARN_GOTO(exp, label, ...)                                \
+        check_common_goto(WARNING, exp, label, __VA_ARGS__)             \
+
+#define CHECK_INF(exp, ...)                     \
+        check_common(INFO, exp, __VA_ARGS__)    \
+
+#define CHECK_INF_RET_VAL(exp, ret_val, ...)                            \
+        check_common_ret_val(INFO, exp, ret_val, __VA_ARGS__)           \
+
+#define CHECK_INF_RET(exp, ...)                          \
+        check_common_ret(INFO, exp, __VA_ARGS__)         \
+
+#define CHECK_INF_GOTO(exp, label, ...)                          \
+        check_common_goto(INFO, exp, label, __VA_ARGS__)         \
+
+#define CHECK_DBG(exp, ...)                      \
+        check_common(DEBUG, exp, __VA_ARGS__)    \
+
+#define CHECK_DBG_RET_VAL(exp, ret_val, ...)                            \
+        check_common_ret_val(DEBUG, exp, ret_val, __VA_ARGS__)          \
+
+#define CHECK_DBG_RET(exp, ...)                           \
+        check_common_ret(DEBUG, exp, __VA_ARGS__)         \
+
+#define CHECK_DBG_GOTO(exp, label, ...)                           \
+        check_common_goto(DEBUG, exp, label, __VA_ARGS__)         \
+
+#define CHECK_FATAL(exp, ...)                      \
+        check_common(FATAL, exp, __VA_ARGS__)      \
+
+#define CHECK_FATAL_RET_VAL(exp, ret_val, ...)                          \
+        check_common_ret_val(FATAL, exp, ret_val, __VA_ARGS__)          \
+
+#define CHECK_FATAL_RET(exp, ...)                           \
+        check_common_ret(FATAL, exp, __VA_ARGS__)           \
+
+#define CHECK_FATAL_GOTO(exp, label, ...)                           \
+        check_common_goto(FATAL, exp, label, __VA_ARGS__)           \
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
