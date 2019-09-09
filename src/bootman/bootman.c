@@ -45,12 +45,13 @@ extern const BootLoader syslinux_bootloader;
  * Bootloader set that we're allowed to check and use
  */
 const BootLoader *bootman_known_loaders[] =
-    { &grub2_bootloader, /**<Always place first to allow extlinux to override */
+    {
 #if defined(HAVE_SHIM_SYSTEMD_BOOT)
       &shim_systemd_bootloader,
 #elif defined(HAVE_SYSTEMD_BOOT)
       &systemd_bootloader,
 #endif
+      &grub2_bootloader, /**<Always place first to allow extlinux to override */
       /* non-systemd-class */
       &syslinux_bootloader,
       &extlinux_bootloader};

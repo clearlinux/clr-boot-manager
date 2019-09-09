@@ -86,16 +86,80 @@ int cbm_get_fstype(const char *boot_device)
         return ret;
 }
 
+static void cmb_inspect_root_native(SystemConfig *c, char *realp) {
+        bool native_uefi = false;
+        autofree(char) *fw_path;
+        char *boot = NULL;
+
+        /* typically /sys, but we forcibly fail this with our tests */
+        fw_path = string_printf("%s/firmware/efi", cbm_system_get_sysfs_path());
+        native_uefi = nc_file_exists(fw_path);
+
+        /*
+         * Try to find the system ESP. The "force legacy" flag is useful
+         * for development purpose only, this is a way to manually test
+         * legacy install when we don't a fully prepared environment to that
+         * namely: having an installer image capable of booting _and_ installing
+         * a legacy bios system.
+         */
+        if (native_uefi && !getenv("CBM_FORCE_LEGACY")) {
+                boot = get_boot_device();
+                c->wanted_boot_mask |= BOOTLOADER_CAP_UEFI;
+
+                if (boot) {
+                        c->boot_device = boot;
+                        c->wanted_boot_mask |= BOOTLOADER_CAP_GPT;
+                        LOG_INFO("Discovered UEFI ESP: %s", boot);
+                }
+        } else {
+                /* Find legacy relative to root, on GPT */
+                boot = get_legacy_boot_device(realp);
+                c->wanted_boot_mask |= BOOTLOADER_CAP_LEGACY;
+
+                if (boot) {
+                        c->boot_device = boot;
+                        c->wanted_boot_mask |= BOOTLOADER_CAP_GPT;
+                        LOG_INFO("Discovered legacy boot device: %s", boot);
+                }
+        }
+}
+
+static void cmb_inspect_root_image(SystemConfig *c, char *realp) {
+        char *legacy_boot = NULL;
+        char *uefi_boot = NULL;
+        char *boot = NULL;
+        char *force_legacy = NULL;
+        int mask = 0;
+
+        legacy_boot = get_legacy_boot_device(realp);
+        uefi_boot = get_boot_device();
+        force_legacy = getenv("CBM_FORCE_LEGACY");
+
+        /*
+         * uefi has precedence over legacy, if we detected both uefi wins
+         * but if force_legacy is set then we honor "users choice"
+         */
+        if (!force_legacy && ((legacy_boot && uefi_boot) || uefi_boot)) {
+                mask = BOOTLOADER_CAP_UEFI | BOOTLOADER_CAP_GPT;
+                boot = uefi_boot;
+        } else if (legacy_boot || force_legacy) {
+                mask = BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_GPT;
+                boot = legacy_boot;
+        }
+
+        c->boot_device = boot;
+        c->wanted_boot_mask = mask;
+}
+
 SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
 {
+        SystemConfig *c = NULL;
+        char *realp = NULL;
+        char *rel = NULL;
+
         if (!path) {
                 return NULL;
         }
-        SystemConfig *c = NULL;
-        char *realp = NULL;
-        char *boot = NULL;
-        char *rel = NULL;
-        bool native_uefi = false;
 
         realp = realpath(path, NULL);
         if (!realp) {
@@ -112,61 +176,12 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
         c->prefix = realp;
         c->wanted_boot_mask = 0;
 
-        /* Determine if this is a native UEFI system. This means we're in a full
-         * native mode and have /sys/firmware/efi available. This does not throw
-         * the image generation, and subsequent updates to the legacy image
-         * wouldn't have a UEFI vfs available.
-         */
-        if (!image_mode) {
-                /* typically /sys, but we forcibly fail this with our tests */
-                autofree(char) *fw_path =
-                    string_printf("%s/firmware/efi", cbm_system_get_sysfs_path());
-                native_uefi = nc_file_exists(fw_path);
-        }
-
-        /* Find legacy relative to root, on GPT, assuming we're not booted using
-         * UEFI. This is due to GPT being able to contain a legacy boot device
-         * *and* an ESP at the same time. Native UEFI takes precedence.
-         */
-        if (!native_uefi || image_mode || getenv("CBM_FORCE_LEGACY")) {
-                boot = get_legacy_boot_device(realp);
-
-                // we may be installing legacy bootloader on a EFI running system
-                // it's useful for CI as well
-                if (!boot && !image_mode) {
-                        boot = get_boot_device();
-                }
-        }
-
-        if (boot) {
-                c->boot_device = boot;
-                c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_GPT;
-                LOG_INFO("Discovered legacy boot device: %s", boot);
-                goto refine_device;
-        }
-
-        /* Now try to find the system ESP */
-        if (!image_mode) {
-                boot = get_boot_device();
-        }
-        if (boot) {
-                c->boot_device = boot;
-                c->wanted_boot_mask = BOOTLOADER_CAP_UEFI | BOOTLOADER_CAP_GPT;
-                LOG_INFO("Discovered UEFI ESP: %s", boot);
-                goto refine_device;
-        }
-
-        /* At this point, we have no boot device available, try to inspect
-         * the root system if we're in image mode.
-         */
-        if (!image_mode) {
-                c->wanted_boot_mask = native_uefi ? BOOTLOADER_CAP_UEFI : BOOTLOADER_CAP_LEGACY;
+        if (image_mode) {
+                cmb_inspect_root_image(c, realp);
         } else {
-                /* At this point, just assume we have a plain UEFI system */
-                c->wanted_boot_mask = BOOTLOADER_CAP_UEFI;
+                cmb_inspect_root_native(c, realp);
         }
 
-refine_device:
         /* Our probe methods are GPT only. If we found one, it's definitely GPT */
         if (c->boot_device) {
                 rel = realpath(c->boot_device, NULL);
@@ -180,10 +195,8 @@ refine_device:
                         LOG_INFO("Fully resolved boot device: %s", rel);
                 }
                 c->wanted_boot_mask |= BOOTLOADER_CAP_GPT;
-        }
 
-        /* determine fstype of the boot_device */
-        if (c->boot_device) {
+                /* determine fstype of the boot_device */
                 c->wanted_boot_mask |= cbm_get_fstype(c->boot_device);
         }
 
