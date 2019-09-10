@@ -120,7 +120,8 @@ static bool extlinux_set_default_kernel(const BootManager *manager, const Kernel
                 return false;
         }
 
-        config_path = string_printf("%s/extlinux.cfg", base_path);
+        config_path = string_printf("%s/syslinux.cfg", base_path);
+        LOG_DEBUG("Writing extlinux config to: %s", config_path);
 
         if (!cbm_writer_open(writer)) {
                 DECLARE_OOM();
