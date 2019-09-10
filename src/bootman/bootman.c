@@ -445,6 +445,15 @@ int mount_boot(BootManager *self, char **boot_directory)
         abs_bootdir = cbm_system_get_mountpoint_for_device(root_base);
 
         if (abs_bootdir) {
+                /*
+                 * skip if abs_bootdir is equal prefix, in that case we don't want to change
+                 * boot_directory and inform we've not mounted a partition
+                 */
+                if (!strcmp(abs_bootdir, self->sysconfig->prefix)) {
+                        ret = 0;
+                        goto out;
+                }
+
                 LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
 
                 /* User has already mounted the ESP somewhere else, use that */
