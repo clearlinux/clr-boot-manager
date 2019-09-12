@@ -40,6 +40,7 @@ static bool extlinux_init(const BootManager *manager)
 {
         autofree(char) *ldlinux = NULL;
         const char *prefix = NULL;
+        autofree(char) *boot_device = NULL;
 
         if (kernel_queue) {
                 kernel_array_free(kernel_queue);
@@ -64,14 +65,14 @@ static bool extlinux_init(const BootManager *manager)
         ldlinux = string_printf("%s/ldlinux.sys", base_path);
 
         prefix = boot_manager_get_prefix((BootManager *)manager);
+        boot_device = get_legacy_boot_device((char *)prefix);
 
-        if (nc_file_exists(ldlinux)) {
-                extlinux_cmd =
-                    string_printf("%s/usr/bin/extlinux -U %s &> /dev/null", prefix, base_path);
-        } else {
-                extlinux_cmd =
-                    string_printf("%s/usr/bin/extlinux -i %s &> /dev/null", prefix, base_path);
+        if (!boot_device) {
+                boot_device = get_boot_device();
         }
+
+        extlinux_cmd = string_printf("%s/usr/bin/extlinux -i %s --device %s &> /dev/null",
+                                     prefix, base_path, boot_device);
 
         return true;
 }
@@ -243,18 +244,21 @@ static bool extlinux_install(const BootManager *manager)
                         MBR_BIN_LEN);
         LOG_DEBUG("wrote \"%s.bin\" to %s", is_gpt ? "gptmbr" : "mbr",
                         boot_device);
-        if (count != MBR_BIN_LEN) {
-                close(mbr);
-                return false;
-        }
+
+        CHECK_ERR_GOTO(count != MBR_BIN_LEN, mbr_error,
+                       "Written mbr size doesn't match the expected");
+
         close(mbr);
 
-        if (cbm_system_system(extlinux_cmd) != 0) {
-                return false;
-        }
+        CHECK_ERR_RET_VAL(cbm_system_system(extlinux_cmd) != 0, false,
+                          "cbm_system_system() returned value != 0");
 
         cbm_sync();
         return true;
+
+ mbr_error:
+        close(mbr);
+        return false;
 }
 
 static bool extlinux_update(const BootManager *manager)
