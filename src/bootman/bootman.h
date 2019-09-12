@@ -29,6 +29,13 @@ typedef enum {
         BOOTLOADER_OPERATION_MAX = 1 << 5
 } BootLoaderOperation;
 
+typedef enum {
+        FSTYPE_VFAT = 1 << 0,
+        FSTYPE_EXT2 = 1 << 1,
+        FSTYPE_EXT3 = 1 << 2,
+        FSTYPE_EXT4 = 1 << 3,
+} FilesystemType;
+
 /**
  * Maximum length for each component in a kernel identifier
  */

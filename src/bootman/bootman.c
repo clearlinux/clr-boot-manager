@@ -414,6 +414,7 @@ int mount_boot(BootManager *self, char **boot_directory)
         autofree(char) *boot_dir = NULL;
         int ret = -1;
         char *root_base = NULL;
+        const char *fs_name = NULL;
 
         if (!boot_directory) {
                 goto out;
@@ -481,7 +482,12 @@ int mount_boot(BootManager *self, char **boot_directory)
         }
 
         LOG_INFO("Mounting boot device %s at %s", root_base, boot_dir);
-        if (cbm_system_mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
+
+        fs_name = cbm_get_fstype_name(root_base);
+        CHECK_FATAL_GOTO(!fs_name, out, "Could not determine fstype of: %s",
+                         root_base);
+
+        if (cbm_system_mount(root_base, boot_dir, fs_name, MS_MGC_VAL, "") < 0) {
                 LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
                           root_base,
                           boot_dir,

@@ -304,7 +304,7 @@ int main(void)
         setenv("CBM_BOOTVAR_TEST_MODE", "yes", 1);
 
         /* Force detection of `ext` filesystem. */
-        setenv("CBM_TEST_FSTYPE", "EXTFS", 1);
+        setenv("CBM_TEST_FSTYPE", "ext4", 1);
 
         cbm_blkid_set_vtable(&blkid_ops);
         cbm_system_set_vtable(&SystemTestOps);

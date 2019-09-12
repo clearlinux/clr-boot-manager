@@ -74,6 +74,11 @@ int detect_and_mount_boot(BootManager *self, char **boot_dir);
  */
 int kernel_compare_reverse(const void *a, const void *b);
 
+/**
+ * Given a boot_device returns the filesystem name, if unknown filesystem returns NULL.
+ */
+const char *cbm_get_fstype_name(const char *boot_device);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

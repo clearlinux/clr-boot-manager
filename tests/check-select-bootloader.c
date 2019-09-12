@@ -104,7 +104,7 @@ static void nuke_boot_device(struct PlaygroundConfig *config)
 START_TEST(bootman_select_uefi_native_with_boot)
 {
         static PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = true };
-        setenv("CBM_TEST_FSTYPE", "FATFS", 1);
+        setenv("CBM_TEST_FSTYPE", "vfat", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_default_vtables();
 
@@ -119,7 +119,7 @@ END_TEST
 START_TEST(bootman_select_uefi_native_without_boot)
 {
         static PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = true };
-        setenv("CBM_TEST_FSTYPE", "FATFS", 1);
+        setenv("CBM_TEST_FSTYPE", "vfat", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_default_vtables();
 
@@ -138,7 +138,7 @@ END_TEST
 START_TEST(bootman_select_uefi_image_with_boot)
 {
         static PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = true };
-        setenv("CBM_TEST_FSTYPE", "FATFS", 1);
+        setenv("CBM_TEST_FSTYPE", "vfat", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_default_vtables();
 
@@ -156,7 +156,7 @@ END_TEST
 START_TEST(bootman_select_uefi_image_without_boot)
 {
         static PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = true };
-        setenv("CBM_TEST_FSTYPE", "FATFS", 1);
+        setenv("CBM_TEST_FSTYPE", "vfat", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_default_vtables();
 
@@ -240,7 +240,7 @@ static void bootman_select_set_legacy_vtables(void)
 START_TEST(bootman_select_extlinux_native_with_boot)
 {
         PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = false };
-        setenv("CBM_TEST_FSTYPE", "EXTFS", 1);
+        setenv("CBM_TEST_FSTYPE", "ext4", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_legacy_vtables();
 
@@ -255,7 +255,7 @@ END_TEST
 START_TEST(bootman_select_extlinux_image_with_boot)
 {
         PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = false };
-        setenv("CBM_TEST_FSTYPE", "EXTFS", 1);
+        setenv("CBM_TEST_FSTYPE", "ext4", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_legacy_vtables();
 
@@ -330,7 +330,7 @@ static void bootman_select_set_grub2_vtables(void)
 START_TEST(bootman_select_grub2_native_without_boot)
 {
         static PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = false };
-        setenv("CBM_TEST_FSTYPE", "EXTFS", 1);
+        setenv("CBM_TEST_FSTYPE", "ext4", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_grub2_vtables();
 
@@ -355,7 +355,7 @@ END_TEST
 START_TEST(bootman_select_edge_uefi_with_legacy_part_native)
 {
         static PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = false };
-        setenv("CBM_TEST_FSTYPE", "EXTFS", 1);
+        setenv("CBM_TEST_FSTYPE", "ext4", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_legacy_vtables();
 
@@ -378,7 +378,7 @@ END_TEST
 START_TEST(bootman_select_edge_uefi_with_legacy_part_image)
 {
         static PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = false };
-        setenv("CBM_TEST_FSTYPE", "EXTFS", 1);
+        setenv("CBM_TEST_FSTYPE", "ext4", 1);
         autofree(BootManager) *m = NULL;
         bootman_select_set_legacy_vtables();
 
