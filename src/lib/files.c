@@ -560,6 +560,30 @@ bool cbm_path_check(const char *path, const char *resolved)
         return streq(p, resolved);
 }
 
+bool cbm_is_dir_empty(const char *path)
+{
+        DIR *dir = NULL;
+        struct dirent *entry;
+        bool ret = true;
+
+        dir = opendir(path);
+        CHECK_DBG_GOTO(!dir, out, "No such directory: %s", path);
+
+        while ((entry = readdir(dir)) != NULL) {
+                if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) {
+                        continue;
+                }
+
+                LOG_DEBUG("Directory %s is not empty, found: %s", path, entry->d_name);
+                ret = false;
+                break;
+        }
+
+ out:
+        closedir(dir);
+        return ret;
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

@@ -428,8 +428,13 @@ int mount_boot(BootManager *self, char **boot_directory)
 
         /* Prepare mounts */
         LOG_INFO("Checking for mounted boot dir");
-        /* Already mounted at the default boot dir, nothing for us to do */
-        if (cbm_system_is_mounted(boot_dir)) {
+
+        /*
+         * Already mounted at the default boot dir or boot doesn't have its own partition,
+         * we check if /boot is empty, if it's not then we assume it's a "partitionless" /boot
+         * (the system has no /boot partition), in both cases there's nothing for us to do
+         */
+        if (cbm_system_is_mounted(boot_dir) || !cbm_is_dir_empty(boot_dir)) {
                 LOG_INFO("boot_dir is already mounted: %s", boot_dir);
                 *boot_directory = strdup(boot_dir);
                 if (*boot_directory) {
@@ -474,6 +479,7 @@ int mount_boot(BootManager *self, char **boot_directory)
                 LOG_INFO("Creating boot dir");
                 nc_mkdir_p(boot_dir, 0755);
         }
+
         LOG_INFO("Mounting boot device %s at %s", root_base, boot_dir);
         if (cbm_system_mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
                 LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
@@ -613,19 +619,15 @@ bool boot_manager_modify_bootloader(BootManager *self, int flags)
         assert(self != NULL);
         autofree(char) *boot_dir = NULL;
 
-        if (!self->bootloader) {
-                return false;
-        }
+        CHECK_DBG_RET_VAL(!self->bootloader, false, "invalid self->bootloader, null.");
 
-        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
-                return false;
-        }
+        CHECK_DBG_RET_VAL(!cbm_is_sysconfig_sane(self->sysconfig), false,
+                          "The sysconfig values are not sane");
 
         /* Ensure we're up to date here on the bootloader */
         boot_dir = boot_manager_get_boot_dir(self);
-        if (!boot_manager_set_boot_dir(self, boot_dir)) {
-                return false;
-        }
+        CHECK_DBG_RET_VAL(!boot_manager_set_boot_dir(self, boot_dir), false,
+                          "Could not set the bootmanager's boot_dir");
 
         bool nocheck = (flags & BOOTLOADER_OPERATION_NO_CHECK) == BOOTLOADER_OPERATION_NO_CHECK;
 
