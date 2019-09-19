@@ -209,9 +209,11 @@ static void cmb_inspect_root_image(SystemConfig *c, char *realp) {
         if (!force_legacy && ((legacy_boot && uefi_boot) || uefi_boot)) {
                 mask = BOOTLOADER_CAP_UEFI | BOOTLOADER_CAP_GPT;
                 boot = uefi_boot;
+                free(legacy_boot);
         } else if (legacy_boot || force_legacy) {
                 mask = BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_GPT;
                 boot = legacy_boot;
+                free(uefi_boot);
         }
 
         c->boot_device = boot;
