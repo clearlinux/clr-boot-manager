@@ -24,3 +24,4 @@ option('bash_completions', type: 'boolean', value: true, description: 'Install b
 option('zsh_completions', type: 'boolean', value: true, description: 'Install zsh shell completions.')
 option('with-bash-completions-dir', type: 'string', description: 'System bash completions directory')
 option('with-zsh-completions-dir', type: 'string', description: 'System zsh completions directory')
+option('with-uefi-entry-label', type: 'string', description: 'uefi entry label')

@@ -153,6 +153,12 @@ if with_systemd_system_unit_dir == ''
     endif
 endif
 
+# Vendor configuration
+with_uefi_entry_label = get_option('with-uefi-entry-label')
+if with_uefi_entry_label == ''
+   with_uefi_entry_label = 'Linux bootloader'
+endif
+
 # Set config.h options up for our general directories, etc.
 cdata.set_quoted('KERNEL_DIRECTORY', with_kernel_dir)
 cdata.set_quoted('INITRD_DIRECTORY', with_initrd_dir)
@@ -162,6 +168,7 @@ cdata.set_quoted('BOOT_DIRECTORY', with_boot_dir)
 cdata.set_quoted('VENDOR_PREFIX', with_vendor_prefix)
 cdata.set_quoted('KERNEL_CONF_DIRECTORY', with_kernel_conf_dir)
 cdata.set_quoted('VENDOR_KERNEL_CONF_DIRECTORY', with_kernel_vendor_conf_dir)
+cdata.set_quoted('UEFI_ENTRY_LABEL', with_uefi_entry_label)
 
 # Helps the test suites
 test_top_dir = meson.current_source_dir()
@@ -194,6 +201,7 @@ report = [
     '    datadir:                                @0@'.format(path_datadir),
     '    sysconfdir:                             @0@'.format(path_sysconfdir),
     '    systemd unit directory:                 @0@'.format(with_systemd_system_unit_dir),
+    '    uefi entry label:                       @0@'.format(with_uefi_entry_label),
     '',
     '    Identification:',
     '    ===============',

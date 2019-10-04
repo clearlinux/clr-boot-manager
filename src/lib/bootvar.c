@@ -23,6 +23,7 @@
 #include <alloca.h>
 #include <blkid.h>
 #include <ctype.h>
+#include <config.h>
 #include <efi.h>
 #include <efiboot.h>
 #include <efilib.h>
@@ -418,7 +419,7 @@ static int bootvar_make_boot_rec_data(const char *esp_mount_path, const char *bo
                                  LOAD_OPTION_ACTIVE,
                                  (void *)fdev_path,
                                  len,
-                                 (unsigned char *)"Linux bootloader",
+                                 (unsigned char *)UEFI_ENTRY_LABEL,
                                  NULL,
                                  0);
         if (len < 0) {
