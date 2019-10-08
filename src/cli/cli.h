@@ -25,6 +25,7 @@ typedef struct SubCommand {
 } SubCommand;
 
 bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image);
+void cli_print_default_args_help(void);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

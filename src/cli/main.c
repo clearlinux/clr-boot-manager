@@ -56,6 +56,11 @@ static bool print_usage(int argc, char **argv)
                         command->name,
                         command->usage ? command->usage : "");
                 fprintf(stdout, "\n%s\n", command->help ? command->help : command->blurb);
+
+                if (!streq(argv[0], "help") && !streq(argv[0], "version")) {
+                        cli_print_default_args_help();
+                }
+
                 return true;
         }
 
@@ -65,6 +70,8 @@ static bool print_usage(int argc, char **argv)
         while (nc_hashmap_iter_next(&iter, (void **)&id, (void **)&command)) {
                 fprintf(stdout, "%15s - %s\n", id, command->blurb);
         }
+
+        cli_print_default_args_help();
 
         return true;
 }

@@ -18,15 +18,46 @@
 
 #include "cli.h"
 
-static struct option default_opts[] = { { "path", required_argument, 0, 'p' },
-                                        { "image", no_argument, 0, 'i' },
-                                        { 0, 0, 0, 0 } };
+struct cli_option {
+        struct option opt;
+        char *desc;
+};
+
+#define OPTION(opt, req, flag, short_opt, desc)       \
+        { {opt, req, flag, short_opt}, desc }         \
+
+static struct cli_option cli_opts[] = {
+        OPTION("path", required_argument, 0, 'p', "Set the base path for boot management operations."),
+        OPTION("image", no_argument, 0, 'i', "Force clr-boot-manager to run in image mode."),
+        OPTION(0, 0, 0, 0, NULL),
+};
+
+void cli_print_default_args_help(void)
+{
+        int opt_len = (sizeof(cli_opts) / sizeof(struct cli_option)) - 1;
+
+        fprintf(stdout, "\nOptions:\n");
+
+        for (int i = 0; i < opt_len; i++) {
+                struct cli_option curr = cli_opts[i];
+                fprintf(stdout, "  -%c, --%s\t%s\n", curr.opt.val,
+                        curr.opt.name, curr.desc);
+        }
+}
 
 bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image)
 {
         int o_in = 0;
         int c;
         char *_root = NULL;
+        int opt_len = sizeof(cli_opts) / sizeof(struct cli_option);
+        struct option *default_opts;
+
+        default_opts = alloca(sizeof(struct option) * (long unsigned int)opt_len);
+
+        for (int i = 0; i < opt_len; i++) {
+                default_opts[i] = cli_opts[i].opt;
+        }
 
         /* We actually want to use getopt, so rewind one for getopt */;
         --(*argv);
