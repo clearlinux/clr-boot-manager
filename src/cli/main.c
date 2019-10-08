@@ -35,6 +35,10 @@ static char *binary_name = NULL;
 static NcHashmap *g_commands = NULL;
 static bool explicit_help = false;
 
+#define FLAGS_USAGE "\nOptions:\n" \
+                    "  -p, --path        Set the base path for boot management operations.\n" \
+                    "  -i, --image       Force clr-boot-manager to run in image mode.\n" \
+
 /**
  * Print usage
  */
@@ -56,6 +60,11 @@ static bool print_usage(int argc, char **argv)
                         command->name,
                         command->usage ? command->usage : "");
                 fprintf(stdout, "\n%s\n", command->help ? command->help : command->blurb);
+
+                if (!streq(argv[0], "help") && !streq(argv[0], "version")) {
+                        fprintf(stdout, "%s", FLAGS_USAGE);
+                }
+
                 return true;
         }
 
@@ -65,6 +74,8 @@ static bool print_usage(int argc, char **argv)
         while (nc_hashmap_iter_next(&iter, (void **)&id, (void **)&command)) {
                 fprintf(stdout, "%15s - %s\n", id, command->blurb);
         }
+
+        fprintf(stdout, "%s", FLAGS_USAGE);
 
         return true;
 }
