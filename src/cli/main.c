@@ -44,10 +44,7 @@ static bool print_usage(int argc, char **argv)
         const char *id = NULL;
         const SubCommand *command = NULL;
 
-        if (argc > 1) {
-                fprintf(stderr, "Usage: %s help [topic]\n", binary_name);
-                return false;
-        } else if (argc == 1 && !explicit_help) {
+        if (argc >= 1 && !explicit_help) {
                 command = nc_hashmap_get(g_commands, argv[0]);
                 if (!command) {
                         fprintf(stderr, "Unknown topic '%s'\n", argv[0]);
