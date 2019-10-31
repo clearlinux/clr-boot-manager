@@ -60,6 +60,16 @@ The next "default" kernel (i.e. tip for a given series) is defined with the `sym
 
 The "post install" step for a kernel shall call `clr-boot-manager update` to push the new configuration & updates to disk. This can be called multiple times, as clr-boot-manager will only update exactly what needs to be updated, saving unnecessary writes to the ESP or `/boot` partition.
 
+Supported Filesystems/Partition Table
+-------------------------------------
+The clr-boot-manager supports the following filesystems combination:
+
+UEFI | Filesystem | Backend
+-----| -----------| -------
+no | ext[2-4] | extlinux
+no | vfat | syslinux
+yes | vfat | systemd-boot
+
 License
 -------
 LGPL-2.1
