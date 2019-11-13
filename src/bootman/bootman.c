@@ -297,6 +297,11 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
         if (!boot_manager_remove_kernel_internal(self, kernel)) {
                 return false;
         }
+
+        if (self->bootloader->remove_kernel == NULL) {
+                return true;
+        }
+
         /* Hand over to the bootloader to finish it up */
         return self->bootloader->remove_kernel(self, kernel);
 }
@@ -371,6 +376,11 @@ char *boot_manager_get_default_kernel(BootManager *self)
         CHECK_DBG_RET_VAL(!self->bootloader, NULL, "Invalid bootloader value: null");
         CHECK_DBG_RET_VAL(!cbm_is_sysconfig_sane(self->sysconfig), NULL,
                             "Sysconfig is not sane");
+
+        if (self->bootloader->get_default_kernel == NULL) {
+                return NULL;
+        }
+
         return self->bootloader->get_default_kernel(self);
 }
 
@@ -639,19 +649,49 @@ bool boot_manager_modify_bootloader(BootManager *self, int flags)
 
         if ((flags & BOOTLOADER_OPERATION_INSTALL) == BOOTLOADER_OPERATION_INSTALL) {
                 if (nocheck) {
+                        if (self->bootloader->install == NULL) {
+                                return true;
+                        }
+                        
                         return self->bootloader->install(self);
                 }
+
+                if (self->bootloader->needs_install == NULL) {
+                        return true;
+                }
+
                 if (self->bootloader->needs_install(self)) {
+                        if (self->bootloader->install == NULL) {
+                                return true;
+                        }
+
                         return self->bootloader->install(self);
                 }
+
                 return true;
         } else if ((flags & BOOTLOADER_OPERATION_REMOVE) == BOOTLOADER_OPERATION_REMOVE) {
+                if (self->bootloader->remove == NULL) {
+                        return true;
+                }
                 return self->bootloader->remove(self);
         } else if ((flags & BOOTLOADER_OPERATION_UPDATE) == BOOTLOADER_OPERATION_UPDATE) {
                 if (nocheck) {
+                        if (self->bootloader->update == NULL) {
+                                return true;
+                        }
+
                         return self->bootloader->update(self);
                 }
+
+                if (self->bootloader->needs_update == NULL) {
+                        return true;
+                }
+                
                 if (self->bootloader->needs_update(self)) {
+                        if (self->bootloader->update == NULL) {
+                                return true;
+                        }
+
                         return self->bootloader->update(self);
                 }
                 return true;
@@ -679,12 +719,20 @@ bool boot_manager_needs_install(BootManager *self)
 {
         assert(self != NULL);
 
+        if (self->bootloader->needs_install == NULL) {
+                return true;
+        }
+
         return self->bootloader->needs_install(self);
 }
 
 bool boot_manager_needs_update(BootManager *self)
 {
         assert(self != NULL);
+
+        if (self->bootloader->needs_update == NULL) {
+                return true;
+        }
 
         return self->bootloader->needs_update(self);
 }

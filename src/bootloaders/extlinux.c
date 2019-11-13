@@ -98,13 +98,6 @@ static bool extlinux_install_kernel(__cbm_unused__ const BootManager *manager, c
         return true;
 }
 
-/* No op due since conf file will only have queued kernels anyway */
-static bool extlinux_remove_kernel(__cbm_unused__ const BootManager *manager,
-                                   __cbm_unused__ const Kernel *kernel)
-{
-        return true;
-}
-
 /* Actually creates the whole conf by iterating through the queued kernels */
 static bool extlinux_set_default_kernel(const BootManager *manager, const Kernel *default_kernel)
 {
@@ -208,21 +201,6 @@ static bool extlinux_set_default_kernel(const BootManager *manager, const Kernel
         return true;
 }
 
-char *extlinux_get_default_kernel(__cbm_unused__ const BootManager *manager)
-{
-        return NULL;
-}
-
-static bool extlinux_needs_update(__cbm_unused__ const BootManager *manager)
-{
-        return true;
-}
-
-static bool extlinux_needs_install(__cbm_unused__ const BootManager *manager)
-{
-        return true;
-}
-
 static bool extlinux_install(const BootManager *manager)
 {
         autofree(char) *boot_device = NULL;
@@ -266,12 +244,6 @@ static bool extlinux_update(const BootManager *manager)
         return extlinux_install(manager);
 }
 
-static bool extlinux_remove(__cbm_unused__ const BootManager *manager)
-{
-        /* Maybe should return false? Unsure */
-        return true;
-}
-
 static void extlinux_destroy(__cbm_unused__ const BootManager *manager)
 {
         if (kernel_queue) {
@@ -306,16 +278,10 @@ static int extlinux_get_capabilities(const BootManager *manager)
 __cbm_export__ const BootLoader extlinux_bootloader = {.name = "extlinux",
                                                        .init = extlinux_init,
                                                        .install_kernel = extlinux_install_kernel,
-                                                       .remove_kernel = extlinux_remove_kernel,
                                                        .set_default_kernel =
                                                            extlinux_set_default_kernel,
-                                                       .get_default_kernel =
-                                                           extlinux_get_default_kernel,
-                                                       .needs_install = extlinux_needs_install,
-                                                       .needs_update = extlinux_needs_update,
                                                        .install = extlinux_install,
                                                        .update = extlinux_update,
-                                                       .remove = extlinux_remove,
                                                        .destroy = extlinux_destroy,
                                                        .get_capabilities =
                                                            extlinux_get_capabilities };

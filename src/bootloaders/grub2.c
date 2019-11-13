@@ -517,41 +517,6 @@ bool grub2_set_default_kernel(const BootManager *manager, const Kernel *default_
         return true;
 }
 
-char *grub2_get_default_kernel(__cbm_unused__ const BootManager *manager)
-{
-        return NULL;
-}
-
-bool grub2_needs_install(__cbm_unused__ const BootManager *manager)
-{
-        return false;
-}
-
-bool grub2_needs_update(__cbm_unused__ const BootManager *manager)
-{
-        return false;
-}
-
-bool grub2_install(__cbm_unused__ const BootManager *manager)
-{
-        /* We don't handle management of GRUB2 so we just say, yes, it did
-         * install. This saves complications.
-         */
-        return true;
-}
-
-bool grub2_update(__cbm_unused__ const BootManager *manager)
-{
-        /* Likewise, we don't update. Just return true. */
-        return true;
-}
-
-bool grub2_remove(__cbm_unused__ const BootManager *manager)
-{
-        /* Certainly not going to remove if we don't install */
-        return true;
-}
-
 int grub2_get_capabilities(const BootManager *manager)
 {
         const char *prefix = NULL;
@@ -567,21 +532,22 @@ int grub2_get_capabilities(const BootManager *manager)
         return BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_EXTFS;
 }
 
+bool grub2_needs_update_install(__cbm_unused__ const BootManager *manager)
+{
+        return false;
+}
+
 __cbm_export__ const BootLoader grub2_bootloader = {.name = "grub2",
                                                     .init = grub2_init,
                                                     .get_kernel_destination = NULL, /* kernel
                                                                                directory
                                                                                only needed for EFI
                                                                                booloaders */
+                                                    .needs_update = grub2_needs_update_install,
+                                                    .needs_install = grub2_needs_update_install,
                                                     .install_kernel = grub2_install_kernel,
                                                     .remove_kernel = grub2_remove_kernel,
                                                     .set_default_kernel = grub2_set_default_kernel,
-                                                    .get_default_kernel = grub2_get_default_kernel,
-                                                    .needs_install = grub2_needs_install,
-                                                    .needs_update = grub2_needs_update,
-                                                    .install = grub2_install,
-                                                    .update = grub2_update,
-                                                    .remove = grub2_remove,
                                                     .destroy = grub2_destroy,
                                                     .get_capabilities = grub2_get_capabilities };
 

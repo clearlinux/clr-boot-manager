@@ -65,7 +65,6 @@ static bool shim_systemd_needs_install(const BootManager *);
 static bool shim_systemd_needs_update(const BootManager *);
 static bool shim_systemd_install(const BootManager *);
 static bool shim_systemd_update(const BootManager *);
-static bool shim_systemd_remove(const BootManager *);
 static bool shim_systemd_init(const BootManager *);
 static void shim_systemd_destroy(const BootManager *);
 static int shim_systemd_get_capabilities(const BootManager *);
@@ -82,7 +81,6 @@ __cbm_export__ const BootLoader
                                .needs_update = shim_systemd_needs_update,
                                .install = shim_systemd_install,
                                .update = shim_systemd_update,
-                               .remove = shim_systemd_remove,
                                .destroy = shim_systemd_destroy,
                                .get_capabilities = shim_systemd_get_capabilities };
 
@@ -299,12 +297,6 @@ static bool shim_systemd_install(const BootManager *manager)
 static bool shim_systemd_update(const BootManager *manager)
 {
         return shim_systemd_install(manager);
-}
-
-static bool shim_systemd_remove(__cbm_unused__ const BootManager *manager)
-{
-        fprintf(stderr, "%s is not implemented\n", __func__);
-        return true;
 }
 
 static bool shim_systemd_init(const BootManager *manager)

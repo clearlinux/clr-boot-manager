@@ -128,13 +128,6 @@ static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager, c
         return true;
 }
 
-/* No op due since conf file will only have queued kernels anyway */
-static bool syslinux_remove_kernel(__cbm_unused__ const BootManager *manager,
-                                   __cbm_unused__ const Kernel *kernel)
-{
-        return true;
-}
-
 /* Actually creates the whole conf by iterating through the queued kernels */
 static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel *default_kernel)
 {
@@ -237,21 +230,6 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         return true;
 }
 
-char *syslinux_get_default_kernel(__cbm_unused__ const BootManager *manager)
-{
-        return NULL;
-}
-
-static bool syslinux_needs_update(__cbm_unused__ const BootManager *manager)
-{
-        return true;
-}
-
-static bool syslinux_needs_install(__cbm_unused__ const BootManager *manager)
-{
-        return true;
-}
-
 static bool syslinux_install(const BootManager *manager)
 {
         autofree(char) *boot_device = NULL;
@@ -298,12 +276,6 @@ static bool syslinux_update(const BootManager *manager)
         return syslinux_install(manager);
 }
 
-static bool syslinux_remove(__cbm_unused__ const BootManager *manager)
-{
-        /* Maybe should return false? Unsure */
-        return true;
-}
-
 static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
 {
         if (kernel_queue) {
@@ -342,16 +314,10 @@ static int syslinux_get_capabilities(const BootManager *manager)
 __cbm_export__ const BootLoader syslinux_bootloader = {.name = "syslinux",
                                                        .init = syslinux_init,
                                                        .install_kernel = syslinux_install_kernel,
-                                                       .remove_kernel = syslinux_remove_kernel,
                                                        .set_default_kernel =
                                                            syslinux_set_default_kernel,
-                                                       .get_default_kernel =
-                                                           syslinux_get_default_kernel,
-                                                       .needs_install = syslinux_needs_install,
-                                                       .needs_update = syslinux_needs_update,
                                                        .install = syslinux_install,
                                                        .update = syslinux_update,
-                                                       .remove = syslinux_remove,
                                                        .destroy = syslinux_destroy,
                                                        .get_capabilities =
                                                            syslinux_get_capabilities };
