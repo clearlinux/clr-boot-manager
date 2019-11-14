@@ -15,6 +15,7 @@
 
 #include "bootman.h"
 #include "cli.h"
+#include "update.h"
 
 static inline bool is_numeric(const char *str)
 {
@@ -89,7 +90,7 @@ bool cbm_command_set_timeout(int argc, char **argv)
                 fprintf(stdout, "New timeout value is: %d\n", n_val);
         }
 
-        return true;
+        return cbm_command_update(argc, argv);
 }
 
 bool cbm_command_get_timeout(int argc, char **argv)
