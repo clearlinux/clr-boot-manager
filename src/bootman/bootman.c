@@ -41,6 +41,11 @@ extern const BootLoader systemd_bootloader;
 extern const BootLoader extlinux_bootloader;
 extern const BootLoader syslinux_bootloader;
 
+struct InitrdEntry {
+        char *name;
+        char *dir;
+};
+
 /**
  * Bootloader set that we're allowed to check and use
  */
@@ -55,6 +60,14 @@ const BootLoader *bootman_known_loaders[] =
       /* non-systemd-class */
       &syslinux_bootloader,
       &extlinux_bootloader};
+
+static void free_initrd_entry(void *p)
+{
+        struct InitrdEntry *entry = p;
+        free(entry->name);
+        free(entry->dir);
+        free(entry);
+}
 
 BootManager *boot_manager_new()
 {
@@ -77,7 +90,8 @@ BootManager *boot_manager_new()
         /* CLI can override this */
         boot_manager_set_image_mode(r, false);
 
-        r->initrd_freestanding = nc_hashmap_new_full(nc_string_hash, nc_string_compare, free, free);
+        r->initrd_freestanding = nc_hashmap_new_full(nc_string_hash,
+                                                     nc_string_compare, free, free_initrd_entry);
         OOM_CHECK(r->initrd_freestanding);
 
 
@@ -101,6 +115,7 @@ void boot_manager_free(BootManager *self)
         cbm_free_sysconfig(self->sysconfig);
         free(self->kernel_dir);
         free(self->initrd_freestanding_dir);
+        free(self->user_initrd_freestanding_dir);
         nc_hashmap_free(self->initrd_freestanding);
         free(self->abs_bootdir);
         free(self->cmdline);
@@ -153,6 +168,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
 
         char *kernel_dir = NULL;
         char *initrd_dir = NULL;
+        char *user_initrd_dir = NULL;
         SystemConfig *config = NULL;
 
         CHECK_DBG_RET_VAL(!prefix, false, "Invalid prefix value: null");
@@ -184,6 +200,13 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         }
         self->initrd_freestanding_dir = initrd_dir;
 
+        user_initrd_dir = string_printf("%s/%s", config->prefix, USER_INITRD_DIRECTORY);
+
+        if (self->user_initrd_freestanding_dir) {
+                free(self->user_initrd_freestanding_dir);
+        }
+        self->user_initrd_freestanding_dir = user_initrd_dir;
+        
         if (self->bootloader) {
                 self->bootloader->destroy(self);
                 self->bootloader = NULL;
@@ -710,23 +733,23 @@ bool boot_manager_set_uname(BootManager *self, const char *uname)
         return self->have_sys_kernel;
 }
 
-bool boot_manager_enumerate_initrds_freestanding(BootManager *self)
+static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, const char *dir)
 {
         autofree(DIR) *initrd_dir = NULL;
         struct dirent *ent = NULL;
         struct stat st = { 0 };
 
-        if (!self || !self->initrd_freestanding_dir) {
+        if (!self || !dir) {
                 return false;
         }
 
-        initrd_dir = opendir(self->initrd_freestanding_dir);
+        initrd_dir = opendir(dir);
         if (!initrd_dir) {
                 if (errno == ENOENT) {
-                        LOG_INFO("path %s does not exist", self->initrd_freestanding_dir);
+                        LOG_INFO("path %s does not exist", dir);
                         return true;
                 } else {
-                        LOG_ERROR("Error opening %s: %s", self->initrd_freestanding_dir, strerror(errno));
+                        LOG_ERROR("Error opening %s: %s", dir, strerror(errno));
                         return false;
                 }
         }
@@ -735,37 +758,92 @@ bool boot_manager_enumerate_initrds_freestanding(BootManager *self)
                 char *initrd_name_key = NULL;
                 char *initrd_name_val = NULL;
                 autofree(char) *path = NULL;
+                struct InitrdEntry *entry = NULL;
 
-                path = string_printf("%s/%s", self->initrd_freestanding_dir, ent->d_name);
+                path = string_printf("%s/%s", dir, ent->d_name);
 
                 /* Some kind of broken link */
-                if (lstat(path, &st) != 0) {
-                        continue;
-                }
+                CHECK_DBG_CONTINUE(lstat(path, &st) != 0, "Broken link: %s, skipping.", path);
 
                 /* Regular only */
-                if (!S_ISREG(st.st_mode)) {
-                        continue;
-                }
+                CHECK_DBG_CONTINUE(!S_ISREG(st.st_mode) && !S_ISLNK(st.st_mode),
+                                   "Non regular file: %s, skipping.", path);
 
                 /* empty files are skipped too */
-                if (st.st_size == 0) {
-                        continue;
-                }
+                CHECK_DBG_CONTINUE(st.st_size == 0, "Empty file: %s, skipping.", path);
 
-                initrd_name_val = strdup(ent->d_name);
-                OOM_CHECK(initrd_name_val);
+                if (S_ISLNK(st.st_mode)) {
+                        char *buf;
+                        const char *prefix;
+                        autofree(char) *null_path;
+                        ssize_t nbytes;
+                        size_t bufsiz = PATH_MAX;
+
+                        if (st.st_size > 0) {
+                                bufsiz = (size_t)st.st_size;
+                        }
+
+                        buf = alloca(bufsiz);
+                        OOM_CHECK(buf);
+
+                        nbytes = readlink(path, buf, bufsiz);
+                        if (nbytes == -1) {
+                                DECLARE_OOM();
+                        }
+
+                        prefix = boot_manager_get_prefix(self);
+
+                        if (prefix != NULL && strcmp("/", prefix) != 0) {
+                                null_path = string_printf("%s/dev/null", prefix);
+                        } else {
+                                null_path = strdup("/dev/null");
+                        }
+
+                        if (!strstr(buf, null_path)) {
+                                initrd_name_val = strdup(ent->d_name);
+                                OOM_CHECK(initrd_name_val);
+                        }
+                } else {
+                        initrd_name_val = strdup(ent->d_name);
+                        OOM_CHECK(initrd_name_val);
+                }
 
                 initrd_name_key = string_printf("freestanding-%s", ent->d_name);
                 OOM_CHECK(initrd_name_key);
 
-                if (!nc_hashmap_put(self->initrd_freestanding, initrd_name_key, initrd_name_val)) {
+                if (nc_hashmap_contains(self->initrd_freestanding, initrd_name_key)) {
+                        LOG_DEBUG("Freestanding %s already loaded, skipping", path);
+                        free(initrd_name_key);
+                        free(initrd_name_val);
+                        continue;
+                }
+
+                entry = calloc(1, sizeof(struct InitrdEntry));
+                OOM_CHECK(entry);
+
+                entry->name = initrd_name_val;
+                entry->dir = strdup(dir);
+
+                if (!nc_hashmap_put(self->initrd_freestanding, initrd_name_key, entry)) {
                         free(initrd_name_key);
                         free(initrd_name_val);
                         DECLARE_OOM();
                         abort();
                 }
         }
+        return true;
+}
+
+bool boot_manager_enumerate_initrds_freestanding(BootManager *self)
+{
+        if (!_boot_manager_enumerate_initrds_freestanding(self, self->user_initrd_freestanding_dir)) {
+                return false;
+        }
+
+        if (!_boot_manager_enumerate_initrds_freestanding(self, self->initrd_freestanding_dir)) {
+                return false;
+        }
+
         return true;
 }
 
@@ -780,7 +858,8 @@ bool boot_manager_copy_initrd_freestanding(BootManager *self)
         const char *efi_boot_dir =
             is_uefi ? self->bootloader->get_kernel_destination(self) : NULL;
         base_path = boot_manager_get_boot_dir((BootManager *)self);
-        if (!self || !self->initrd_freestanding_dir || !self->initrd_freestanding) {
+
+        if (!self || !self->initrd_freestanding) {
                 return false;
         }
 
@@ -793,14 +872,19 @@ bool boot_manager_copy_initrd_freestanding(BootManager *self)
         while (nc_hashmap_iter_next(&iter, &key, &val)) {
                 autofree(char) *initrd_target = NULL;
                 autofree(char) *initrd_source = NULL;
+                struct InitrdEntry *entry = val;
+
+                // if we put null's name to initrd entry then we're masking it
+                if (entry->name == NULL) {
+                        LOG_DEBUG("Masking initrd freestanding: %s", (char *)key);
+                        continue;
+                }
 
                 initrd_target = string_printf("%s%s/%s",
-                                              base_path,
-                                              (is_uefi ? efi_boot_dir : ""),
-                                              (char*)key);
-                initrd_source = string_printf("%s/%s",
-                                              self->initrd_freestanding_dir,
-                                              (char*)val);
+                                              base_path, (is_uefi ? efi_boot_dir : ""), (char*)key);
+
+                initrd_source = string_printf("%s/%s", entry->dir, entry->name);
+
                 if (!cbm_files_match(initrd_source, initrd_target)) {
                         if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
                                 LOG_FATAL("Failed to install initrd %s -> %s: %s",
@@ -824,7 +908,7 @@ bool boot_manager_remove_initrd_freestanding(BootManager * self)
                         BOOTLOADER_CAP_UEFI);
         const char *efi_boot_dir =
             is_uefi ? self->bootloader->get_kernel_destination(self) : NULL;
-        if (!self || !self->initrd_freestanding_dir) {
+        if (!self || (!self->user_initrd_freestanding_dir && !self->initrd_freestanding_dir)) {
                 return false;
         }
         /* if it's UEFI, then bootloader->get_kernel_dst() must return a value. */
@@ -879,10 +963,24 @@ void boot_manager_initrd_iterator_init(const BootManager *manager, NcHashmapIter
 
 bool boot_manager_initrd_iterator_next(NcHashmapIter *iter, char **name)
 {
+        struct InitrdEntry *entry = NULL;
+
         if (!iter || !name) {
                 return false;
         }
-        return nc_hashmap_iter_next(iter, (void **)name, NULL);
+
+        while (nc_hashmap_iter_next(iter, (void **)name, (void **)&entry)) {
+                // the entries without a name are the masked ones, we don't want
+                // the backend implementations to use this records, we keep'em with
+                // the sole purpose of avoiding the system freestanding to overwrite
+                // the user masked ones
+                if (entry->name == NULL) {
+                        continue;
+                }
+                return true;
+        }
+
+        return false;
 }
 
 /*

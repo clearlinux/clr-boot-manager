@@ -118,6 +118,12 @@ if with_initrd_dir == ''
     with_initrd_dir = join_paths(path_prefix, 'lib', 'initrd.d')
 endif
 
+# Defaults to /etc/kernel/initrd.d
+with_user_initrd_dir = get_option('with-user-initrd-dir')
+if with_user_initrd_dir == ''
+    with_user_initrd_dir = join_paths(path_sysconfdir, 'kernel', 'initrd.d')
+endif
+
 # Defaults to /etc/kernel
 with_kernel_conf_dir = get_option('with-kernel-conf-dir')
 if with_kernel_conf_dir == ''
@@ -162,6 +168,7 @@ endif
 # Set config.h options up for our general directories, etc.
 cdata.set_quoted('KERNEL_DIRECTORY', with_kernel_dir)
 cdata.set_quoted('INITRD_DIRECTORY', with_initrd_dir)
+cdata.set_quoted('USER_INITRD_DIRECTORY', with_user_initrd_dir)
 cdata.set_quoted('KERNEL_MODULES_DIRECTORY', with_kernel_modules_dir)
 cdata.set_quoted('KERNEL_NAMESPACE', with_kernel_namespace)
 cdata.set_quoted('BOOT_DIRECTORY', with_boot_dir)

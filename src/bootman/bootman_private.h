@@ -35,6 +35,7 @@ struct BootManager {
         SystemConfig *sysconfig;       /**<System configuration */
         char *cmdline;                 /**<Additional cmdline to append */
         char *initrd_freestanding_dir; /**<Initrd without kernel deps directory */
+        char *user_initrd_freestanding_dir; /**<User's initrd without kernel deps directory */
         NcHashmap *initrd_freestanding;/**<Array of initrds without kernel deps */
 };
 
