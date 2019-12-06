@@ -803,7 +803,8 @@ bool boot_manager_copy_initrd_freestanding(BootManager *self)
                                               (char*)val);
                 if (!cbm_files_match(initrd_source, initrd_target)) {
                         if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
-                                LOG_FATAL("Failed to install initrd %s: %s",
+                                LOG_FATAL("Failed to install initrd %s -> %s: %s",
+                                          initrd_source,
                                           initrd_target,
                                           strerror(errno));
                                 return false;
