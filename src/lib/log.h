@@ -94,6 +94,12 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
                 }                                               \
         } while(false)                                          \
 
+#define check_common_continue(level, exp, ...)                  \
+        if (exp) {                                              \
+                LOG_##level(__VA_ARGS__);                       \
+                continue;                                       \
+        }                                                       \
+
 #define check_common(level, exp, ...)                                   \
   do {                                                                  \
           if (exp) {                                                    \
@@ -113,6 +119,9 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
 #define CHECK_ERR_GOTO(exp, label, ...)                           \
         check_common_goto(ERROR, exp, label, __VA_ARGS__)         \
 
+#define CHECK_ERR_CONTINUE(exp, ...)                              \
+        check_common_continue(ERROR, exp, __VA_ARGS__)            \
+
 #define CHECK_WARN(exp, ...)                    \
         check_common(WARNING, exp, __VA_ARGS__) \
 
@@ -124,6 +133,9 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
 
 #define CHECK_WARN_GOTO(exp, label, ...)                                \
         check_common_goto(WARNING, exp, label, __VA_ARGS__)             \
+
+#define CHECK_WARN_CONTINUE(exp, ...)                                   \
+        check_common_continue(WARNING, exp, __VA_ARGS__)                \
 
 #define CHECK_INF(exp, ...)                     \
         check_common(INFO, exp, __VA_ARGS__)    \
@@ -137,6 +149,9 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
 #define CHECK_INF_GOTO(exp, label, ...)                          \
         check_common_goto(INFO, exp, label, __VA_ARGS__)         \
 
+#define CHECK_INF_CONTINUE(exp, ...)                             \
+        check_common_continue(INFO, exp, __VA_ARGS__)            \
+
 #define CHECK_DBG(exp, ...)                      \
         check_common(DEBUG, exp, __VA_ARGS__)    \
 
@@ -149,6 +164,9 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
 #define CHECK_DBG_GOTO(exp, label, ...)                           \
         check_common_goto(DEBUG, exp, label, __VA_ARGS__)         \
 
+#define CHECK_DBG_CONTINUE(exp, ...)                              \
+        check_common_continue(DEBUG, exp, __VA_ARGS__)            \
+
 #define CHECK_FATAL(exp, ...)                      \
         check_common(FATAL, exp, __VA_ARGS__)      \
 
@@ -160,6 +178,9 @@ void cbm_log(CbmLogLevel level, const char *file, int line, const char *format, 
 
 #define CHECK_FATAL_GOTO(exp, label, ...)                           \
         check_common_goto(FATAL, exp, label, __VA_ARGS__)           \
+
+#define CHECK_FATAL_CONTINUE(exp, ...)                              \
+        check_common_continue(FATAL, exp, __VA_ARGS__)              \
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
