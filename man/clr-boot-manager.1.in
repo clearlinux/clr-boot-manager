@@ -40,6 +40,12 @@ Set the base path for boot management operations\&.
 Force \fBclr\-boot\-manager\fR to run in image mode\&.
 .RE
 .PP
+\fB\-n\fR, \fB\-\-no-efi-update\fR
+.RS 4
+Force \fBclr\-boot\-manager\fR to skip efi variables update (when using shim-systemd
+backend)\&.
+.RE
+.PP
 
 .PP
 \fB\-v\fR, \fB\-\-version\fR, \fBversion\fR
@@ -136,6 +142,14 @@ are made on a per line basis so multiple different removals should be placed
 on their own line or file\&.
 .RE
 
+.PP
+\fB@KERNEL_CONF_DIRECTORY@/update_efi_vars\fR
+.RS 4
+A system-wide configuration to avoid clr-boot-manager changing efi variables when
+using shim-systemd backend (see flag --no-efi-update). This configuration file will
+be applied every time clr-boot-manager is called - even when called by a external
+tool non interactively. Possible values are: \fBno\fR, \fBfalse\fR\&.
+.RE
 
 .SH "ENVIRONMENT"
 \fI$CBM_DEBUG\fR
