@@ -17,6 +17,10 @@
 #include <string.h>
 
 #include "cli.h"
+#include "config.h"
+#include "log.h"
+#include "nica/files.h"
+#include "util.h"
 
 struct cli_option {
         struct option opt;
@@ -125,6 +129,30 @@ bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_im
         if (_root) {
                 *root = _root;
         }
+
+        if (update_efi_vars && *update_efi_vars) {
+                autofree(FILE) *f = NULL;
+                autofree(char) *cfg_path = NULL;
+                char *buf = NULL;
+                size_t sn;
+                ssize_t r = 0;
+
+                cfg_path = string_printf("%s/%s/update_efi_vars", (*root != NULL) ? *root : "",
+                                         KERNEL_CONF_DIRECTORY);
+                CHECK_DBG_GOTO(!nc_file_exists(cfg_path), success, "No such file: %s", cfg_path);
+
+                f = fopen(cfg_path, "r");
+                CHECK_ERR_RET_VAL(!f, false, "Could not open file: %s", cfg_path);
+
+                while ((r = getline(&buf, &sn, f)) > 0) {
+                        if (!strncmp(buf, "no", 2) || !strncmp(buf, "false", 5)) {
+                                *update_efi_vars = false;
+                                break;
+                        }
+                }
+        }
+
+ success:
         return true;
 bail:
         if (_root) {
