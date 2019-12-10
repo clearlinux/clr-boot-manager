@@ -35,8 +35,9 @@ bool cbm_command_set_timeout(int argc, char **argv)
         int n_val = -1;
         autofree(char) *root = NULL;
         autofree(BootManager) *manager = NULL;
+        bool update_efi_vars = false;
 
-        if (!cli_default_args_init(&argc, &argv, &root, NULL)) {
+        if (!cli_default_args_init(&argc, &argv, &root, NULL, &update_efi_vars)) {
                 return false;
         }
 
@@ -45,6 +46,8 @@ bool cbm_command_set_timeout(int argc, char **argv)
                 DECLARE_OOM();
                 return false;
         }
+
+        boot_manager_set_update_efi_vars(manager, update_efi_vars);
 
         /* Use specified root if required */
         if (root) {
@@ -97,14 +100,17 @@ bool cbm_command_get_timeout(int argc, char **argv)
 {
         autofree(char) *root = NULL;
         autofree(BootManager) *manager = NULL;
+        bool update_efi_vars = false;
 
-        cli_default_args_init(&argc, &argv, &root, NULL);
+        cli_default_args_init(&argc, &argv, &root, NULL, &update_efi_vars);
 
         manager = boot_manager_new();
         if (!manager) {
                 DECLARE_OOM();
                 return false;
         }
+
+        boot_manager_set_update_efi_vars(manager, update_efi_vars);
 
         /* Use specified root if required */
         if (root) {

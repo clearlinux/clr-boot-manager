@@ -302,6 +302,16 @@ bool boot_manager_is_image_mode(BootManager *manager);
 void boot_manager_set_image_mode(BootManager *manager, bool image_mode);
 
 /**
+ * Set boot manager flag, determining if it should or not update efi variables
+ */
+void boot_manager_set_update_efi_vars(BootManager *self, bool update_efi_vars);
+
+/**
+ * Returns the boot manager's update_efi_vars flag
+ */
+bool boot_manager_is_update_efi_vars(BootManager *self);
+
+/**
  * Determine the default timeout based on the contents of
  * SYSCONFDIR/boot_timeout
  */

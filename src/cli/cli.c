@@ -29,6 +29,8 @@ struct cli_option {
 static struct cli_option cli_opts[] = {
         OPTION("path", required_argument, 0, 'p', "Set the base path for boot management operations."),
         OPTION("image", no_argument, 0, 'i', "Force clr-boot-manager to run in image mode."),
+        OPTION("no-efi-update", no_argument, 0, 'n',
+               "Don't update efi vars when using shim-systemd backend."),
         OPTION(0, 0, 0, 0, NULL),
 };
 
@@ -61,7 +63,8 @@ void cli_print_default_args_help(void)
         }
 }
 
-bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image)
+bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image,
+                           bool *update_efi_vars)
 {
         int o_in = 0;
         int c;
@@ -85,7 +88,7 @@ bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_im
 
         /* Allow setting the root */
         while (true) {
-                c = getopt_long(*argc, *argv, "ip:", default_opts, &o_in);
+                c = getopt_long(*argc, *argv, "nip:", default_opts, &o_in);
                 if (c == -1) {
                         break;
                 }
@@ -103,6 +106,11 @@ bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_im
                 case 'i':
                         if (forced_image) {
                                 *forced_image = true;
+                        }
+                        break;
+                case 'n':
+                        if (update_efi_vars) {
+                                *update_efi_vars = false;
                         }
                         break;
                 case '?':

@@ -27,8 +27,9 @@ bool cbm_command_list_kernels(int argc, char **argv)
         autofree(BootManager) *manager = NULL;
         bool forced_image = false;
         char **kernels = NULL;
+        bool update_efi_vars = true;
 
-        if (!cli_default_args_init(&argc, &argv, &root, &forced_image)) {
+        if (!cli_default_args_init(&argc, &argv, &root, &forced_image, &update_efi_vars)) {
                 return false;
         }
 
@@ -37,6 +38,8 @@ bool cbm_command_list_kernels(int argc, char **argv)
                 DECLARE_OOM();
                 return false;
         }
+
+        boot_manager_set_update_efi_vars(manager, update_efi_vars);
 
         if (root) {
                 autofree(char) *realp = NULL;
@@ -88,8 +91,9 @@ bool cbm_command_set_kernel(int argc, char **argv)
         char version[16] = { 0 };
         int release = 0;
         Kernel kern = { 0 };
+        bool update_efi_vars = true;
 
-        if (!cli_default_args_init(&argc, &argv, &root, &forced_image)) {
+        if (!cli_default_args_init(&argc, &argv, &root, &forced_image, &update_efi_vars)) {
                 return false;
         }
 
@@ -98,6 +102,8 @@ bool cbm_command_set_kernel(int argc, char **argv)
                 DECLARE_OOM();
                 return false;
         }
+
+        boot_manager_set_update_efi_vars(manager, update_efi_vars);
 
         if (root) {
                 autofree(char) *realp = NULL;

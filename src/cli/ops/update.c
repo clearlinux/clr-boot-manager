@@ -26,8 +26,9 @@ bool cbm_command_update(int argc, char **argv)
         autofree(char) *root = NULL;
         autofree(BootManager) *manager = NULL;
         bool forced_image = false;
+        bool update_efi_vars = true;
 
-        if (!cli_default_args_init(&argc, &argv, &root, &forced_image)) {
+        if (!cli_default_args_init(&argc, &argv, &root, &forced_image, &update_efi_vars)) {
                 return false;
         }
 
@@ -37,6 +38,8 @@ bool cbm_command_update(int argc, char **argv)
                 return false;
         }
 
+        boot_manager_set_update_efi_vars(manager, update_efi_vars);
+        
         if (!boot_manager_detect_kernel_dir(root)) {
                 fprintf(stderr, "No kernels detected on system to update\n");
                 return true;

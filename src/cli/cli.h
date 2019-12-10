@@ -24,7 +24,8 @@ typedef struct SubCommand {
         bool requires_root;
 } SubCommand;
 
-bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image);
+bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image,
+                           bool *update_efi_vars);
 void cli_print_default_args_help(void);
 
 /*

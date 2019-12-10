@@ -884,6 +884,19 @@ bool boot_manager_initrd_iterator_next(NcHashmapIter *iter, char **name)
         return nc_hashmap_iter_next(iter, (void **)name, NULL);
 }
 
+void boot_manager_set_update_efi_vars(BootManager *self, bool update_efi_vars)
+{
+        assert(self != NULL);
+
+        self->update_efi_vars = update_efi_vars;
+}
+
+bool boot_manager_is_update_efi_vars(BootManager *self)
+{
+        assert(self != NULL);
+        return self->update_efi_vars;
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
