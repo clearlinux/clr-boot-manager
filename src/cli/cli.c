@@ -35,13 +35,29 @@ static struct cli_option cli_opts[] = {
 void cli_print_default_args_help(void)
 {
         int opt_len = (sizeof(cli_opts) / sizeof(struct cli_option)) - 1;
+        int larger = -1;
+        const char *flags_mask = "  -%c, --%s";
 
         fprintf(stdout, "\nOptions:\n");
 
         for (int i = 0; i < opt_len; i++) {
                 struct cli_option curr = cli_opts[i];
-                fprintf(stdout, "  -%c, --%s\t%s\n", curr.opt.val,
-                        curr.opt.name, curr.desc);
+                char tmp[60] = {0};
+                int len;
+
+                len = sprintf(tmp, flags_mask, curr.opt.val, curr.opt.name);
+                if (len > larger) {
+                        larger = len;
+                }
+        }
+
+        for (int i = 0; i < opt_len; i++) {
+                struct cli_option curr = cli_opts[i];
+                char tmp[60] = {0};
+                int len;
+
+                len = sprintf(tmp, flags_mask, curr.opt.val, curr.opt.name);
+                fprintf(stdout, "%s%*s%s\n", tmp, (larger - len) + 2, "", curr.desc);
         }
 }
 
