@@ -25,3 +25,16 @@
    fun:srunner_run
    fun:main
 }
+
+{
+   <external-check-error-01>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:UnknownInlinedFun
+   fun:UnknownInlinedFun
+   fun:tag_string_to_list
+   fun:UnknownInlinedFun
+   fun:srunner_run_tagged
+   fun:main
+}
