@@ -177,6 +177,11 @@ cdata.set_quoted('KERNEL_CONF_DIRECTORY', with_kernel_conf_dir)
 cdata.set_quoted('VENDOR_KERNEL_CONF_DIRECTORY', with_kernel_vendor_conf_dir)
 cdata.set_quoted('UEFI_ENTRY_LABEL', with_uefi_entry_label)
 
+with_grub2_backend = get_option('with-grub2-backend')
+if with_grub2_backend == true
+   cdata.set('GRUB2_BACKEND_ENABLED', with_grub2_backend)
+endif
+
 # Helps the test suites
 test_top_dir = meson.current_source_dir()
 
@@ -230,6 +235,7 @@ report = [
     '',
     '    bootloader:                             @0@'.format(with_bootloader),
     '    efi variable support:                   @0@'.format(require_efi),
+    '    grub backend:                           @0@'.format(with_grub2_backend),
 ]
 
 # Output some stuff to validate the build config

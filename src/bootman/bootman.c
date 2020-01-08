@@ -33,7 +33,10 @@
 /**
  * Total "usable" bootloaders
  */
+#if defined(GRUB2_BACKEND_ENABLED)
 extern const BootLoader grub2_bootloader;
+#endif
+
 #if defined(HAVE_SHIM_SYSTEMD_BOOT)
 extern const BootLoader shim_systemd_bootloader;
 #endif
@@ -56,7 +59,9 @@ const BootLoader *bootman_known_loaders[] =
 #elif defined(HAVE_SYSTEMD_BOOT)
       &systemd_bootloader,
 #endif
+#if defined(GRUB2_BACKEND_ENABLED)
       &grub2_bootloader, /**<Always place first to allow extlinux to override */
+#endif
       /* non-systemd-class */
       &syslinux_bootloader,
       &extlinux_bootloader};

@@ -33,7 +33,6 @@ link_libnica = declare_dependency(
 libcbm_sources = [
     'bootloaders/systemd-class.c',
     'bootloaders/systemd-boot.c',
-    'bootloaders/grub2.c',
     'bootloaders/extlinux.c',
     'bootloaders/syslinux.c',
     'bootloaders/mbr.c',
@@ -52,6 +51,12 @@ libcbm_sources = [
     'lib/writer.c',
     'lib/util.c',
 ]
+
+if with_grub2_backend == true
+libcbm_sources += [
+    'bootloaders/grub2.c',
+]
+endif
 
 libcbm_includes = [
     include_directories('bootloaders'),
