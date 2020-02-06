@@ -71,6 +71,9 @@ static bool extlinux_init(const BootManager *manager)
                 boot_device = get_boot_device();
         }
 
+        CHECK_ERR_RET_VAL(!boot_device, false, "No boot partition found, you need to "
+                          "mark the boot partition with \"legacy_boot\" flag.");
+
         extlinux_cmd = string_printf("%s/usr/bin/extlinux -i %s --device %s &> /dev/null",
                                      prefix, base_path, boot_device);
 

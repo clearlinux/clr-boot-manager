@@ -77,6 +77,9 @@ static bool syslinux_init(const BootManager *manager)
                 boot_device = get_boot_device();
         }
 
+        CHECK_ERR_RET_VAL(!boot_device, false, "No boot partition found, you need to "
+                          "mark the boot partition with \"legacy_boot\" flag.");
+
         // syslinux -U will not work with a partuuid, the effect of "install" and
         // "update" will always be the same, so assume install for all scenarios
         syslinux_cmd = string_printf("%s/usr/bin/syslinux -i %s &> /dev/null",
