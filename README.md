@@ -3,9 +3,9 @@ clr-boot-manager
 
 ![](https://github.com/clearlinux/clr-boot-manager/workflows/CI/badge.svg)
 
-clr-boot-manager  exists  to  enable the correct maintenance of vendor kernels and appropriate garbage collection tactics over the  course  of upgrades.   The  implementation  provides  the  means to enable correct cohabitation on a shared boot directory, such as the EFI System  Partition for UEFI-booting operating systems.
+clr-boot-manager exists to enable the correct maintenance of vendor kernels and appropriate garbage collection tactics over the course of upgrades. The implementation provides the means to enable correct cohabitation on a shared boot directory, such as the EFI System Partition for UEFI-booting operating systems.
 
-Special  care  is taken to ensure the boot partition is handled gracefully, and in the instance that it is not already mounted, then clr-boot-manager will automatically  discover and mount it, and automatically unmount the boot partition again when it is complete.
+Special care is taken to ensure the boot partition is handled gracefully, and in the instance that it is not already mounted, then clr-boot-manager will automatically discover and mount it, and automatically unmount the boot partition again when it is complete.
 
 Most importantly, clr-boot-manager provides a simple mechanism to provide kernel updates, with the ability for users to rollback to an older kernel should the new update be problematic. This is achieved through the use of strict namespace policies, permanent source paths, and clr-boot-manager's own internal logic, without the need for "meta packages" or undue complexity on the distribution side.
 
@@ -73,4 +73,4 @@ License
 -------
 LGPL-2.1
 
-Copyright © 2016-2018 Intel Corporation
+Copyright © 2016-2020 Intel Corporation
