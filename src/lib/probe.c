@@ -255,8 +255,18 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
                 LOG_ERROR("Unable to find UUID for %s: %s", devnode, strerror(errno));
         }
 
-        /* Lastly check if its a device-mapper device */
+        /* Check if its a software raid device */
         basenom = basename(devnode);
+        if (strncmp(basenom, "md", 2) == 0) {
+                LOG_DEBUG("Root device exists on Linux software RAID configuration");
+                /* Need to use the UUID only */
+                if (probe.part_uuid) {
+                        free(probe.part_uuid);
+                        probe.part_uuid = NULL;
+                }
+        }
+
+        /* Lastly check if its a device-mapper device */
         if (strncmp(basenom, "dm-", 3) == 0) {
                 LOG_DEBUG("Root device exists on device-mapper configuration");
                 probe.luks_uuid = cbm_get_luks_uuid(basenom);
