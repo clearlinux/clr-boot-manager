@@ -27,11 +27,11 @@ _clr_boot_manager() {
       COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
 			;;
     get-timeout|list-kernels|update|set-timeout)
-      opts="--path"
+      opts="--path --image --no-efi-update"
       COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
       ;;
     set-kernel)
-      opts="--path"
+      opts="--path --image --no-efi-update"
       COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
       COMPREPLY+=($(compgen -G "@KERNEL_DIRECTORY@/@KERNEL_NAMESPACE@*" ))
       ;;

@@ -36,7 +36,11 @@ _arguments -C \
   && ret=0
 
 if [[ -n "$state" ]]; then
-  local -a args=('--path=[Set the base path for boot management operations.]:path: _path_files -/')
+  local -a args=(
+    '(-p --path)'{-p,--path=}'[Set the base path for boot management operations]:path: _files -/'
+    '(-i --image)'{-i,--image}'[Force clr-boot-manager to run in image mode]'
+    '(-n --no-efi-update)'{-n,--no-efi-update}'[Don`t update efi vars when using shim-systemd backend]'
+  )
   case "$state" in
     subcmd)
       _describe -t subcmds 'clr-boot-manager subcommand' subcmds && ret=0
@@ -47,11 +51,9 @@ if [[ -n "$state" ]]; then
           _arguments $args && ret=0
         ;;
         set-kernel)
-          # Anonymous function to get the root filesystem path specified by --path=
-          local -a kernelpath args=($args)
-          () {
-            zparseopts -E -a kernelpath '-path:' '-path\=:' 2>/dev/null
-          } $words
+          local -a kernelpath
+
+          kernelpath=(${opt_args[--path=]:-${opt_args[-p]}})
           if (( $#kernelpath )); then
             # Filename expansion, path start with `~` (zsh completion system doesn't expand ~
             eval kernelpath=$kernelpath
@@ -69,7 +71,7 @@ if [[ -n "$state" ]]; then
           ;;
         set-timeout)
           local -a args=($args)
-          args+=(':timeout: _message -r "Please enter a integer value"')
+          args+=(':timeout: _message -r "Please enter an integer value"')
           _arguments $args && ret=0
           ;;
         help)
