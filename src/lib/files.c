@@ -162,15 +162,28 @@ static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
         }
 
         dev_path = cbm_system_get_device_for_mountpoint(path);
-        blkid_probe pr = cbm_blkid_new_probe_from_filename(dev_path);
-        if (cbm_blkid_do_safeprobe(pr) != 0) {
-                LOG_ERROR("Invalid block device: %s", path);
+        if (dev_path) {
+                blkid_probe pr = cbm_blkid_new_probe_from_filename(dev_path);
+                if (cbm_blkid_do_safeprobe(pr) != 0) {
+                        LOG_ERROR("Invalid block device: %s", path);
+                        cbm_blkid_free_probe(pr);
+                        return false;
+                }
+
+                *diskdevno = cbm_probe_get_wholedisk_devno(pr);
                 cbm_blkid_free_probe(pr);
-                return false;
+        } else {
+                /* Fall back to stat, possibly /proc/self/mounts has /dev/root
+                   as the root device.
+                */
+                dev_t ret;
+                if (cbm_blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
+                        LOG_ERROR("Invalid block device: %s", path);
+                        return false;
+                }
+                *diskdevno = ret;
         }
 
-        *diskdevno = cbm_probe_get_wholedisk_devno(pr);
-        cbm_blkid_free_probe(pr);
         return true;
 }
 

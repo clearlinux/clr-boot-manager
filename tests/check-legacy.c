@@ -37,7 +37,7 @@
  */
 static inline int legacy_devno_to_wholedisk(__cbm_unused__ dev_t dev, __cbm_unused__ char *diskname,
                                             __cbm_unused__ size_t len,
-                                            __cbm_unused__ dev_t *diskdevno)
+                                            dev_t *diskdevno)
 {
         *diskdevno = makedev(8, 8);
         return 0;
@@ -46,9 +46,9 @@ static inline int legacy_devno_to_wholedisk(__cbm_unused__ dev_t dev, __cbm_unus
 /**
  * Coerce legacy lookup
  */
-static inline dev_t legacy_probe_get_wholedisk_devno(__cbm_unused__ blkid_probe pr)
+static inline char *legacy_get_device_for_mountpoint(__cbm_unused__ const char *mount)
 {
-        return makedev(8, 8);
+        return NULL;
 }
 
 /**
@@ -297,10 +297,11 @@ int main(void)
         int fail;
         /* override test ops for legacy testing */
         CbmBlkidOps blkid_ops = BlkidTestOps;
+        CbmSystemOps system_ops = SystemTestOps;
         blkid_ops.devno_to_wholedisk = legacy_devno_to_wholedisk;
-        blkid_ops.probe_get_wholedisk_devno = legacy_probe_get_wholedisk_devno;
         blkid_ops.partition_get_flags = legacy_partition_get_flags;
         blkid_ops.partition_get_uuid = legacy_partition_get_uuid;
+        system_ops.get_device_for_mountpoint = legacy_get_device_for_mountpoint;
 
         /* syncing can be problematic during test suite runs */
         cbm_set_sync_filesystems(false);
@@ -316,7 +317,7 @@ int main(void)
         setenv("CBM_TEST_FSTYPE", "ext4", 1);
 
         cbm_blkid_set_vtable(&blkid_ops);
-        cbm_system_set_vtable(&SystemTestOps);
+        cbm_system_set_vtable(&system_ops);
 
         s = core_suite();
         sr = srunner_create(s);
