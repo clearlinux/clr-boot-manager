@@ -790,7 +790,7 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
                 if (S_ISLNK(st.st_mode)) {
                         char *buf;
                         const char *prefix;
-                        autofree(char) *null_path;
+                        autofree(char) *null_path = NULL;
                         ssize_t nbytes;
                         size_t bufsiz = PATH_MAX;
 

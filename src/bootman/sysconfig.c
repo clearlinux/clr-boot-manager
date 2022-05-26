@@ -155,7 +155,7 @@ int cbm_get_filesystem_cap(const char *boot_device)
 
 static void cmb_inspect_root_native(SystemConfig *c, char *realp) {
         bool native_uefi = false;
-        autofree(char) *fw_path;
+        autofree(char) *fw_path = NULL;
         char *boot = NULL;
 
         /* typically /sys, but we forcibly fail this with our tests */
