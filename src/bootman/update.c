@@ -287,7 +287,7 @@ static bool boot_manager_update_native(BootManager *self)
                                 }
                                 LOG_INFO("update_native: not-running: %s", tk->source.path);
                                 /* Preserve tip */
-                                if (tip && tk == tip) {
+                                if (tip && tk == tip && strcmp(kernel_type, "kvm") != 0) {
                                         LOG_DEBUG("update_native: Skipping default-%s: %s",
                                                   kernel_type,
                                                   tk->source.path);
@@ -323,9 +323,17 @@ static bool boot_manager_update_native(BootManager *self)
                 if (system_kernel && system_kernel->ktype[0] != '\0') {
                         new_default =
                             boot_manager_get_default_for_type(self, kernels, system_kernel->ktype);
+                        if (new_default && strcmp(new_default->meta.ktype, "kvm") == 0) {
+                                new_default =
+                                        boot_manager_get_default_for_type(self, kernels, "native");
+                        }
                 }
         } else {
                 new_default = boot_manager_get_default_for_type(self, kernels, running->meta.ktype);
+                if (new_default && strcmp(new_default->meta.ktype, "kvm") == 0) {
+                        new_default =
+                                boot_manager_get_default_for_type(self, kernels, "native");
+                }
         }
 
         if (new_default) {
