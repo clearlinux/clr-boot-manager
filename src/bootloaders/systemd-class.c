@@ -243,6 +243,16 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                                  get_kernel_destination_impl(manager),
                                  kernel->target.path);
 
+        /* Early microcode loading initrd must be the first entry */
+        initrd_name = boot_manager_get_ucode_initrd(manager);
+        if (initrd_name) {
+                cbm_writer_append_printf(writer,
+                                         "initrd %s/%s\n",
+                                         get_kernel_destination_impl(manager),
+                                         initrd_name);
+                boot_manager_remove_initrd(manager, initrd_name);
+        }
+
         /* Optional initrd */
         if (kernel->target.initrd_path) {
                 cbm_writer_append_printf(writer,
