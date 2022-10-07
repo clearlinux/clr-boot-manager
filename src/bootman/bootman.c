@@ -843,7 +843,7 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
                 entry->dir = strdup(dir);
 
                 /* Check whether this is a microcode cpio (*-ucode.cpio) */
-                if (found = strstr(initrd_name_val, ucode_needle)) {
+                if ((found = strstr(initrd_name_val, ucode_needle))) {
                         if ((strlen(initrd_name_val) - (size_t) (found - initrd_name_val)) == strlen(ucode_needle)) {
                                 if (!self->ucode_initrd) {
                                         LOG_INFO("Microcode initrd %s (%s) selected for early load",
