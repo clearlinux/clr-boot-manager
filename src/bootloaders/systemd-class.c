@@ -263,7 +263,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
 
         boot_manager_initrd_iterator_init(manager, &iter);
         while (boot_manager_initrd_iterator_next(&iter, &initrd_name)) {
-                if (ucode_initrd && 0 == strcmp(initrd_name, ucode_initrd)) {
+                if (streq(initrd_name, ucode_initrd)) {
                         /* This is the ucode early update initrd we already
                          * wrote above */
                         continue;
