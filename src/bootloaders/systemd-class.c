@@ -219,6 +219,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         autofree(CbmWriter) *writer = CBM_WRITER_INIT;
         NcHashmapIter iter = { 0 };
         char *initrd_name = NULL;
+        char *ucode_initrd = NULL;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
@@ -244,13 +245,12 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                                  kernel->target.path);
 
         /* Early microcode loading initrd must be the first entry */
-        initrd_name = boot_manager_get_ucode_initrd(manager);
-        if (initrd_name) {
+        ucode_initrd = boot_manager_get_ucode_initrd(manager);
+        if (ucode_initrd) {
                 cbm_writer_append_printf(writer,
                                          "initrd %s/%s\n",
                                          get_kernel_destination_impl(manager),
-                                         initrd_name);
-                boot_manager_remove_initrd(manager, initrd_name);
+                                         ucode_initrd);
         }
 
         /* Optional initrd */
@@ -263,6 +263,11 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
 
         boot_manager_initrd_iterator_init(manager, &iter);
         while (boot_manager_initrd_iterator_next(&iter, &initrd_name)) {
+                if (0 == strcmp(initrd_name, ucode_initrd)) {
+                        /* This is the ucode early update initrd we already
+                         * wrote above */
+                        continue;
+                }
                 cbm_writer_append_printf(writer,
                                          "initrd %s/%s\n",
                                          get_kernel_destination_impl(manager),

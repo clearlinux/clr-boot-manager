@@ -437,11 +437,6 @@ bool boot_manager_remove_initrd_freestanding(BootManager * self);
  */
 char *boot_manager_get_ucode_initrd(const BootManager *manager);
 
-/**
- * Remove an initrd from the boot manager hash
- */
-bool boot_manager_remove_initrd(const BootManager *manager, const char *name);
-
 /*
  * Iterate initrd elements
  */

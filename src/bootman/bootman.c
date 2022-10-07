@@ -993,11 +993,6 @@ char *boot_manager_get_ucode_initrd(const BootManager *manager)
         return manager->ucode_initrd;
 }
 
-bool boot_manager_remove_initrd(const BootManager *manager, const char *name)
-{
-        return nc_hashmap_remove(manager->initrd_freestanding, name);
-}
-
 void boot_manager_initrd_iterator_init(const BootManager *manager, NcHashmapIter *iter)
 {
         if (!iter) {
