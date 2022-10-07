@@ -776,7 +776,6 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
                 autofree(char) *path = NULL;
                 struct InitrdEntry *entry = NULL;
                 char *ucode_needle = "-ucode.cpio";
-                char *found = NULL;
 
                 path = string_printf("%s/%s", dir, ent->d_name);
 
@@ -843,10 +842,12 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
                 entry->dir = strdup(dir);
 
                 /* Check whether this is a microcode cpio (*-ucode.cpio) */
-                found = strstr(initrd_name_val, ucode_needle);
-                if (found) {
+                size_t nlen = strlen(ucode_needle);
+                size_t hlen = strlen(initrd_name_val);
+                if (hlen > nlen) {
                         /* Ensure the match is at the end of the string */
-                        if ((strlen(initrd_name_val) - (size_t) (found - initrd_name_val)) == strlen(ucode_needle)) {
+                        const char *ext = &initrd_name_val[hlen-nlen];
+                        if (streq(ext, ucode_needle)) {
                                 if (!self->ucode_initrd) {
                                         LOG_INFO("Microcode initrd %s (%s) selected for early load",
                                                         path, initrd_name_key);
