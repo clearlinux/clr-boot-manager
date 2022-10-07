@@ -122,6 +122,7 @@ void boot_manager_free(BootManager *self)
         free(self->initrd_freestanding_dir);
         free(self->user_initrd_freestanding_dir);
         nc_hashmap_free(self->initrd_freestanding);
+        free(self->ucode_initrd);
         free(self->abs_bootdir);
         free(self->cmdline);
         free(self);
@@ -774,6 +775,8 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
                 char *initrd_name_val = NULL;
                 autofree(char) *path = NULL;
                 struct InitrdEntry *entry = NULL;
+                char *ucode_needle = "-ucode.cpio";
+                char *found = NULL;
 
                 path = string_printf("%s/%s", dir, ent->d_name);
 
@@ -839,6 +842,20 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
                 entry->name = initrd_name_val;
                 entry->dir = strdup(dir);
 
+                /* Check whether this is a microcode cpio (*-ucode.cpio) */
+                if (found = strstr(initrd_name_val, ucode_needle)) {
+                        if ((strlen(initrd_name_val) - (size_t) (found - initrd_name_val)) == strlen(ucode_needle)) {
+                                if (!self->ucode_initrd) {
+                                        LOG_INFO("Microcode initrd %s (%s) selected for early load",
+                                                        path, initrd_name_key);
+                                        self->ucode_initrd = strdup(initrd_name_key);
+                                }
+                                else {
+                                        LOG_ERROR("Microcode initrd %s will not be loaded early", path);
+                                }
+                        }
+                }
+
                 if (!nc_hashmap_put(self->initrd_freestanding, initrd_name_key, entry)) {
                         free(initrd_name_key);
                         free(initrd_name_val);
@@ -846,6 +863,7 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
                         abort();
                 }
         }
+
         return true;
 }
 
