@@ -159,6 +159,12 @@ Additional initrd arguments will be added to the kernel argument list, if desire
 the user may mask out system installed initrd files by creating symbolic links
 within \fB@KERNEL_CONF_DIRECTORY@/initrd.d\fR pointing to \fB/dev/null\fR with same
 name of system installed files.
+
+To support early microcode updates, clr-boot-manager will identify the first file it
+finds named *-ucode.cpio, and ensure that is the first initrd loaded by the boot
+manager. There is currently no deterministic sorting, however, a matching file in
+\fB@KERNEL_CONF_DIRECTORY@/initrd.d\fR will take precedence over the system-provided
+microcode initrd in \fB/usr/lib/initrd.d\fR.
 .RE
 
 .SH "ENVIRONMENT"
