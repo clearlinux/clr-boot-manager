@@ -175,6 +175,7 @@ bool grub2_write_kernel(const Grub2Config *config, const Kernel *kernel)
         const char *root_tab = config->submenu ? "\t" : "";
         NcHashmapIter iter = { 0 };
         char *initrd_name = NULL;
+        char *ucode_initrd = NULL;
         autofree(char) *initrd_paths = NULL;
         initrd_paths = malloc(1);
         initrd_paths[0] = '\0';
@@ -244,6 +245,17 @@ bool grub2_write_kernel(const Grub2Config *config, const Kernel *kernel)
         /* Finish it off with the command line options */
         cbm_writer_append_printf(config->writer, "%s\"\n", kernel->meta.cmdline);
 
+        /* Early microcode loading initrd must be the first entry */
+        ucode_initrd = boot_manager_get_ucode_initrd(config->manager);
+        if (ucode_initrd) {
+                char *tmp = initrd_paths;
+                initrd_paths = string_printf("%s %s/%s",
+                                         initrd_paths,
+                                         (!config->is_separate) ? BOOT_DIRECTORY : "", /* i.e. /boot */
+                                         ucode_initrd);
+                free(tmp);
+        }
+
         /* Optional initrd */
         if (kernel->target.initrd_path) {
                 char *tmp = initrd_paths;
@@ -256,6 +268,11 @@ bool grub2_write_kernel(const Grub2Config *config, const Kernel *kernel)
         boot_manager_initrd_iterator_init(config->manager, &iter);
         while (boot_manager_initrd_iterator_next(&iter, &initrd_name)) {
                 char *tmp = initrd_paths;
+                if (streq(initrd_name, ucode_initrd)) {
+                        /* This is the ucode early update initrd we already
+                         * wrote above */
+                        continue;
+                }
                 initrd_paths = string_printf("%s %s/%s",
                                          initrd_paths,
                                          (!config->is_separate) ? BOOT_DIRECTORY : "", /* i.e. /boot */

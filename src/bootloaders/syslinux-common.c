@@ -102,6 +102,7 @@ bool syslinux_common_set_default_kernel(const BootManager *manager, const Kernel
         autofree(CbmWriter) *writer = CBM_WRITER_INIT;
         NcHashmapIter iter = { 0 };
         char *initrd_name = NULL;
+        char *ucode_initrd = NULL;
         int timeout;
         struct SyslinuxContext *ctx = NULL;
 
@@ -145,6 +146,14 @@ bool syslinux_common_set_default_kernel(const BootManager *manager, const Kernel
                 cbm_writer_append_printf(writer, "LABEL %s\n", k->target.legacy_path);
                 cbm_writer_append_printf(writer, "  KERNEL %s\n", k->target.legacy_path);
 
+                /* Early microcode loading initrd must be the first entry */
+                ucode_initrd = boot_manager_get_ucode_initrd(manager);
+                if (ucode_initrd) {
+                        char *tmp = initrd_paths;
+                        initrd_paths = string_printf("%s,%s", initrd_paths, ucode_initrd);
+                        free(tmp);
+                }
+
                 /* Add the initrd if we found one */
                 if (k->target.initrd_path) {
                         char *tmp = initrd_paths;
@@ -154,6 +163,11 @@ bool syslinux_common_set_default_kernel(const BootManager *manager, const Kernel
                 boot_manager_initrd_iterator_init(manager, &iter);
                 while (boot_manager_initrd_iterator_next(&iter, &initrd_name)) {
                         char *tmp = initrd_paths;
+                        if (streq(initrd_name, ucode_initrd)) {
+                                /* This is the ucode early update initrd we already
+                                 * wrote above */
+                                continue;
+                        }
                         initrd_paths = string_printf("%s,%s", initrd_paths, initrd_name);
                         free(tmp);
                 }
