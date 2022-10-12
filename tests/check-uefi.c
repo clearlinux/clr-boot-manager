@@ -462,6 +462,79 @@ START_TEST(bootman_uefi_initrd_freestandings_image)
 }
 END_TEST
 
+START_TEST(bootman_uefi_initrd_freestandings_ucode)
+{
+        autofree(BootManager) *m = NULL;
+        autofree(char) *path_initrd = NULL;
+        autofree(char) *ucode_initrd = NULL;
+        char *initrd_name = "00-initrd";
+        char *ucode_initrd_name = "00-ucode.cpio";
+
+        m = prepare_playground(&uefi_config);
+        fail_if(!m, "Failed to prepare update playground");
+
+        path_initrd = string_printf("%s%s/%s",
+                                        PLAYGROUND_ROOT,
+                                        INITRD_DIRECTORY,
+                                        initrd_name);
+
+        ucode_initrd = string_printf("%s%s/%s",
+                                        PLAYGROUND_ROOT,
+                                        INITRD_DIRECTORY,
+                                        ucode_initrd_name);
+
+        file_set_text(path_initrd, "Placeholder initrd");
+        file_set_text(ucode_initrd, "Placeholder ucode initrd");
+        /* Validate image install */
+        boot_manager_set_image_mode(m, true);
+        fail_if(!boot_manager_enumerate_initrds_freestanding(m), "Failed to find freestanding initrd");
+
+        fail_if(!check_freestanding_initrds_available(m, initrd_name), "Failed reading from initrd path");
+        fail_if(!boot_manager_update(m), "Failed to update image");
+        fail_if(!check_initrd_file_exist(m, initrd_name), "Failed copying initrd file");
+        fail_if(!check_initrd_file_exist(m, ucode_initrd_name), "Failed copying ucode initrd file");
+
+        /*
+         * Check whether the microcode (ucode) initrd is first in the list in
+         * the loader config files
+         */
+        for (int k = 0; k < uefi_config.n_kernels; k++) {
+                autofree(char) *conf_file = NULL;
+                autofree(char) *conf_path = NULL;
+                autofree(char) *config = NULL;
+                conf_file = string_printf("Clear-linux-%s-%s-%d.conf",
+                                uefi_config.initial_kernels[k].ktype,
+                                uefi_config.initial_kernels[k].version,
+                                uefi_config.initial_kernels[k].release);
+                conf_path = string_printf("%s/%s",
+                                BOOT_FULL "/loader/entries",
+                                conf_file);
+
+                if (file_get_text(conf_path, &config)) {
+                        autofree(char) *key = NULL;
+                        autofree(char) *exp = NULL;
+                        char *found = NULL;
+
+                        key = string_printf("initrd");
+
+                        found = strstr(config, key);
+                        fail_if(!found, "No initrd definitions found in %s:\n%s", conf_file, config);
+
+                        exp = string_printf("%s /efi/%s/freestanding-%s\n",
+                                        key, KERNEL_NAMESPACE, ucode_initrd_name);
+
+                        /*
+                         * We only want to compare this entry, not the rest of
+                         * the config
+                         */
+                        fail_if(0 != strncmp(found, exp, strlen(exp)),
+                                        "First initrd entry in config %s was not our microcode (%s):\n%s",
+                                        conf_file, ucode_initrd_name, config);
+                }
+        }
+}
+END_TEST
+
 
 /**
  * Ensure all blobs are removed for garbage collected kernels
@@ -610,6 +683,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_uefi_list_kernels);
         tcase_add_test(tc, bootman_uefi_set_kernel);
         tcase_add_test(tc, bootman_uefi_set_kernel_missing);
+        tcase_add_test(tc, bootman_uefi_initrd_freestandings_ucode);
         suite_add_tcase(s, tc);
 
         /* Tests without kernel modules */
