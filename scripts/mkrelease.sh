@@ -14,6 +14,7 @@
 set -e
 
 pkg="clr-boot-manager"
+SIGN=0
 
 print_help() {
     echo -e "mkrelease.sh [--help] [options]
@@ -36,6 +37,10 @@ for curr in "$@"; do
 	    shift
 	    shift
 	    ;;
+        "--sign"|"-s")
+            SIGN=1
+            shift
+            ;;
 	"--help"|"-h")
 	    print_help;
 	    exit 0;;
@@ -44,6 +49,7 @@ done
 
 if [ "$version" == "" ]; then
     echo "No version provided, please use \"--new-version\" flag. Use --help for more information."
+    exit 1
 fi
 
 echo "${version}" > VERSION
@@ -59,5 +65,7 @@ git submodule update
 xz -9 "${pkg}-${version}.tar"
 
 # Automatically sign the tarball
-gpg --armor --detach-sign "${pkg}-${version}.tar.xz"
-gpg --verify "${pkg}-${version}.tar.xz.asc"
+if [ $SIGN -eq 1 ]; then
+    gpg --armor --detach-sign "${pkg}-${version}.tar.xz"
+    gpg --verify "${pkg}-${version}.tar.xz.asc"
+fi

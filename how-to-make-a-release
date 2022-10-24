@@ -1,0 +1,4 @@
+1) Update VERSION file and commit
+2) Tag new release with "v${VERSION}"
+3) Run "./scripts/mkrelease.sh -n ${VERSION}"
+4) Push command and tag to github and use github ui to draft a new release and upload the tarball
