@@ -31,6 +31,7 @@ static SubCommand cmd_get_timeout;
 static SubCommand cmd_report_booted;
 static SubCommand cmd_list_kernels;
 static SubCommand cmd_set_kernel;
+static SubCommand cmd_remove_kernel;
 static char *binary_name = NULL;
 static NcHashmap *g_commands = NULL;
 static bool explicit_help = false;
@@ -205,6 +206,21 @@ kernel for the next time the system boots.",
         };
 
         if (!nc_hashmap_put(commands, cmd_set_kernel.name, &cmd_set_kernel)) {
+                DECLARE_OOM();
+                return EXIT_FAILURE;
+        }
+
+        /* Remove kernel */
+        cmd_remove_kernel = (SubCommand){
+                .name = "remove-kernel",
+                .blurb = "Remove the kernel from the system",
+                .help = "This command will remove a kernel from the system.",
+                .callback = cbm_command_remove_kernel,
+                .usage = " [--path=/path/to/filesystem/root]",
+                .requires_root = true
+        };
+
+        if (!nc_hashmap_put(commands, cmd_remove_kernel.name, &cmd_remove_kernel)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }

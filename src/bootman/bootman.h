@@ -268,6 +268,16 @@ void *boot_manager_get_data(BootManager *manager);
 void boot_manager_set_data(BootManager *manager, void *data);
 
 /**
+ * Wrapping function to remove a kernel that handles sanity checks and /boot mount state
+ *
+ * @param kernel A valid kernel instance
+ *
+ * @return a boolean value, indicating success or failure
+ */
+
+bool boot_manager_remove_kernel_wrapper(BootManager *manager, const Kernel *kernel);
+
+/**
  * Attempt to uninstall a previously installed kernel
  *
  * @param kernel A valid kernel instance

@@ -26,6 +26,7 @@ local -a subcmds; subcmds=(
   "set-timeout:Set the timeout to be used by the bootloader"
   "get-timeout:Get the timeout to be used by the bootloader"
   "set-kernel:Configure kernel to be used at next boot"
+  "remove-kernel:Remove kernel from system"
   "list-kernels:Display currently selectable kernels to boot"
   "help:Display help information on available commands"
 )
@@ -50,7 +51,7 @@ if [[ -n "$state" ]]; then
         get-timeout|list-kernels|update)
           _arguments $args && ret=0
         ;;
-        set-kernel)
+        set-kernel|remove-kernel)
           local -a kernelpath
 
           kernelpath=(${opt_args[--path=]:-${opt_args[-p]}})

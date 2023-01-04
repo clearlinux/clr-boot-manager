@@ -23,14 +23,14 @@ _clr_boot_manager() {
 
   case "$3" in
 		"$1"|help)
-			opts="version report-booted help update set-timeout get-timeout set-kernel list-kernels help"
+			opts="version report-booted help update set-timeout get-timeout set-kernel remove-kernel list-kernels help"
       COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
 			;;
     get-timeout|list-kernels|update|set-timeout)
       opts="--path --image --no-efi-update"
       COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
       ;;
-    set-kernel)
+    set-kernel|remove-kernel)
       opts="--path --image --no-efi-update"
       COMPREPLY=($(compgen -W "${opts}" -- "${2}"))
       COMPREPLY+=($(compgen -G "@KERNEL_DIRECTORY@/@KERNEL_NAMESPACE@*" ))

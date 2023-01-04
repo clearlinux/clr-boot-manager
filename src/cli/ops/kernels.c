@@ -158,6 +158,83 @@ bool cbm_command_set_kernel(int argc, char **argv)
         return true;
 }
 
+bool cbm_command_remove_kernel(int argc, char **argv)
+{
+        autofree(char) *root = NULL;
+        autofree(BootManager) *manager = NULL;
+        autofree(KernelArray) *kernels = NULL;
+        bool forced_image = false;
+        char type[32] = { 0 };
+        char version[16] = { 0 };
+        int release = 0;
+        Kernel kern = { 0 };
+        bool update_efi_vars = true;
+
+        if (!cli_default_args_init(&argc, &argv, &root, &forced_image, &update_efi_vars)) {
+                return false;
+        }
+
+        manager = boot_manager_new();
+        if (!manager) {
+                DECLARE_OOM();
+                return false;
+        }
+
+        boot_manager_set_update_efi_vars(manager, update_efi_vars);
+
+        if (root) {
+                autofree(char) *realp = NULL;
+
+                realp = realpath(root, NULL);
+                if (!realp) {
+                        LOG_FATAL("Path specified does not exist: %s", root);
+                        return false;
+                }
+                /* Anything not / is image mode */
+                if (!streq(realp, "/")) {
+                        boot_manager_set_image_mode(manager, true);
+                } else {
+                        boot_manager_set_image_mode(manager, forced_image);
+                }
+
+                /* CBM will check this again, we just needed to check for
+                 * image mode.. */
+                if (!boot_manager_set_prefix(manager, root)) {
+                        return false;
+                }
+        } else {
+                boot_manager_set_image_mode(manager, forced_image);
+                /* Default to "/", bail if it doesn't work. */
+                if (!boot_manager_set_prefix(manager, "/")) {
+                        return false;
+                }
+        }
+
+        if (argc != 1) {
+                fprintf(stderr,
+                        "remove-kernel takes a kernel ID of the form %s.TYPE.VERSION-RELEASE\n",
+                        KERNEL_NAMESPACE);
+                return false;
+        }
+
+        if (sscanf(argv[optind], KERNEL_NAMESPACE ".%31[^.].%15[^-]-%d", type, version, &release) != 3) {
+                fprintf(stderr,
+                        "remove-kernel takes a kernel ID of the form %s.TYPE.VERSION-RELEASE\n",
+                        KERNEL_NAMESPACE);
+                return false;
+        }
+
+        kern.meta.ktype = type;
+        kern.meta.version = version;
+        kern.meta.release = release;
+
+        /* Let CBM take care of the rest */
+        if (!boot_manager_remove_kernel_wrapper(manager, &kern)) {
+                return false;
+        }
+        return true;
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

@@ -312,6 +312,47 @@ bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)
         return self->bootloader->install_kernel(self, kernel);
 }
 
+bool boot_manager_remove_kernel_wrapper(BootManager *self, const Kernel *kernel)
+{
+        assert(self != NULL);
+        autofree(KernelArray) *kernels = NULL;
+        autofree(char) *boot_dir = NULL;
+        int did_mount = -1;
+        bool matched = false;
+        bool kernel_removed = false;
+
+        CHECK_DBG_RET_VAL(!self->bootloader, false, "Invalid boot loader: null");
+
+        CHECK_DBG_RET_VAL(!cbm_is_sysconfig_sane(self->sysconfig), false,
+                          "Sysconfig is not sane");
+
+        /* Grab the available kernels */
+        kernels = boot_manager_get_kernels(self);
+        CHECK_ERR_RET_VAL(!kernels || kernels->len == 0, false,
+                          "No kernels discovered in %s, bailing", self->kernel_dir);
+
+        did_mount = detect_and_mount_boot(self, &boot_dir);
+        CHECK_DBG_RET_VAL(did_mount < 0, false, "Boot was not mounted");
+
+        for (uint16_t i = 0; i < kernels->len; i++) {
+                const Kernel *k = nc_array_get(kernels, i);
+                if (streq(kernel->meta.ktype, k->meta.ktype) &&
+                    streq(kernel->meta.version, k->meta.version) &&
+                    kernel->meta.release == k->meta.release) {
+                        matched = true;
+                        kernel_removed = boot_manager_remove_kernel(self, k);
+                        break;
+                }
+        }
+        if (did_mount > 0) {
+                umount_boot(boot_dir);
+        }
+
+        CHECK_ERR(!matched, "No matching kernel in %s, bailing", self->kernel_dir);
+
+        return kernel_removed;
+}
+
 bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
 {
         assert(self != NULL);

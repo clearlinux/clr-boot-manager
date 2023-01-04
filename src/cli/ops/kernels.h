@@ -15,6 +15,7 @@
 
 bool cbm_command_list_kernels(int argc, char **argv);
 bool cbm_command_set_kernel(int argc, char **argv);
+bool cbm_command_remove_kernel(int argc, char **argv);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

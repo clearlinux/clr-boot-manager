@@ -112,6 +112,15 @@ Configure the default booting kernel.
 This command will not prevent the update command from changing the default kernel\&.
 .RE
 
+.PP
+\fBremove-kernel\fR
+.RS 4
+Remove a kernel from the system (both /boot and /usr locations).
+
+Warning: This can remove the only kernel from the system, ensure you have a default kernel
+set after running this command\&.
+.RE
+
 .SH "EXIT STATUS"
 .PP
 On success, 0 is returned, a non\-zero failure code otherwise\&
