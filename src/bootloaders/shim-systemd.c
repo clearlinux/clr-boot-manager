@@ -124,15 +124,18 @@ __cbm_export__ const BootLoader
 
 /* these path components can be used as-is, no need to probe */
 #define SHIM_DST "bootloader" EFI_SUFFIX
+#define MM_DST "mm" EFI_SUFFIX
 #define SYSTEMD_DST "loader" EFI_SUFFIX
 #define SYSTEMD_CONFIG_DIR "loader"
 #define SYSTEMD_ENTRIES_DIR "entries"
 
 typedef struct shim_systemd_config {
         char *shim_src;
+        char *mm_src;
         char *systemd_src;
 
         char *shim_dst_host; /* as accessible by the CMB for file ops. */
+        char *mm_dst_host;
         char *systemd_dst_host;
 
         char *shim_dst_esp; /* absolute location of shim on the ESP, for boot record */
@@ -199,6 +202,9 @@ static bool shim_systemd_needs_install(__cbm_unused__ const BootManager *manager
         if (!exists_identical(config.shim_dst_host, NULL)) {
                 return true;
         }
+        if (!exists_identical(config.mm_dst_host, NULL)) {
+                return true;
+        }
         if (!exists_identical(config.systemd_dst_host, NULL)) {
                 return true;
         }
@@ -216,6 +222,9 @@ static bool shim_systemd_needs_update(__cbm_unused__ const BootManager *manager)
                 }
         }
         if (!exists_identical(config.shim_dst_host, config.shim_src)) {
+                return true;
+        }
+        if (!exists_identical(config.mm_dst_host, config.mm_src)) {
                 return true;
         }
         if (!exists_identical(config.systemd_dst_host, config.systemd_src)) {
@@ -271,6 +280,10 @@ static bool shim_systemd_install(const BootManager *manager)
 
         if (!copy_file_atomic(config.shim_src, config.shim_dst_host, 00644)) {
                 LOG_FATAL("Cannot copy %s to %s", config.shim_src, config.shim_dst_host);
+                return false;
+        }
+        if (!copy_file_atomic(config.mm_src, config.mm_dst_host, 00644)) {
+                LOG_FATAL("Cannot copy %s to %s", config.mm_src, config.mm_dst_host);
                 return false;
         }
         if (!copy_file_atomic(config.systemd_src, config.systemd_dst_host, 00644)) {
@@ -338,6 +351,7 @@ static bool shim_systemd_init(const BootManager *manager)
                 prefix[len - 1] = '\0';
         }
         config.shim_src = string_printf("%s/%s", prefix, SHIM_SRC);
+        config.mm_src = string_printf("%s/%s", prefix, MM_SRC);
         config.systemd_src = string_printf("%s/%s", prefix, SYSTEMD_SRC);
 
         boot_root = boot_manager_get_boot_dir((BootManager *)manager);
@@ -349,6 +363,7 @@ static bool shim_systemd_init(const BootManager *manager)
         config.bin_dst_esp = strdup(config.bin_dst_host + strlen(boot_root));
 
         config.shim_dst_host = nc_build_case_correct_path(config.bin_dst_host, SHIM_DST, NULL);
+        config.mm_dst_host = nc_build_case_correct_path(config.bin_dst_host, MM_DST, NULL);
         config.systemd_dst_host =
             nc_build_case_correct_path(config.bin_dst_host, SYSTEMD_DST, NULL);
 
@@ -366,8 +381,10 @@ static bool shim_systemd_init(const BootManager *manager)
 static void shim_systemd_destroy(const BootManager *manager)
 {
         free(config.shim_src);
+        free(config.mm_src);
         free(config.systemd_src);
         free(config.shim_dst_host);
+        free(config.mm_dst_host);
         free(config.systemd_dst_host);
         free(config.shim_dst_esp);
         free(config.efi_fallback_dir);
