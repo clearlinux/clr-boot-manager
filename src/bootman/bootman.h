@@ -298,6 +298,13 @@ bool boot_manager_set_default_kernel(BootManager *manager, const Kernel *kernel)
 char *boot_manager_get_default_kernel(BootManager *manager);
 
 /**
+ * Detect and mount the boot directory.
+ * @param boot_dir Path indicating the mounted boot directory.
+ * @return an integer value, indicating success or failure.
+ */
+int boot_manager_detect_and_mount_boot(BootManager *self, char **boot_dir);
+
+/**
  * Return the CbmDeviceProbe for the root partition
  *
  * @note This struct belongs to BootManager and should not be freed. Also
