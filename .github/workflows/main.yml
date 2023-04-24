@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
       with:
@@ -12,7 +12,7 @@ jobs:
     - name: Prepare
       run: |
         sudo apt-get update
-        sudo apt-get install libefiboot-dev check grep ninja-build meson gcc libblkid-dev lcov valgrind gnu-efi libefivar-dev ruby ruby-dev
+        sudo apt-get install libefiboot-dev check grep ninja-build meson gcc libblkid-dev lcov valgrind gnu-efi libefivar-dev libbtrfsutil-dev ruby ruby-dev
         sudo gem install coveralls-lcov
     - name: "Run Test: stock"
       env:
