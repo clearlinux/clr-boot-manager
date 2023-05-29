@@ -263,6 +263,8 @@ static bool shim_systemd_install_fallback_bootloader(__cbm_unused__ const BootMa
 static bool shim_systemd_install(const BootManager *manager)
 {
         char varname[9];
+        const char *prefix = NULL;
+        prefix = boot_manager_get_vendor_prefix((BootManager *)manager);
 
         if (!make_layout(manager)) {
                 LOG_FATAL("Cannot create layout");
@@ -282,7 +284,7 @@ static bool shim_systemd_install(const BootManager *manager)
                 if (!config.has_boot_rec && boot_manager_is_update_efi_vars((BootManager *)manager)) {
                         if (bootvar_create(BOOT_DIRECTORY, config.shim_dst_esp, varname, 9)) {
                                 LOG_ERROR("Cannot create EFI variable (boot entry)");
-                                LOG_ERROR("Please manually update your bios to add a boot entry for Clear Linux");
+                                LOG_ERROR("Please manually update your bios to add a boot entry for %s", prefix);
                         }
                 }
         } else {
