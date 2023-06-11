@@ -158,7 +158,7 @@ This integer value will be used when next configuring the bootloader, and is use
 to forcibly delay the system boot for a specified number of seconds.",
                 .callback = cbm_command_get_timeout,
                 .usage = " [--path=/path/to/filesystem/root]",
-                .requires_root = false,
+                .requires_root = true,
         };
 
         if (!nc_hashmap_put(commands, cmd_get_timeout.name, &cmd_get_timeout)) {
