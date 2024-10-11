@@ -71,7 +71,7 @@ int mount_boot(BootManager *self, char **boot_directory);
  *
  * @see mount_boot() for return and error conditions.
  */
-int detect_and_mount_boot(BootManager *self, char **boot_dir);
+int boot_manager_detect_and_mount_boot(BootManager *self, char **boot_dir);
 
 /**
  * Internal function to sort by Kernel structs by release number (highest first)

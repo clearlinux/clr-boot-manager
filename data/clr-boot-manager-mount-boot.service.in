@@ -1,0 +1,11 @@
+[Unit]
+Description=mount @BOOTDIR@ using clr-boot-manager
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=@BINDIR@/clr-boot-manager mount-boot
+ExecStop=@BINDIR@/umount @BOOTDIR@
+
+[Install]
+WantedBy=multi-user.target

@@ -41,7 +41,7 @@ bool boot_manager_update(BootManager *self)
                 return boot_manager_update_image(self);
         }
 
-        did_mount = detect_and_mount_boot(self, &boot_dir);
+        did_mount = boot_manager_detect_and_mount_boot(self, &boot_dir);
         if (did_mount >= 0) {
                 /* Do a native update */
                 ret = boot_manager_update_native(self);
