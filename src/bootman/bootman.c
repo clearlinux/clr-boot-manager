@@ -886,7 +886,7 @@ static bool _boot_manager_enumerate_initrds_freestanding(BootManager *self, cons
 
                 /* Check whether this is a microcode cpio (*-ucode.cpio) */
                 size_t nlen = strlen(ucode_needle);
-                size_t hlen = strlen(initrd_name_val);
+                size_t hlen = initrd_name_val ? strlen(initrd_name_val) : 0;
                 if (hlen > nlen) {
                         /* Ensure the match is at the end of the string */
                         const char *ext = &initrd_name_val[hlen-nlen];
