@@ -326,6 +326,8 @@ bool boot_manager_remove_kernel_wrapper(BootManager *self, const Kernel *kernel)
         CHECK_DBG_RET_VAL(!cbm_is_sysconfig_sane(self->sysconfig), false,
                           "Sysconfig is not sane");
 
+        CHECK_ERR_RET_VAL(!kernel, false, "No kernel specified, bailing");
+
         /* Grab the available kernels */
         kernels = boot_manager_get_kernels(self);
         CHECK_ERR_RET_VAL(!kernels || kernels->len == 0, false,
